@@ -1,0 +1,122 @@
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="UxrRuntimeGripInfo.cs" company="VRMADA">
+//   Copyright (c) VRMADA, All rights reserved.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+using UnityEngine;
+
+namespace UltimateXR.Manipulation
+{
+    /// <summary>
+    ///     Stores spatial information of a grab that was performed at runtime.
+    /// </summary>
+    internal class UxrRuntimeGripInfo
+    {
+        #region Public Types & Data
+
+        /// <summary>
+        ///     Gets or sets the <see cref="UxrGrabbableObject" /> rotation relative to the <see cref="UxrGrabber" /> at the moment
+        ///     it was grabbed.
+        /// </summary>
+        public Quaternion RelativeGrabRotation { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the <see cref="UxrGrabbableObject" /> position in local <see cref="UxrGrabber" /> space at the moment
+        ///     it was grabbed.
+        /// </summary>
+        public Vector3 RelativeGrabPosition { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the <see cref="UxrGrabber" /> rotation relative to the <see cref="UxrGrabbableObject" /> at the moment
+        ///     it was grabbed.
+        /// </summary>
+        public Quaternion RelativeGrabberRotation { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the <see cref="UxrGrabber" /> position in local <see cref="UxrGrabbableObject" /> space at the moment
+        ///     it was grabbed.
+        /// </summary>
+        public Vector3 RelativeGrabberPosition { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the snap rotation relative to the <see cref="UxrGrabbableObject" /> at the moment it was grabbed.
+        /// </summary>
+        public Quaternion RelativeGrabAlignRotation { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the snap position in local <see cref="UxrGrabbableObject" /> space at the moment it was grabbed.
+        /// </summary>
+        public Vector3 RelativeGrabAlignPosition { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the proximity rotation relative to the <see cref="UxrGrabbableObject" /> at the moment it was grabbed.
+        /// </summary>
+        public Vector3 RelativeProximityPosition { get; set; }
+
+        // *************************************************************************************************************************
+        // For smooth transitions from object to hand or object to target or hand to object where we want to avoid instant snapping.
+        // *************************************************************************************************************************
+
+        /// <summary>
+        ///     Gets or sets the <see cref="UxrGrabbableObject" /> world-space position at the moment it was grabbed.
+        /// </summary>
+        public Vector3 PositionOnGrab { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the <see cref="UxrGrabbableObject" /> world-space rotation at the moment it was grabbed.
+        /// </summary>
+        public Quaternion RotationOnGrab { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the world-space snap position at the moment the <see cref="UxrGrabbableObject" /> was grabbed.
+        /// </summary>
+        public Vector3 AlignPositionOnGrab { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the world-space snap rotation at the moment the <see cref="UxrGrabbableObject" /> was grabbed.
+        /// </summary>
+        public Quaternion AlignRotationOnGrab { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the world-space <see cref="UxrGrabber" /> position at the moment the <see cref="UxrGrabbableObject" />
+        ///     was grabbed.
+        /// </summary>
+        public Vector3 GrabberPositionOnGrab { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the world-space <see cref="UxrGrabber" /> rotation at the moment the <see cref="UxrGrabbableObject" />
+        ///     was grabbed.
+        /// </summary>
+        public Quaternion GrabberRotationOnGrab { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the world-space hand bone position at the moment the <see cref="UxrGrabbableObject" /> was grabbed.
+        /// </summary>
+        public Vector3 HandBonePositionOnGrab { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the world-space hand bone rotation at the moment the <see cref="UxrGrabbableObject" /> was grabbed.
+        /// </summary>
+        public Quaternion HandBoneRotationOnGrab { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the decreasing timer that is initialized at <see cref="UxrGrabbableObject.ObjectAlignmentSeconds" />
+        ///     at the moment the <see cref="UxrGrabbableObject" /> was grabbed. It is used for smooth object-to-hand transitions.
+        /// </summary>
+        public float GrabTimer { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the decreasing timer that is initialized at <see cref="UxrGrabbableObject.HandLockSeconds" /> at the
+        ///     moment the <see cref="UxrGrabbableObject" /> was grabbed. It is used for smooth hand-to-object transitions.
+        /// </summary>
+        public float HandLockTimer { get; set; }
+
+        /// <summary>
+        ///     Gets whether the grip is currently in a transition where the hand is locking to the
+        ///     <see cref="UxrGrabbableObject" />.
+        /// </summary>
+        public bool LockHandInTransition { get; set; }
+
+        #endregion
+    }
+}

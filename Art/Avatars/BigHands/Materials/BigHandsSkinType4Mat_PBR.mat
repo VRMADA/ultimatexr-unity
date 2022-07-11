@@ -1,0 +1,195 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-6291578921193277310
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 5
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: BigHandsSkinType4Mat_PBR
+  m_Shader: {fileID: -6465566751694194690, guid: b696962bc2ea6924596c291ba20d1286, type: 3}
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap:
+        m_Texture: {fileID: 2800000, guid: 7173c639dbda2134387192375d29d027, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _HandMasks1:
+        m_Texture: {fileID: 2800000, guid: a8978e65d952d8e4eb753cfd790491b6, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _HandMasks2:
+        m_Texture: {fileID: 2800000, guid: f7291382680697249a32c1e5c450aa7e, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _HandMasks3:
+        m_Texture: {fileID: 2800000, guid: 539b9126f83004f45867a56015300e07, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SpecGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AO_Strength: 1
+    - _AlphaClip: 0
+    - _BUILTIN_QueueControl: -1
+    - _BUILTIN_QueueOffset: 0
+    - _Blend: 0
+    - _BloodVessels: 0.2
+    - _BloodVesselsFuzziness: 1
+    - _BloodVesselsRange: 0.649
+    - _BumpScale: 1
+    - _ClearCoatMask: 0
+    - _ClearCoatSmoothness: 0
+    - _ColoredFingers: 0.2
+    - _Cull: 2
+    - _Cutoff: 0.5
+    - _DetailAlbedoMapScale: 1
+    - _DetailNormalMapScale: 1
+    - _DstBlend: 0
+    - _EnvironmentReflections: 1
+    - _FingersFuzziness: 0.364
+    - _FingersRange: 0.846
+    - _GlossMapScale: 0
+    - _Glossiness: 0
+    - _GlossyReflections: 0
+    - _HandLines: 0.501
+    - _Knuckles: 0.678
+    - _KnucklesFuzziness: 1
+    - _KnucklesRange: 1
+    - _LargeSpots: 0.027
+    - _LargeSpotsFuzziness: 1
+    - _LargeSpotsIntensity: 0
+    - _LargeSpotsRange: 0.342
+    - _Large_Spots_Intensity: 0
+    - _LinesFuzziness: 1
+    - _LinesRange: 0
+    - _Metallic: 0
+    - _MidSpots: 0.319
+    - _MidSpotsFuzziness: 1
+    - _MidSpotsRange: 0.546
+    - _NailsFuzziness: 0.378
+    - _NailsRange: 0.706
+    - _Normal_Strength: 1
+    - _OcclusionStrength: 1
+    - _PalmFuzziness: 1
+    - _PalmRange: 0.7
+    - _Parallax: 0.005
+    - _QueueControl: 0
+    - _QueueOffset: 0
+    - _ReceiveShadows: 1
+    - _SeparatePalmColor: 1
+    - _SmallSpots: 0.263
+    - _SmallSpotsFuzziness: 1
+    - _SmallSpotsRange: 0
+    - _Smoothness: 1
+    - _SmoothnessTextureChannel: 0
+    - _SpecularHighlights: 1
+    - _SrcBlend: 1
+    - _Surface: 0
+    - _WorkflowMode: 1
+    - _ZWrite: 1
+    m_Colors:
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BloodVesselsColor: {r: 0.8160377, g: 0.8896226, b: 1, a: 0}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _Fingers_Color: {r: 0.8301887, g: 0.2237006, b: 0.13705944, a: 0}
+    - _KnucklesColor: {r: 0.49056602, g: 0.3294131, b: 0.20131719, a: 1}
+    - _LargeSpotsColor: {r: 0.90588236, g: 0.7490196, b: 0.61960787, a: 1}
+    - _Lines_Color: {r: 0.754717, g: 0.35154858, b: 0.2171591, a: 1}
+    - _MidSpotsColor: {r: 0.5849056, g: 0.39583606, b: 0.24554999, a: 1}
+    - _NailsColorA: {r: 0.8862745, g: 0.5803922, b: 0.57254905, a: 1}
+    - _NailsColorB: {r: 0.99215686, g: 0.76862746, b: 0.73333335, a: 1}
+    - _NailsTipColor: {r: 1, g: 0.9764151, b: 0.9764151, a: 1}
+    - _PalmColor: {r: 0.7372549, g: 0.54901963, b: 0.44313726, a: 1}
+    - _SkinColor: {r: 0.6037736, g: 0.4495848, b: 0.3275187, a: 1}
+    - _Small_Spots_Color: {r: 0.6039216, g: 0.32941177, b: 0.34676576, a: 1}
+    - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+  m_BuildTextureStacks: []
+--- !u!114 &5047957631765768789
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 639247ca83abc874e893eb93af2b5e44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 0

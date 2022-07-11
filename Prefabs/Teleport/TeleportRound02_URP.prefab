@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1592665250863918
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4828405532353868}
+  - component: {fileID: 114050169640948700}
+  m_Layer: 0
+  m_Name: TeleportRound02_URP
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4828405532353868
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592665250863918}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &114050169640948700
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592665250863918}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f49112646ffbe3943ad1a450d98ee87e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _controllerHand: 0
+  _useControllerForward: 1
+  _shakeFilter: 0.4
+  _translationType: 1
+  _fadeTranslationColor: {r: 0, g: 0, b: 0, a: 1}
+  _fadeTranslationSeconds: 0.2
+  _smoothTranslationSeconds: 0.1
+  _allowJoystickBackStep: 1
+  _backStepDistance: 2
+  _rotationType: 2
+  _rotationStepDegrees: 45
+  _fadeRotationColor: {r: 0, g: 0, b: 0, a: 1}
+  _fadeRotationSeconds: 0.1
+  _smoothRotationSeconds: 0.1
+  _reorientationType: 2
+  _target: {fileID: 114664516483464280, guid: 81a6e4099b454fe479f240fbb12bf640, type: 3}
+  _targetPlacementAboveHit: 0.04
+  _showTargetAlsoWhenInvalid: 0
+  _validMaterialColorTargets: {r: 0, g: 0.7058824, b: 0, a: 1}
+  _invalidMaterialColorTargets: {r: 0.7058824, g: 0, b: 0, a: 1}
+  _triggerCollidersInteraction: 1
+  _maxAllowedDistance: 8
+  _maxAllowedHeightDifference: 10
+  _maxAllowedSlopeDegrees: 45
+  _destinationValidationRadius: 0.25
+  _validTargetLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  _blockingTargetLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  _arcSegments: 100
+  _arcWidth: 0.07
+  _arcScrollSpeedValid: 4
+  _arcScrollSpeedInvalid: 0
+  _arcMaterialValid: {fileID: 2100000, guid: 9ec301dadb507724cbdf5d4fc44c5d0e, type: 2}
+  _arcMaterialInvalid: {fileID: 2100000, guid: 35486f617742cb943a22e2b62ef57950, type: 2}
+  _arcFadeLength: 1
+  _raycastStepsQuality: 2

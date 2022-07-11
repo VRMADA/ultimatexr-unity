@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d6597a4f2b4fc545bf356a7b195076a, type: 3}
+  m_Name: Readme
+  m_EditorClassIdentifier: 
+  _headerImage: {fileID: 2800000, guid: 75b8aad0da34cc74c886a68bfc14dd12, type: 3}
+  _sections:
+  - _heading: Welcome to UltimateXR!
+    _text: UltimateXR is a free, open source framework and toolkit for Unity that
+      includes powerful features such as cross-device compatibility, state-of-the-art
+      grab and manipulation mechanics, inclusion through a library of gender- and
+      race-agnostic hands, customizable full body avatar representation, advanced
+      UI components, animation, locomotion mechanics, and much more.
+    _linkText: 
+    _url: 
+  - _heading: Example scene
+    _text: Check our example scene with a complete set of virtual reality interactions
+      that will help you understand how to create your own applications.
+    _linkText: Open example scene
+    _url: Assets/UltimateXR/Examples/FullScene/UltimateXR_URP.unity
+  - _heading: Learn UltimateXR
+    _text: Get started!
+    _linkText: Guides and tutorials
+    _url: http://ultimatexr.io/learn
+  - _heading: UltimateXR API
+    _text: Unlock the full potential using the API.
+    _linkText: Scripting reference
+    _url: http://ultimatexr.io/api
+  - _heading: Community
+    _text: Join our community and get in touch with other developers.
+    _linkText: Join UltimateXR
+    _url: http://ultimatexr.io/community
+  _credits:
+  - _name: Paulo Tromp
+    _role: CEO at VRMADA
+  - _name: Enrique Tromp
+    _role: Direction, architecture and programming
+  - _name: Alberto Cruz
+    _role: Lead graphics
+  - _name: Fernando Rojas
+    _role: Additional programming
+  - _name: "Agust\xEDn C\xE1mara"
+    _role: Additional graphics
+  - _name: "Alfredo Guti\xE9rrez"
+    _role: Additional graphics

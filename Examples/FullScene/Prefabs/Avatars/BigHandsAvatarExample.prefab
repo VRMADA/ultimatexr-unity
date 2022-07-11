@@ -1,0 +1,164 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &8730597227760549254
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2827089707736777876, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_ClearFlags
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089707736777876, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: far clip plane
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089707736777876, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_BackGroundColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089707736777876, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_BackGroundColor.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089707736777876, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_BackGroundColor.r
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371599, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_Name
+      value: BigHandsAvatarExample
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371600, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371600, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371600, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371600, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371600, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371600, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371600, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371600, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371600, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371600, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371600, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371603, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: _prefabGuid
+      value: a03a6b1c0ba45034fb1b6ee336f85ddc
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371603, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: _parentPrefab
+      value: 
+      objectReference: {fileID: 2827089708500371599, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+    - target: {fileID: 2827089708500371603, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: _handPoses.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2827089708500371603, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: _handPoses.Array.data[0]
+      value: 
+      objectReference: {fileID: 11400000, guid: a6240c306c6b28f43a24ae1f6f92667d,
+        type: 2}
+    - target: {fileID: 2827089708500371603, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: _handPoses.Array.data[1]
+      value: 
+      objectReference: {fileID: 11400000, guid: 2a3c52fdf9efe7d40bb89303bf74c8bb,
+        type: 2}
+    - target: {fileID: 2827089708500371603, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: _handPoses.Array.data[2]
+      value: 
+      objectReference: {fileID: 11400000, guid: 701f560eda417d147b82d2d5a823a26a,
+        type: 2}
+    - target: {fileID: 2827089708500371603, guid: 55a8090836bca384fa6c13a15986a579,
+        type: 3}
+      propertyPath: _handPoses.Array.data[3]
+      value: 
+      objectReference: {fileID: 11400000, guid: 4c93378714dc235479696ff8bb00c0c7,
+        type: 2}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 55a8090836bca384fa6c13a15986a579, type: 3}
+--- !u!1 &6778648547123083543 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2827089707736777873, guid: 55a8090836bca384fa6c13a15986a579,
+    type: 3}
+  m_PrefabInstance: {fileID: 8730597227760549254}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4011426746496139267
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6778648547123083543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13e10b2b122c8014ca43f12f5be3d59a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _mode: 1
+  _collisionLayers:
+    serializedVersion: 2
+    m_Bits: 1
+  _ignoreTriggerColliders: 1
+  _ignoreDynamicObjects: 1
+  _ignoreGrabbedObjects: 1
+  _fadeColor: {r: 0, g: 0, b: 0, a: 0}
+  _fadeFarDistance: 0.24
+  _fadeNearDistance: 0.12
