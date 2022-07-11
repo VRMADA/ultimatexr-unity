@@ -56,6 +56,8 @@ namespace UltimateXR.Devices.Integrations.Valve
                 yield return "Knuckles EV3.0 Right";
                 yield return "Knuckles EV2.0 Left";
                 yield return "Knuckles EV2.0 Right";
+                yield return "Knuckles Left";
+                yield return "Knuckles Right";
             }
         }
 

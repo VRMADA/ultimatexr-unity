@@ -11,8 +11,11 @@ using UltimateXR.Extensions.Unity;
 using UltimateXR.Extensions.Unity.Math;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 using UnityEngine.XR;
+
+#if ULTIMATEXR_UNITY_URP
+using UnityEngine.Rendering.Universal;
+#endif
 
 namespace UltimateXR.Rendering.FX
 {
@@ -283,7 +286,9 @@ namespace UltimateXR.Rendering.FX
             // Render
 
             GL.invertCulling = true;
+#if ULTIMATEXR_UNITY_URP
             UniversalRenderPipeline.RenderSingleCamera(context, reflectionCamera);
+#endif
             GL.invertCulling = false;
 
             reflectionCamera.ResetWorldToCameraMatrix();

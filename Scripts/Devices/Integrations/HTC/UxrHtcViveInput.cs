@@ -19,7 +19,15 @@ namespace UltimateXR.Devices.Integrations.HTC
         /// <inheritdoc />
         public override IEnumerable<string> ControllerNames
         {
-            get { yield return ControllerNameHtcVive; }
+            get
+            {
+                yield return "controller_vive";
+                yield return "Vive. Controller MV";
+                yield return "Vive. Controller Pro MV";
+                yield return "VIVE Controller MV";
+                yield return "VIVE Controller Pro MV";
+
+            }
         }
 
         /// <inheritdoc />
@@ -62,12 +70,6 @@ namespace UltimateXR.Devices.Integrations.HTC
         {
             return UxrControllerInputCapabilities.HapticImpulses;
         }
-
-        #endregion
-
-        #region Private Types & Data
-
-        private const string ControllerNameHtcVive = "controller_vive";
 
         #endregion
     }

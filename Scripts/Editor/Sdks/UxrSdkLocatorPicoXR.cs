@@ -35,7 +35,7 @@ namespace UltimateXR.Editor.Sdks
                 {
                     if (CurrentVersion == 0)
                     {
-                        return new[] { "UXR_USE_PICOXR_SDK" };
+                        return new[] { "ULTIMATEXR_USE_PICOXR_SDK" };
                     }
                 }
 
@@ -46,7 +46,7 @@ namespace UltimateXR.Editor.Sdks
         /// <inheritdoc />
         public override string[] AllSymbols
         {
-            get { return new[] { "UXR_USE_PICOXR_SDK" }; }
+            get { return new[] { "ULTIMATEXR_USE_PICOXR_SDK" }; }
         }
 
         /// <inheritdoc />
@@ -60,7 +60,7 @@ namespace UltimateXR.Editor.Sdks
             if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
             {
                 // UltimateXR assembly already sets up version define for the PicoXR package
-#if UXR_USE_PICOXR_SDK
+#if ULTIMATEXR_USE_PICOXR_SDK
                 CurrentVersion = 0;
                 CurrentState = State.Available;
 #else

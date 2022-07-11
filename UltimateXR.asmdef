@@ -1,49 +1,54 @@
 {
-  "name": "UltimateXR",
-  "rootNamespace": "UltimateXR",
-  "references": [
-    "SteamVR",
-    "Oculus.VR",
-    "Unity.XR.OpenVR",
-    "UnityEngine.SpatialTracking",
-    "Unity.InputSystem",
-    "Unity.RenderPipelines.Universal.Runtime",
-    "Wave.Essence.CompositorLayer",
-    "Unity.XR.PicoXR"
-  ],
-  "includePlatforms": [],
-  "excludePlatforms": [],
-  "allowUnsafeCode": false,
-  "overrideReferences": false,
-  "precompiledReferences": [],
-  "autoReferenced": true,
-  "defineConstraints": [],
-  "versionDefines": [
-    {
-      "name": "com.unity.xr.management",
-      "expression": "",
-      "define": "ULTIMATEXR_UNITY_XR_MANAGEMENT"
-    },
-    {
-      "name": "com.unity.inputsystem",
-      "expression": "",
-      "define": "ULTIMATEXR_USE_UNITYINPUTSYSTEM_SDK"
-    },
-    {
-      "name": "com.htc.upm.wave.xrsdk",
-      "expression": "",
-      "define": "ULTIMATEXR_USE_WAVEXR_SDK"
-    },
-    {
-      "name": "com.htc.upm.wave.essence",
-      "expression": "",
-      "define": "ULTIMATEXR_USE_WAVEXR_ESSENCE_SDK"
-    },
-    {
-      "name": "com.unity.xr.picoxr",
-      "expression": "",
-      "define": "UXR_USE_PICOXR_SDK"
-    }
-  ],
-  "noEngineReferences": false
+    "name": "UltimateXR",
+    "rootNamespace": "UltimateXR",
+    "references": [
+        "SteamVR",
+        "Oculus.VR",
+        "Unity.XR.OpenVR",
+        "UnityEngine.SpatialTracking",
+        "Unity.InputSystem",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Wave.Essence.CompositorLayer",
+        "Unity.XR.PicoXR"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.xr.management",
+            "expression": "",
+            "define": "ULTIMATEXR_UNITY_XR_MANAGEMENT"
+        },
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "",
+            "define": "ULTIMATEXR_USE_UNITYINPUTSYSTEM_SDK"
+        },
+        {
+            "name": "com.htc.upm.wave.xrsdk",
+            "expression": "",
+            "define": "ULTIMATEXR_USE_WAVEXR_SDK"
+        },
+        {
+            "name": "com.htc.upm.wave.essence",
+            "expression": "",
+            "define": "ULTIMATEXR_USE_WAVEXR_ESSENCE_SDK"
+        },
+        {
+            "name": "com.unity.xr.picoxr",
+            "expression": "",
+            "define": "ULTIMATEXR_USE_PICOXR_SDK"
+        },
+        {
+            "name": "com.unity.render-pipelines.universal",
+            "expression": "",
+            "define": "ULTIMATEXR_UNITY_URP"
+        }
+    ],
+    "noEngineReferences": false
 }
