@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Removed built-in compatibility in hand shader to fix shader errors when building.
+  Compatibility will be added again as soon as Unity issue is fixed.
+  Issue status can be followed here: https://github.com/VRMADA/ultimatexr-unity/issues/2
+
 ## [0.8.1] - 2022-07-11
 
 ### Changed
