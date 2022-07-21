@@ -1,0 +1,12 @@
+{
+    "name": "com.vrmada.ultimatexr-unity",
+    "version": "0.8.2",
+    "displayName": "UltimateXR",
+    "description": "An open source XR framework and toolkit for Unity.",
+    "unity": "2019.4",
+    "unityRelease": "5f1",
+    "dependencies": {
+        "com.unity.render-pipelines.universal": "7.5.3"
+    }
+}
+  
