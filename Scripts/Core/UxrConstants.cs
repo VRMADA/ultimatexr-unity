@@ -14,7 +14,7 @@ namespace UltimateXR.Core
 
         public const int MajorVersion = 0;
         public const int MinorVersion = 8;
-        public const int PatchVersion = 1;
+        public const int PatchVersion = 2;
 
         public const string CoreModule         = "Core";
         public const string LocomotionModule   = "Locomotion";

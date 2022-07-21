@@ -105,6 +105,34 @@ namespace UltimateXR.Extensions.Unity.Math
         }
 
         /// <summary>
+        ///     Fixes Euler angles so that they are always in the -180, 180 degrees range.
+        /// </summary>
+        /// <param name="self">Euler angles to fix</param>
+        /// <returns>Euler angles in the -180, 180 degrees range</returns>
+        public static Vector3 ToEuler180(this in Vector3 self)
+        {
+            float[] result = new float[VectorLength];
+
+            for (int i = 0; i < VectorLength; ++i)
+            {
+                float angle = self[i] % 360.0f;
+
+                if (angle > 180.0f)
+                {
+                    angle -= 360.0f;
+                }
+                else if (angle < -180.0f)
+                {
+                    angle += 360.0f;
+                }
+
+                result[i] = angle;
+            }
+
+            return result.ToVector3();
+        }
+
+        /// <summary>
         ///     Computes the average of a set of vectors.
         /// </summary>
         /// <param name="vectors">Input vectors</param>
@@ -561,7 +589,7 @@ namespace UltimateXR.Extensions.Unity.Math
 
             if (distance > sphere.radius)
             {
-                pos = center + ((pos - center).normalized * sphere.radius);
+                pos = center + (pos - center).normalized * sphere.radius;
                 return sphere.transform.TransformPoint(pos);
             }
 

@@ -58,14 +58,14 @@ namespace UltimateXR.Manipulation
         // *************************************************************************************************************************
 
         /// <summary>
-        ///     Gets or sets the <see cref="UxrGrabbableObject" /> world-space position at the moment it was grabbed.
+        ///     Gets or sets the <see cref="UxrGrabbableObject" /> local position at the moment it was grabbed.
         /// </summary>
-        public Vector3 PositionOnGrab { get; set; }
+        public Vector3 LocalPositionOnGrab { get; set; }
 
         /// <summary>
-        ///     Gets or sets the <see cref="UxrGrabbableObject" /> world-space rotation at the moment it was grabbed.
+        ///     Gets or sets the <see cref="UxrGrabbableObject" /> local rotation at the moment it was grabbed.
         /// </summary>
-        public Quaternion RotationOnGrab { get; set; }
+        public Quaternion LocalRotationOnGrab { get; set; }
 
         /// <summary>
         ///     Gets or sets the world-space snap position at the moment the <see cref="UxrGrabbableObject" /> was grabbed.
@@ -78,16 +78,16 @@ namespace UltimateXR.Manipulation
         public Quaternion AlignRotationOnGrab { get; set; }
 
         /// <summary>
-        ///     Gets or sets the world-space <see cref="UxrGrabber" /> position at the moment the <see cref="UxrGrabbableObject" />
-        ///     was grabbed.
+        ///     Gets or sets the <see cref="UxrGrabber" /> position in local avatar coordinates at the moment the
+        ///     <see cref="UxrGrabbableObject" /> was grabbed.
         /// </summary>
-        public Vector3 GrabberPositionOnGrab { get; set; }
+        public Vector3 GrabberLocalAvatarPositionOnGrab { get; set; }
 
         /// <summary>
-        ///     Gets or sets the world-space <see cref="UxrGrabber" /> rotation at the moment the <see cref="UxrGrabbableObject" />
-        ///     was grabbed.
+        ///     Gets or sets the <see cref="UxrGrabber" /> rotation in local avatar coordinates at the moment the
+        ///     <see cref="UxrGrabbableObject" /> was grabbed.
         /// </summary>
-        public Quaternion GrabberRotationOnGrab { get; set; }
+        public Quaternion GrabberLocalAvatarRotationOnGrab { get; set; }
 
         /// <summary>
         ///     Gets or sets the world-space hand bone position at the moment the <see cref="UxrGrabbableObject" /> was grabbed.

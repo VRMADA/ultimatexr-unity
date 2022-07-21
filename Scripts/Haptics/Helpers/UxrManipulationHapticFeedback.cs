@@ -19,7 +19,7 @@ namespace UltimateXR.Haptics.Helpers
     [RequireComponent(typeof(UxrGrabbableObject))]
     public class UxrManipulationHapticFeedback : UxrGrabbableObjectComponent<UxrManipulationHapticFeedback>
     {
-        #region Inspector Properties
+        #region Inspector Properties/Serialized Fields
 
         [Header("Continuous Manipulation:")] [SerializeField] private bool          _continuousManipulationHaptics;
         [SerializeField]                                      private UxrHapticMode _hapticMixMode   = UxrHapticMode.Mix;
@@ -40,7 +40,7 @@ namespace UltimateXR.Haptics.Helpers
 
         #endregion
 
-        #region Public types & data
+        #region Public Types & Data
 
         /// <summary>
         ///     Gets or sets whether the component will send haptic feedback continuously while the object is being grabbed.
@@ -205,7 +205,7 @@ namespace UltimateXR.Haptics.Helpers
         protected override void OnDisable()
         {
             base.OnDisable();
-            
+
             if (_leftHapticsCoroutine != null)
             {
                 StopCoroutine(_leftHapticsCoroutine);
@@ -345,6 +345,20 @@ namespace UltimateXR.Haptics.Helpers
             }
         }
 
+        /// <summary>
+        ///     Called after all object manipulation has been processed and potential constraints have been applied.
+        ///     It is used to update the speed information.
+        /// </summary>
+        /// <param name="e">Event parameters</param>
+        protected override void OnObjectConstraintsApplied(UxrApplyConstraintsEventArgs e)
+        {
+            _linearSpeed  = Vector3.Distance(_previousLocalPosition, e.GrabbableObject.transform.localPosition) / Time.deltaTime;
+            _angularSpeed = Quaternion.Angle(_previousLocalRotation, e.GrabbableObject.transform.localRotation) / Time.deltaTime;
+
+            _previousLocalPosition = e.GrabbableObject.transform.localPosition;
+            _previousLocalRotation = e.GrabbableObject.transform.localRotation;
+        }
+
         #endregion
 
         #region Private Methods
@@ -361,8 +375,8 @@ namespace UltimateXR.Haptics.Helpers
                 return;
             }
 
-            float speed        = _useExternalRigidbody && _externalRigidbody ? _externalRigidbody.velocity.magnitude : UxrGrabManager.Instance.GetGrabbedObjectVelocity(GrabbableObject).magnitude;
-            float angularSpeed = _useExternalRigidbody && _externalRigidbody ? _externalRigidbody.angularVelocity.magnitude : UxrGrabManager.Instance.GetGrabbedObjectAngularVelocity(GrabbableObject).magnitude;
+            float speed        = _useExternalRigidbody && _externalRigidbody ? _externalRigidbody.velocity.magnitude : _linearSpeed;
+            float angularSpeed = _useExternalRigidbody && _externalRigidbody ? _externalRigidbody.angularVelocity.magnitude : _angularSpeed;
 
             float quantityPos = _maxSpeed - _minSpeed <= 0.0f ? 0.0f : (speed - _minSpeed) / (_maxSpeed - _minSpeed);
             float quantityRot = _maxAngularSpeed - _minAngularSpeed <= 0.0f ? 0.0f : (angularSpeed - _minAngularSpeed) / (_maxAngularSpeed - _minAngularSpeed);
@@ -380,12 +394,16 @@ namespace UltimateXR.Haptics.Helpers
 
         #endregion
 
-        #region Private types & data
+        #region Private Types & Data
 
         private const float SampleDurationSeconds = 0.1f;
 
-        private Coroutine _leftHapticsCoroutine;
-        private Coroutine _rightHapticsCoroutine;
+        private Coroutine  _leftHapticsCoroutine;
+        private Coroutine  _rightHapticsCoroutine;
+        private Vector3    _previousLocalPosition;
+        private Quaternion _previousLocalRotation;
+        private float      _linearSpeed;
+        private float      _angularSpeed;
 
         #endregion
     }

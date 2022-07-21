@@ -1271,23 +1271,23 @@ namespace UltimateXR.Manipulation
         /// </summary>
         /// <param name="grabber">Grabber that is currently grabbing the object</param>
         /// <param name="grabPoint">Point that is being grabbed</param>
-        /// <param name="lastPosition">Object position the previous frame</param>
-        /// <param name="lastRotation">Object rotation the previous frame</param>
+        /// <param name="positionBeforeUpdate">Object position before being updated</param>
+        /// <param name="rotationBeforeUpdate">Object rotation before being updated</param>
         /// <param name="propagateEvents">
         ///     Whether to propagate <see cref="ConstraintsApplying" /> and
         ///     <see cref="ConstraintsApplied" /> events
         /// </param>
-        internal void CheckAndApplyConstraints(UxrGrabber grabber, int grabPoint, Vector3 lastPosition, Quaternion lastRotation, bool propagateEvents)
+        internal void CheckAndApplyConstraints(UxrGrabber grabber, int grabPoint, Vector3 positionBeforeUpdate, Quaternion rotationBeforeUpdate, bool propagateEvents)
         {
             if (propagateEvents)
             {
-                OnConstraintsApplying(new UxrApplyConstraintsEventArgs());
+                OnConstraintsApplying(new UxrApplyConstraintsEventArgs(this));
             }
 
             if (IsLockedInPlace)
             {
-                transform.position = lastPosition;
-                transform.rotation = lastRotation;
+                transform.position = positionBeforeUpdate;
+                transform.rotation = rotationBeforeUpdate;
                 return;
             }
 
@@ -1323,7 +1323,7 @@ namespace UltimateXR.Manipulation
                                              targetRotation,
                                              GetGrabPointSnapModeAffectsRotation(grabPoint, UxrHandSnapDirection.ObjectToHand),
                                              false);
-                    ConstrainTransform(false, true, lastPosition, lastRotation); // Constrain rotation before snapping pivot
+                    ConstrainTransform(false, true, positionBeforeUpdate, rotationBeforeUpdate); // Constrain rotation before snapping pivot
                     transform.ApplyAlignment(transform.TransformPoint(gripInfo.RelativeGrabAlignPosition),
                                              sourceRotation,
                                              grabber.transform.position,
@@ -1335,14 +1335,14 @@ namespace UltimateXR.Manipulation
                     {
                         // Smooth transition to the hand
                         float t = 1.0f - Mathf.Clamp01(gripInfo.GrabTimer / ObjectAlignmentSeconds);
-                        transform.position = Vector3.Lerp(gripInfo.PositionOnGrab, transform.position, t);
-                        transform.rotation = Quaternion.Slerp(gripInfo.RotationOnGrab, transform.rotation, t);
+                        transform.localPosition = Vector3.Lerp(gripInfo.LocalPositionOnGrab, transform.localPosition, t);
+                        transform.localRotation = Quaternion.Slerp(gripInfo.LocalRotationOnGrab, transform.localRotation, t);
                     }
                 }
 
                 // Translation & Rotation
 
-                ConstrainTransform(true, true, lastPosition, lastRotation);
+                ConstrainTransform(true, true, positionBeforeUpdate, rotationBeforeUpdate);
 
                 // Smoothly exit from a constraint if we had manually created the transition using StartSmoothConstraintExit()
 
@@ -1361,33 +1361,34 @@ namespace UltimateXR.Manipulation
                 // Position
 
                 transform.position = grabber.transform.TransformPoint(GetGrabPointRelativeGrabPosition(grabber, grabPoint));
-                ConstrainTransform(true, false, lastPosition, lastRotation);
+                ConstrainTransform(true, false, positionBeforeUpdate, rotationBeforeUpdate);
 
                 // Rotation: We use the angle between V1(pivot, initial grab position) and V2 (pivot, current grab position).
                 //           This method works better for levers, steering wheels, etc. It won't work well with elements
                 //           like knobs or similar because the point where the torque is applied lies in the rotation axis itself.
                 //           In this cases we recommend using ManipulationMode.GrabAndMove instead.
 
-                Vector3 grabDirection        = grabber.transform.position - transform.position;
-                Vector3 initialGrabDirection = gripInfo.GrabberPositionOnGrab - transform.position;
+                Vector3    grabDirection        = grabber.transform.position - transform.position;
+                Vector3    initialGrabDirection = grabber.Avatar.transform.TransformPoint(gripInfo.GrabberLocalAvatarPositionOnGrab) - transform.position;
+                Quaternion rotationOnGrab       = transform.parent != null ? transform.parent.rotation * gripInfo.LocalRotationOnGrab : gripInfo.LocalRotationOnGrab;
 
-                Quaternion rotation              = Quaternion.FromToRotation(initialGrabDirection.normalized, grabDirection.normalized) * gripInfo.RotationOnGrab;
+                Quaternion rotation              = Quaternion.FromToRotation(initialGrabDirection.normalized, grabDirection.normalized) * rotationOnGrab;
                 Quaternion inverseParentRotation = Quaternion.Inverse(RotationLimitsParentRotation);
                 Quaternion localRotation         = inverseParentRotation * rotation;
-                Quaternion localRotationPrevious = inverseParentRotation * lastRotation;
+                Quaternion localRotationPrevious = inverseParentRotation * rotationBeforeUpdate;
                 Quaternion clampedLocalRotation  = ClampRotation(localRotation, localRotationPrevious, Quaternion.Euler(InitialLocalEulerAnglesToReference), _rotationAngleLimitsMin, _rotationAngleLimitsMax);
                 transform.rotation = RotationLimitsParentRotation * clampedLocalRotation;
             }
 
             if (UxrGrabManager.Instance.GetHandsGrabbingCount(this) == 1)
             {
-                transform.position = UxrInterpolator.SmoothDampPosition(lastPosition, transform.position, _translationResistance);
-                transform.rotation = UxrInterpolator.SmoothDampRotation(lastRotation, transform.rotation, _rotationResistance);
+                transform.position = UxrInterpolator.SmoothDampPosition(positionBeforeUpdate, transform.position, _translationResistance);
+                transform.rotation = UxrInterpolator.SmoothDampRotation(rotationBeforeUpdate, transform.rotation, _rotationResistance);
             }
 
             if (propagateEvents)
             {
-                OnConstraintsApplied(new UxrApplyConstraintsEventArgs());
+                OnConstraintsApplied(new UxrApplyConstraintsEventArgs(this));
             }
         }
 
@@ -1431,15 +1432,15 @@ namespace UltimateXR.Manipulation
             grabInfo.RelativeGrabAlignPosition = transform.InverseTransformPoint(snapPosition);
             grabInfo.RelativeProximityPosition = transform.InverseTransformPoint(snapMatrix.MultiplyPoint(localProximity));
 
-            grabInfo.PositionOnGrab         = transform.position;
-            grabInfo.RotationOnGrab         = transform.rotation;
-            grabInfo.AlignPositionOnGrab    = snapPosition;
-            grabInfo.AlignRotationOnGrab    = snapRotation;
-            grabInfo.GrabberPositionOnGrab  = grabber.transform.position;
-            grabInfo.GrabberRotationOnGrab  = grabber.transform.rotation;
-            grabInfo.HandBonePositionOnGrab = grabber.HandBone.position;
-            grabInfo.HandBoneRotationOnGrab = grabber.HandBone.rotation;
-            grabInfo.GrabTimer              = ObjectAlignmentSeconds;
+            grabInfo.LocalPositionOnGrab              = transform.localPosition;
+            grabInfo.LocalRotationOnGrab              = transform.localRotation;
+            grabInfo.AlignPositionOnGrab              = snapPosition;
+            grabInfo.AlignRotationOnGrab              = snapRotation;
+            grabInfo.GrabberLocalAvatarPositionOnGrab = grabber.Avatar.transform.InverseTransformPoint(grabber.transform.position);
+            grabInfo.GrabberLocalAvatarRotationOnGrab = Quaternion.Inverse(grabber.Avatar.transform.rotation) * grabber.transform.rotation;
+            grabInfo.HandBonePositionOnGrab           = grabber.HandBone.position;
+            grabInfo.HandBoneRotationOnGrab           = grabber.HandBone.rotation;
+            grabInfo.GrabTimer                        = ObjectAlignmentSeconds;
 
             if (IsConstrained || UxrGrabManager.Instance.IsBeingGrabbedByOtherThan(this, grabPoint, grabber))
             {
@@ -1833,6 +1834,7 @@ namespace UltimateXR.Manipulation
             float      angleMax;
 
             int axisIndex = 0;
+            int axisCount = 0;
 
             // First pass: Check for components that have a fixed value. Sometimes x, y or z needs to be -90 for instance because of the object axis system
 
@@ -1844,6 +1846,18 @@ namespace UltimateXR.Manipulation
                     fixedEuler[axisIndex] = eulerMin[axisIndex];
                     rot                   = Quaternion.Euler(fixedEuler);
                 }
+                else if(!Mathf.Approximately(eulerMin[axisIndex], eulerMax[axisIndex]))
+                {
+                    axisCount++;
+                }
+            }
+
+            // If we have more than one axis constraint we probably have something like a socket-ball joint. We solve this easier.
+            
+            if (axisCount > 1)
+            {
+                Vector3 initialEuler = initialRot.eulerAngles;
+                return Quaternion.Euler(rot.eulerAngles.ToEuler180().Clamp(initialEuler + eulerMin, initialEuler + eulerMax));
             }
 
             // Second pass: Try to fix around axis that has a range of degrees

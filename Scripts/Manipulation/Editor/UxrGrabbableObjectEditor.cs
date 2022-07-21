@@ -586,8 +586,8 @@ namespace UltimateXR.Manipulation.Editor
                     EditorGUILayout.PropertyField(_propLockedGrabReleaseDistance, ContentLockedGrabReleaseDistance);
                 }
 
-                EditorGUILayout.Slider(_propTranslationResistance, 0.0f, 0.5f, ContentTranslationResistance);
-                EditorGUILayout.Slider(_propRotationResistance,    0.0f, 0.5f, ContentRotationResistance);
+                EditorGUILayout.Slider(_propTranslationResistance, 0.0f, 1.0f, ContentTranslationResistance);
+                EditorGUILayout.Slider(_propRotationResistance,    0.0f, 1.0f, ContentRotationResistance);
             }
 
             // Added new grab points? Set their values from previous grab points to make life easier
@@ -1250,13 +1250,13 @@ namespace UltimateXR.Manipulation.Editor
         private GUIContent ContentTranslationConstraintMode          { get; } = new GUIContent("Anchor Proximity Translation Constraint Mode", "Allows to constrain the translation of this object while being grabbed.");
         private GUIContent ContentRestrictToBox                      { get; } = new GUIContent("Restrict To Box",                              "Allowed volume where this object's pivot will be allowed to move while being grabbed.");
         private GUIContent ContentRestrictToSphere                   { get; } = new GUIContent("Restrict To Sphere",                           "Allowed volume where this object's pivot will be allowed to move while being grabbed.");
-        private GUIContent ContentTranslationLimitsMin               { get; } = new GUIContent("Translation Limits Min",                       "Minimum allowed offset in local coordinates.");
-        private GUIContent ContentTranslationLimitsMax               { get; } = new GUIContent("Translation Limits Max",                       "Maximum allowed offset in local coordinates.");
+        private GUIContent ContentTranslationLimitsMin               { get; } = new GUIContent("Translation Offset Min",                       "Minimum allowed offset in local coordinates.");
+        private GUIContent ContentTranslationLimitsMax               { get; } = new GUIContent("Translation Offset Max",                       "Maximum allowed offset in local coordinates.");
         private GUIContent ContentTranslationLimitsReferenceIsParent { get; } = new GUIContent("Translation Reference Is Parent",              "Tells whether the local translation limits specified are with respect to the parent or another transform.");
         private GUIContent ContentTranslationLimitsParent            { get; } = new GUIContent("Translation Parent Transform",                 "Allows to specify a different transform as parent reference for the local translation limits.");
         private GUIContent ContentRotationConstraintMode             { get; } = new GUIContent("Rotation Constraint Mode",                     "Allows to constrain the rotation of this object while being grabbed.");
-        private GUIContent ContentRotationAngleLimitsMin             { get; } = new GUIContent("Rotation Angle Limits Min",                    "Minimum allowed rotation offset degrees in local axes.");
-        private GUIContent ContentRotationAngleLimitsMax             { get; } = new GUIContent("Rotation Angle Limits Max",                    "Maximum allowed rotation offset degrees in local axes.");
+        private GUIContent ContentRotationAngleLimitsMin             { get; } = new GUIContent("Rotation Angles Offset Min",                   "Minimum allowed rotation offset degrees in local axes.");
+        private GUIContent ContentRotationAngleLimitsMax             { get; } = new GUIContent("Rotation Angles Offset Max",                   "Maximum allowed rotation offset degrees in local axes.");
         private GUIContent ContentRotationLimitsReferenceIsParent    { get; } = new GUIContent("Rotation Reference Is Parent",                 "Tells whether the local rotation limits specified are with respect to the parent or another transform.");
         private GUIContent ContentRotationLimitsParent               { get; } = new GUIContent("Rotation Parent Transform",                    "Allows to specify a different transform as parent reference for the local rotation limits.");
         private GUIContent ContentLockedGrabReleaseDistance          { get; } = new GUIContent("Locked Grab Release Distance",                 "Maximum allowed distance of a locked grab to move away from the grab point before being released.");

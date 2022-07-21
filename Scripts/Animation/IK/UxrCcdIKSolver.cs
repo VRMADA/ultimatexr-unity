@@ -178,11 +178,11 @@ namespace UltimateXR.Animation.IK
 
             if (angle > 180.0f)
             {
-                angle -= 180.0f;
+                angle -= 360.0f;
             }
             else if (angle < -180.0f)
             {
-                angle += 180.0f;
+                angle += 360.0f;
             }
 
             return angle;

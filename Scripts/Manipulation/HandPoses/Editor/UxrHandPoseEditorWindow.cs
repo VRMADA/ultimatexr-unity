@@ -1257,13 +1257,15 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
                                 break;
                             }
 
-                            Texture2D buttonNormal = GUI.skin.button.normal.background;
-                            Texture2D buttonHover  = GUI.skin.button.hover.background;
-                            Texture2D buttonActive = GUI.skin.button.active.background;
+                            Texture2D buttonNormal  = GUI.skin.button.normal.background;
+                            Texture2D buttonHover   = GUI.skin.button.hover.background;
+                            Texture2D buttonActive  = GUI.skin.button.active.background;
+                            Texture2D buttonFocused = GUI.skin.button.focused.background;
 
-                            GUI.skin.button.normal.background = _handPosePresets[index].Thumbnail;
-                            GUI.skin.button.hover.background  = _handPosePresets[index].Thumbnail;
-                            GUI.skin.button.active.background = _handPosePresets[index].Thumbnail;
+                            GUI.skin.button.normal.background  = _handPosePresets[index].Thumbnail;
+                            GUI.skin.button.hover.background   = _handPosePresets[index].Thumbnail;
+                            GUI.skin.button.active.background  = _handPosePresets[index].Thumbnail;
+                            GUI.skin.button.focused.background = _handPosePresets[index].Thumbnail;
 
                             GUI.skin.button.alignment = TextAnchor.LowerCenter;
 
@@ -1299,9 +1301,10 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
                                 }
                             }
 
-                            GUI.skin.button.normal.background = buttonNormal;
-                            GUI.skin.button.hover.background  = buttonHover;
-                            GUI.skin.button.active.background = buttonActive;
+                            GUI.skin.button.normal.background  = buttonNormal;
+                            GUI.skin.button.hover.background   = buttonHover;
+                            GUI.skin.button.active.background  = buttonActive;
+                            GUI.skin.button.focused.background = buttonFocused;
 
                             GUILayout.Space(presetMargin);
                         }

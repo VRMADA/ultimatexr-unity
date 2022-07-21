@@ -13,5 +13,33 @@ namespace UltimateXR.Manipulation
     /// </summary>
     public class UxrApplyConstraintsEventArgs : EventArgs
     {
+        #region Public Types & Data
+
+        /// <summary>
+        ///     Gets the grabbable object.
+        /// </summary>
+        public UxrGrabbableObject GrabbableObject { get; }
+
+        #endregion
+
+        #region Constructors & Finalizer
+
+        /// <summary>
+        ///     Default constructor is private.
+        /// </summary>
+        private UxrApplyConstraintsEventArgs()
+        {
+        }
+
+        /// <summary>
+        ///     Constructor.
+        /// </summary>
+        /// <param name="grabbableObject">The grabbable object being processed</param>
+        public UxrApplyConstraintsEventArgs(UxrGrabbableObject grabbableObject)
+        {
+            GrabbableObject = grabbableObject;
+        }
+
+        #endregion
     }
 }
