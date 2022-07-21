@@ -14,10 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add support for rotational constraints on more than one axis.
 - Add access to the grabbable object on UxrApplyConstraintsEventArgs.
 
-### Changed
-
-- Rename GrabStandard pose to GrabCylinder to be more specific.
-
 ### Fixed
 
 - Remove built-in compatibility in hand shader to fix shader errors when building.
