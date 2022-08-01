@@ -878,6 +878,15 @@ namespace UltimateXR.Avatar.Controllers
                 string             overrideGrabPoseName = UxrGrabManager.Instance.GetOverrideGrabPoseName(grabber, grabber.GrabbedObject);
                 UxrRuntimeHandPose overrideGrabPose     = !string.IsNullOrEmpty(overrideGrabPoseName) ? Avatar.GetRuntimeHandPose(overrideGrabPoseName) : null;
 
+                // Raise triggered pull event if grabber is triggering object
+
+                bool triggered = UxrAvatar.LocalAvatarInput.GetButtonsPressDown(handSide, UxrInputButtons.Trigger);
+
+                if (triggered)
+                {
+                    UxrGrabManager.Instance.TriggerObjectBeingGrabbed(grabber, grabber.GrabbedObject, true);
+                }
+
                 // Keep updating blend value
 
                 if (overrideGrabPose != null && overrideGrabPose.PoseType == UxrHandPoseType.Blend)

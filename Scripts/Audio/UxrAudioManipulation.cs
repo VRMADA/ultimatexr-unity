@@ -22,6 +22,7 @@ namespace UltimateXR.Audio
         #region Inspector Properties/Serialized Fields
 
         [Header("Events:")] [SerializeField] private UxrAudioSample _audioOnGrab    = new UxrAudioSample();
+        [SerializeField]                     private UxrAudioSample _audioOnTrigger = new UxrAudioSample();
         [SerializeField]                     private UxrAudioSample _audioOnPlace   = new UxrAudioSample();
         [SerializeField]                     private UxrAudioSample _audioOnRelease = new UxrAudioSample();
 
@@ -58,9 +59,10 @@ namespace UltimateXR.Audio
         {
             base.OnEnable();
 
-            GrabbableObject.Grabbed  += Object_Grabbed;
-            GrabbableObject.Placed   += Object_Placed;
-            GrabbableObject.Released += Object_Released;
+            GrabbableObject.Grabbed     += Object_Grabbed;
+            GrabbableObject.Triggered   += Object_Triggered;
+            GrabbableObject.Placed      += Object_Placed;
+            GrabbableObject.Released    += Object_Released;
         }
 
         /// <summary>
@@ -70,9 +72,10 @@ namespace UltimateXR.Audio
         {
             base.OnDisable();
 
-            GrabbableObject.Grabbed  -= Object_Grabbed;
-            GrabbableObject.Placed   -= Object_Placed;
-            GrabbableObject.Released -= Object_Released;
+            GrabbableObject.Grabbed     -= Object_Grabbed;
+            GrabbableObject.Triggered   -= Object_Triggered;
+            GrabbableObject.Placed      -= Object_Placed;
+            GrabbableObject.Released    -= Object_Released;
         }
 
         #endregion
@@ -89,6 +92,19 @@ namespace UltimateXR.Audio
             if (e.Grabber.Avatar == UxrAvatar.LocalAvatar)
             {
                 _audioOnGrab.Play(transform.position);
+            }
+        }
+
+        /// <summary>
+        ///     Called when the object was triggered.
+        /// </summary>
+        /// <param name="sender">Grabbable object that sent the event</param>
+        /// <param name="e">Event arguments</param>
+        private void Object_Triggered(object sender, UxrManipulationEventArgs e)
+        {   
+            if (e.Grabber != null && e.Grabber.Avatar == UxrAvatar.LocalAvatar)
+            {
+                _audioOnTrigger.Play(transform.position);
             }
         }
 

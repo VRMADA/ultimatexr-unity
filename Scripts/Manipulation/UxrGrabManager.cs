@@ -162,6 +162,38 @@ namespace UltimateXR.Manipulation
         public event EventHandler<UxrManipulationEventArgs> ObjectPlaced;
 
         /// <summary>
+        ///     Event called whenever a <see cref="UxrGrabbableObject" /> is about to be triggered on an
+        ///     <see cref="UxrGrabbableObjectAnchor" />.
+        ///     The following properties from <see cref="UxrManipulationEventArgs" /> will contain meaningful data:
+        ///     <list type="bullet">
+        ///         <item>
+        ///             <see cref="UxrManipulationEventArgs.GrabbableObject" />: Object that is about to be triggered.
+        ///         </item>
+        ///         <item>
+        ///             <see cref="UxrManipulationEventArgs.GrabbableAnchor" />:  Anchor where the object was originally grabbed
+        ///             from. Null if it wasn't grabbed from an anchor.
+        ///         </item>
+        ///         <item>
+        ///             <see cref="UxrManipulationEventArgs.Grabber" />: Grabber that is triggering the object.
+        ///         </item>
+        ///         <item>
+        ///             <see cref="UxrManipulationEventArgs.GrabPointIndex" />: Grab point index of the object that is being
+        ///             grabbed by the <see cref="UxrGrabber" />.
+        ///         </item>
+        ///     </list>
+        /// </summary>
+        /// <remarks>
+        ///     If the object is being placed it will not generate a <see cref="ObjectTriggering" /> event. Whenever an object is
+        ///     released it will either generate either a Place or Release event, but not both.
+        /// </remarks>
+        public event EventHandler<UxrManipulationEventArgs> ObjectTriggering;
+
+        /// <summary>
+        ///     Same as <see cref="ObjectTriggering" /> but called right after the object was triggered.
+        /// </summary>
+        public event EventHandler<UxrManipulationEventArgs> ObjectTriggered;
+
+        /// <summary>
         ///     Event called whenever a <see cref="UxrGrabbableObject" /> is about to be removed from an
         ///     <see cref="UxrGrabbableObjectAnchor" />.
         ///     The following properties from <see cref="UxrManipulationEventArgs" /> will contain meaningful data:
@@ -311,6 +343,12 @@ namespace UltimateXR.Manipulation
 
                     RemoveObjectFromAnchor(syncArgs.EventArgs.GrabbableObject, propagateEvents);
                     break;
+
+                case UxrManipulationSyncEventType.Trigger:
+
+                    TriggerObjectBeingGrabbed(syncArgs.EventArgs.Grabber, syncArgs.EventArgs.GrabbableObject, propagateEvents);
+                    break;
+                
             }
         }
 
@@ -1241,6 +1279,21 @@ namespace UltimateXR.Manipulation
             {
                 anchorFrom.RaiseRemovedEvent(manipulationEventArgs);
             }
+        }
+
+        /// <summary>
+        ///     Triggers a <see cref="UxrGrabbableObject" />.
+        /// </summary>
+        /// <param name="grabber">Grabber triggering the object</param>
+        /// <param name="grabbableObject">Grabbable object being triggered</param>
+        /// <param name="propagateEvents">Whether to propagate events</param>
+        public void TriggerObjectBeingGrabbed(UxrGrabber grabber, UxrGrabbableObject grabbableObject, bool propagateEvents)
+        {
+            UxrManipulationEventArgs manipulationEventArgs = new UxrManipulationEventArgs(grabbableObject, grabbableObject.CurrentAnchor, grabber);
+            
+            grabbableObject.RaiseTriggeredEvent(manipulationEventArgs);
+            OnObjectTriggering(manipulationEventArgs, propagateEvents);
+            OnObjectTriggered(manipulationEventArgs, propagateEvents);
         }
 
         /// <summary>
@@ -2321,6 +2374,40 @@ namespace UltimateXR.Manipulation
                 StateChanged?.Invoke(this, new UxrManipulationSyncEventArgs(UxrManipulationSyncEventType.Remove, e));
             }
         }
+
+        /// <summary>
+        ///     Event trigger for <see cref="ObjectTriggering" />.
+        /// </summary>
+        /// <param name="e">Event parameters</param>
+        /// <param name="propagateEvent">Whether to propagate the event</param>
+        private void OnObjectTriggering(UxrManipulationEventArgs e, bool propagateEvent)
+        {
+            if (LogLevel >= UxrLogLevel.Relevant)
+            {
+                string handInfo = e.Grabber != null ? $"{e.Grabber.Side.ToString().ToLower()} hand" : string.Empty;
+                Debug.Log($"{UxrConstants.ManipulationModule}: Triggering {e.GrabbableObject.name} from {handInfo}");
+            }
+
+            if (propagateEvent)
+            {
+                ObjectTriggering?.Invoke(this, e);
+            }
+        }
+
+        /// <summary>
+        ///     Event trigger for <see cref="ObjectTriggered" />.
+        /// </summary>
+        /// <param name="e">Event parameters</param>
+        /// <param name="propagateEvent">Whether to propagate the event</param>
+        private void OnObjectTriggered(UxrManipulationEventArgs e, bool propagateEvent)
+        {
+            if (propagateEvent)
+            {
+                ObjectTriggered?.Invoke(this, e);
+                StateChanged?.Invoke(this, new UxrManipulationSyncEventArgs(UxrManipulationSyncEventType.Trigger, e));
+            }
+        }
+
 
         /// <summary>
         ///     Event trigger for <see cref="AnchorRangeEntered" />.

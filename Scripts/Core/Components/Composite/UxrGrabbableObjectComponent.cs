@@ -79,6 +79,8 @@ namespace UltimateXR.Core.Components.Composite
                 GrabbableObject.Released            += GrabbableObject_Released;
                 GrabbableObject.Placing             += GrabbableObject_Placing;
                 GrabbableObject.Placed              += GrabbableObject_Placed;
+                GrabbableObject.Triggering          += GrabbableObject_Triggering;
+                GrabbableObject.Triggered           += GrabbableObject_Triggered;
                 GrabbableObject.ConstraintsApplying += GrabbableObject_ConstraintsApplying;
                 GrabbableObject.ConstraintsApplied  += GrabbableObject_ConstraintsApplied;
             }
@@ -99,6 +101,8 @@ namespace UltimateXR.Core.Components.Composite
                 GrabbableObject.Released            -= GrabbableObject_Released;
                 GrabbableObject.Placing             -= GrabbableObject_Placing;
                 GrabbableObject.Placed              -= GrabbableObject_Placed;
+                GrabbableObject.Triggering          -= GrabbableObject_Triggering;
+                GrabbableObject.Triggered           -= GrabbableObject_Triggered;
                 GrabbableObject.ConstraintsApplying -= GrabbableObject_ConstraintsApplying;
                 GrabbableObject.ConstraintsApplied  -= GrabbableObject_ConstraintsApplied;
             }
@@ -173,6 +177,28 @@ namespace UltimateXR.Core.Components.Composite
         {
             OnObjectPlaced(e);
         }
+
+        /// <summary>
+        ///     Event handling method for the <see cref="UxrGrabbableObject.Triggering" /> event. It will call the overridable event
+        ///     trigger so that child classes don't need to subscribe to the event and can override the method instead.
+        /// </summary>
+        /// <param name="sender">The event sender</param>
+        /// <param name="e">The event parameters</param>
+        private void GrabbableObject_Triggering(object sender, UxrManipulationEventArgs e)
+        {
+            OnObjectTriggering(e);
+        }
+
+        /// <summary>
+        ///     Event handling method for the <see cref="UxrGrabbableObject.Triggered" /> event. It will call the overridable event
+        ///     trigger so that child classes don't need to subscribe to the event and can override the method instead.
+        /// </summary>
+        /// <param name="sender">The event sender</param>
+        /// <param name="e">The event parameters</param>
+        private void GrabbableObject_Triggered(object sender, UxrManipulationEventArgs e)
+        {
+            OnObjectTriggered(e);
+        }        
 
         /// <summary>
         ///     Event handling method for the <see cref="UxrGrabbableObject.ConstraintsApplying" /> event. It will call the
@@ -253,6 +279,24 @@ namespace UltimateXR.Core.Components.Composite
         /// </summary>
         /// <param name="e">Event parameters</param>
         protected virtual void OnObjectPlaced(UxrManipulationEventArgs e)
+        {
+        }
+
+        /// <summary>
+        ///     Overridable event trigger method for the <see cref="UxrGrabbableObject.Triggering" /> event that can be used to
+        ///     handle it without requiring to subscribe/unsubscribe.
+        /// </summary>
+        /// <param name="e">Event parameters</param>
+        protected virtual void OnObjectTriggering(UxrManipulationEventArgs e)
+        {
+        }
+
+        /// <summary>
+        ///     Overridable event trigger method for the <see cref="UxrGrabbableObject.Triggered" /> event that can be used to
+        ///     handle it without requiring to subscribe/unsubscribe.
+        /// </summary>
+        /// <param name="e">Event parameters</param>
+        protected virtual void OnObjectTriggered(UxrManipulationEventArgs e)
         {
         }
 
