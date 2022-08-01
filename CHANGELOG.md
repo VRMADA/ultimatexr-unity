@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.3] - 2022-08-01
+
+### Added
+
+- Add editor tooltips to UxrTeleportLocomotionBase and UxrTeleportLocomotion.
+
+### Fixed
+
+- Fix UxrLaserPointerRaycaster bug that prevented using laser pointers as UI input.
+- Fix LaserDot.shader so that it works in stereo VR.
+
 ## [0.8.2] - 2022-07-21
 
 ### Added
@@ -40,7 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First public release!
 
-[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.8.3...HEAD
+[0.8.2]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.8.3
 [0.8.2]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.8.2
 [0.8.1]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.8.1
 [0.8.0]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.8.0
