@@ -451,7 +451,7 @@ namespace UltimateXR.Animation.Interpolation
                         if (isForUnityTextUI)
                         {
                             // Add the remaining characters as "invisible" to avoid word wrapping effects during interpolation.
-                            finalArgs[i] += @"<color=""#00000000"">" + (endChars > startChars ? b.Substring(numChars, endChars - numChars) : string.Empty) + @"</color>";
+                            finalArgs[i] += @"<color=#00000000>" + (endChars > startChars ? b.Substring(numChars, endChars - numChars) : string.Empty) + @"</color>";
                         }
                     }
                     else

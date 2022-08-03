@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add new ULTIMATEXR_UNITY_TMPRO symbol when TextMeshPro is available.
+- Add support to UxrTextContentTween for TextMeshPro text components.
+
+### Changed
+
+- UxrTextContentTween.Animate() now uses a GameObject as target parameter so that
+  either a Unity UI Text component or a TextMeshPro text component can be animated.
+
+### Fixed
+
+- Fix UxrInterpolator.InterpolateText() use of rich text color tag.
+
 ## [0.8.3] - 2022-08-01
 
 ### Added
