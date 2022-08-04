@@ -685,7 +685,7 @@ namespace UltimateXR.Avatar
 
             UxrAvatar current = ParentAvatarPrefab;
 
-            while (current != null)
+            while (current != null && current != this)
             {
                 yield return current;
 
@@ -709,7 +709,7 @@ namespace UltimateXR.Avatar
 
                 UxrAvatar current = ParentAvatarPrefab;
 
-                while (current != null)
+                while (current != null && current != this)
                 {
                     yield return current.PrefabGuid;
 
@@ -728,7 +728,7 @@ namespace UltimateXR.Avatar
         {
             UxrAvatar current = ParentAvatarPrefab;
 
-            while (current != null)
+            while (current != null && current != this)
             {
                 yield return current;
 

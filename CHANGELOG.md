@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix UxrInterpolator.InterpolateText() use of rich text color tag.
+- Fix UxrAvatar to avoid infinite loops when enumerating the avatar prefab chain.
 
 ## [0.8.3] - 2022-08-01
 
