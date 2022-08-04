@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix UxrInterpolator.InterpolateText() use of rich text color tag.
 - Fix UxrAvatar to avoid infinite loops when enumerating the avatar prefab chain.
+- Fix UxrAvatarRigInfo.GetWorldElbowAxis() for left side when T-pose is found.
+- Fix UxrAvatarRig.ClearRigElements() to clear missing references.
 
 ## [0.8.3] - 2022-08-01
 

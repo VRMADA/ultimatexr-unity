@@ -198,11 +198,15 @@ namespace UltimateXR.Avatar.Rig
         /// </summary>
         public void ClearRigElements()
         {
-            _head     = new UxrAvatarHead();
-            _leftArm  = new UxrAvatarArm();
-            _rightArm = new UxrAvatarArm();
-            _leftLeg  = new UxrAvatarLeg();
-            _rightLeg = new UxrAvatarLeg();
+            _head       = new UxrAvatarHead();
+            _leftArm    = new UxrAvatarArm();
+            _rightArm   = new UxrAvatarArm();
+            _leftLeg    = new UxrAvatarLeg();
+            _rightLeg   = new UxrAvatarLeg();
+            _upperChest = null;
+            _chest      = null;
+            _spine      = null;
+            _hips       = null;
         }
 
         /// <summary>
