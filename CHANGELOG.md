@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.4]
+
 ### Added
 
 - Add new ULTIMATEXR_UNITY_TMPRO symbol when TextMeshPro is available.
@@ -23,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix UxrAvatar to avoid infinite loops when enumerating the avatar prefab chain.
 - Fix UxrAvatarRigInfo.GetWorldElbowAxis() for left side when T-pose is found.
 - Fix UxrAvatarRig.ClearRigElements() to clear missing references.
+- Fix missing ULTIMATEXR_UNITY_URP in UxrMagnifyingGlassUrp to avoid URP hard requirement.
 
 ## [0.8.3] - 2022-08-01
 
@@ -68,7 +71,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First public release!
 
-[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.8.3...HEAD
+[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.8.4...HEAD
+[0.8.4]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.8.4
 [0.8.3]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.8.3
 [0.8.2]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.8.2
 [0.8.1]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.8.1
