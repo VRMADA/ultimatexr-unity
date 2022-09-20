@@ -180,9 +180,8 @@ namespace UltimateXR.Rendering.FX
 
             reflectionCamera.cullingMask = ~(1 << 4) & _reflectLayers.value;
 
-            Renderer theRenderer = GetComponent<Renderer>();
-
-            if (theRenderer != null)
+            
+            if (TryGetComponent<Renderer>(out var theRenderer))
             {
                 foreach (Material m in theRenderer.sharedMaterials)
                 {
@@ -256,14 +255,12 @@ namespace UltimateXR.Rendering.FX
 
                 if (isLeft)
                 {
-                    reflectionCamera.transform.position = renderCamera.transform.position - renderCamera.transform.right * ipd * 0.5f;
-                    reflectionCamera.transform.rotation = renderCamera.transform.rotation;
+                    reflectionCamera.transform.SetPositionAndRotation(renderCamera.transform.position - 0.5f * ipd * renderCamera.transform.right, renderCamera.transform.rotation);
                     projection                          = renderCamera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left);
                 }
                 else
                 {
-                    reflectionCamera.transform.position = renderCamera.transform.position + renderCamera.transform.right * ipd * 0.5f;
-                    reflectionCamera.transform.rotation = renderCamera.transform.rotation;
+                    reflectionCamera.transform.SetPositionAndRotation(renderCamera.transform.position + 0.5f * ipd * renderCamera.transform.right, renderCamera.transform.rotation);
                     projection                          = renderCamera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right);
                 }
             }

@@ -397,7 +397,7 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
                         DeletePose(_avatar, _currentPoseNames[_poseIndex], true);
                         LoadDefaultPoseData();
 
-                        if (_currentHandPose == null && _currentPoseNames.Any())
+                        if (_currentHandPose == null && _currentPoseNames.Count > 0)
                         {
                             _poseIndex       = 0;
                             _currentHandPose = _avatar.GetHandPose(_currentPoseNames[_poseIndex]);
@@ -654,7 +654,7 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
 
                                 if (_currentHandPose != handPose)
                                 {
-                                    if (!_currentPoseNames.Any())
+                                    if (_currentPoseNames.Count == 0)
                                     {
                                         // No poses available: reset hands
 
@@ -1458,7 +1458,7 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
         {
             if (avatar != null)
             {
-                if (_avatar != avatar || _fingerSpinners == null || !_fingerSpinners.Any() || handPose == null)
+                if (_avatar != avatar || _fingerSpinners == null || _fingerSpinners.Count == 0 || handPose == null)
                 {
                     _avatar = avatar;
 
@@ -2696,8 +2696,7 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
                         {
                             GameObject                      snapObject              = new GameObject(poseName + (handSide == UxrHandSide.Left ? "Left" : "Right"));
                             UxrGrabbableObjectSnapTransform alignTransformComponent = snapObject.AddComponent<UxrGrabbableObjectSnapTransform>();
-                            snapObject.transform.position = grabbers[i].transform.position;
-                            snapObject.transform.rotation = grabbers[i].transform.rotation;
+                            snapObject.transform.SetPositionAndRotation(grabbers[i].transform.position, grabbers[i].transform.rotation);
                             snapObject.transform.SetParent(grabbableObjectSelected.transform, true);
 
                             Undo.RegisterCreatedObjectUndo(snapObject, "Create " + snapObject.name);

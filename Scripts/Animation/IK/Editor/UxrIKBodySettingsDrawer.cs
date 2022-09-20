@@ -144,9 +144,7 @@ namespace UltimateXR.Animation.IK.Editor
                 return true;
             }
 
-            UxrAvatar avatar = controller.GetComponent<UxrAvatar>();
-
-            if (avatar == null)
+            if (!controller.TryGetComponent<UxrAvatar>(out var avatar))
             {
                 return true;
             }

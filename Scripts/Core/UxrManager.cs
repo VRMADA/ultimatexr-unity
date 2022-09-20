@@ -232,8 +232,7 @@ namespace UltimateXR.Core
                 OnAvatarMoving(new UxrAvatarMoveEventArgs(avatar, oldPosition, oldRotation, newPosition, newRotation));
             }
 
-            avatarTransform.position = newPosition;
-            avatarTransform.rotation = newRotation;
+            avatarTransform.SetPositionAndRotation(newPosition, newRotation);
 
             if (propagateEvents)
             {
@@ -1105,9 +1104,7 @@ namespace UltimateXR.Core
                 {
                     if (canvas.renderMode == RenderMode.WorldSpace && canvas.GetComponent<UxrIgnoreCanvas>() == null)
                     {
-                        UxrCanvas canvasXR = canvas.GetComponent<UxrCanvas>();
-
-                        if (canvasXR == null)
+                        if (!canvas.TryGetComponent<UxrCanvas>(out var canvasXR))
                         {
                             if (UxrPointerInputModule.Instance.AutoEnableOnWorldCanvases)
                             {

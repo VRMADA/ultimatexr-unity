@@ -27,17 +27,17 @@ namespace UltimateXR.Extensions.Unity.Render
         /// <param name="height">Height in pixels</param>
         /// <param name="color">Color to fill the texture with</param>
         /// <returns>The created <see cref="Texture2D" /> object</returns>
-        public static Texture2D Create(int width, int height, Color color)
+        public static Texture2D Create(int width, int height, Color32 color)
         {
             Texture2D tex = new Texture2D(width, height);
 
-            Color[] pixels = new Color[width * height];
+            Color32[] pixels = new Color32[width * height];
             for (int i = 0; i < pixels.Length; ++i)
             {
                 pixels[i] = color;
             }
 
-            tex.SetPixels(pixels);
+            tex.SetPixels32(pixels);
             tex.Apply();
 
             return tex;

@@ -46,7 +46,7 @@ namespace UltimateXR.Devices
         /// <summary>
         ///     Gets whether the component contains calibration data collected by using the inspector.
         /// </summary>
-        public bool HasCalibrationData => _leftCalibrationData != null && _leftCalibrationData.Any() && _rightCalibrationData != null && _rightCalibrationData.Any();
+        public bool HasCalibrationData => _leftCalibrationData != null && _leftCalibrationData.Count > 0 && _rightCalibrationData != null && _rightCalibrationData.Count > 0;
 
         /// <summary>
         ///     Gets or sets whether to use calibration data to minimize the mismatches between the particular hand rig used and

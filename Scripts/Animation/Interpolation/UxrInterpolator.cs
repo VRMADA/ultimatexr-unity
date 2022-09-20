@@ -507,8 +507,8 @@ namespace UltimateXR.Animation.Interpolation
 
                 ///////////////////////////////////////// QUAD //////////////////////////////////////////////////////
 
-                case UxrEasing.EaseInQuad:  return start + change * t * t;
-                case UxrEasing.EaseOutQuad: return -change * t * (t - 2.0f) + start;
+                case UxrEasing.EaseInQuad:  return start + t * t * change;
+                case UxrEasing.EaseOutQuad: return (t - 2.0f) * t * -change + start;
 
                 case UxrEasing.EaseInOutQuad:
                 {
@@ -528,7 +528,7 @@ namespace UltimateXR.Animation.Interpolation
 
                 ///////////////////////////////////////// CUBIC /////////////////////////////////////////////////////
 
-                case UxrEasing.EaseInCubic: return start + change * t * t * t;
+                case UxrEasing.EaseInCubic: return start + t * t * t * change;
 
                 case UxrEasing.EaseOutCubic:
                     t -= 1.0f;
@@ -552,7 +552,7 @@ namespace UltimateXR.Animation.Interpolation
 
                 ///////////////////////////////////////// QUART /////////////////////////////////////////////////////
 
-                case UxrEasing.EaseInQuart: return start + change * t * t * t * t;
+                case UxrEasing.EaseInQuart: return start + t * t * t * t * change;
 
                 case UxrEasing.EaseOutQuart:
                     t -= 1.0f;
@@ -576,7 +576,7 @@ namespace UltimateXR.Animation.Interpolation
 
                 ///////////////////////////////////////// QUINT /////////////////////////////////////////////////////
 
-                case UxrEasing.EaseInQuint: return start + change * t * t * t * t * t;
+                case UxrEasing.EaseInQuint: return start + t * t * t * t * t * change;
 
                 case UxrEasing.EaseOutQuint:
                     t -= 1.0f;
@@ -686,7 +686,7 @@ namespace UltimateXR.Animation.Interpolation
 
                     t -= 1.0f;
 
-                    return -(a * Mathf.Pow(2.0f, 10.0f * t) * Mathf.Sin((t - s) * (2.0f * Mathf.PI) / p)) + start;
+                    return -(Mathf.Pow(2.0f, 10.0f * t) * Mathf.Sin((t - s) * (2.0f * Mathf.PI) / p) * a) + start;
                 }
 
                 case UxrEasing.EaseOutElastic:
@@ -694,7 +694,7 @@ namespace UltimateXR.Animation.Interpolation
                     float   p = 0.3f;
                     Vector4 a = change;
                     float   s = p / 4.0f;
-                    return a * Mathf.Pow(2.0f, -10.0f * t) * Mathf.Sin((t - s) * (2.0f * Mathf.PI) / p) + change + start;
+                    return Mathf.Pow(2.0f, -10.0f * t) * Mathf.Sin((t - s) * (2.0f * Mathf.PI) / p) * a + change + start;
                 }
 
                 case UxrEasing.EaseInOutElastic:
@@ -707,11 +707,11 @@ namespace UltimateXR.Animation.Interpolation
                     if (t < 1.0f)
                     {
                         t -= 1.0f;
-                        return -0.5f * (a * Mathf.Pow(2.0f, 10.0f * t) * Mathf.Sin((t - s) * (2.0f * Mathf.PI) / p)) + start;
+                        return -0.5f * (Mathf.Pow(2.0f, 10.0f * t) * Mathf.Sin((t - s) * (2.0f * Mathf.PI) / p) * a) + start;
                     }
 
                     t -= 1.0f;
-                    return a * Mathf.Pow(2.0f, -10.0f * t) * Mathf.Sin((t - s) * (2.0f * Mathf.PI) / p) * 0.5f + change + start;
+                    return 0.5f * Mathf.Pow(2.0f, -10.0f * t) * Mathf.Sin((t - s) * (2.0f * Mathf.PI) / p) * a + change + start;
                 }
 
                 case UxrEasing.EaseOutInElastic when t < 0.5f: return InterpolateVector4(start,                 start + change * 0.5f, t * 2.0f,          UxrEasing.EaseOutElastic);

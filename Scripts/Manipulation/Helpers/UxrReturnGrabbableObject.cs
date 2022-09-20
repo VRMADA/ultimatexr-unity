@@ -34,9 +34,7 @@ namespace UltimateXR.Manipulation.Helpers
         /// <param name="grabbableObject">Object to try to cancel the return of</param>
         public static void CancelReturn(UxrGrabbableObject grabbableObject)
         {
-            UxrReturnGrabbableObject returnComponent = grabbableObject.gameObject.GetComponent<UxrReturnGrabbableObject>();
-
-            if (returnComponent != null)
+            if (grabbableObject.gameObject.TryGetComponent<UxrReturnGrabbableObject>(out var returnComponent))
             {
                 returnComponent.CancelReturn();
             }

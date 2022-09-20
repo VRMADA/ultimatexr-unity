@@ -150,9 +150,8 @@ namespace UltimateXR.Mechanics.Weapons
             {
                 chunkCollider.enabled = true;
                 chunkCollider.transform.SetParent(null);
-                Rigidbody rigidBodyChunk = chunkCollider.gameObject.GetComponent<Rigidbody>();
-
-                if (rigidBodyChunk == null)
+                
+                if (!chunkCollider.gameObject.TryGetComponent<Rigidbody>(out var rigidBodyChunk))
                 {
                     rigidBodyChunk = chunkCollider.gameObject.AddComponent<Rigidbody>();
                 }

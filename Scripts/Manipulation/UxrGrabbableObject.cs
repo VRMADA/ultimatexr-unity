@@ -1286,8 +1286,7 @@ namespace UltimateXR.Manipulation
 
             if (IsLockedInPlace)
             {
-                transform.position = positionBeforeUpdate;
-                transform.rotation = rotationBeforeUpdate;
+                transform.SetPositionAndRotation(positionBeforeUpdate, rotationBeforeUpdate);
                 return;
             }
 
@@ -1349,8 +1348,7 @@ namespace UltimateXR.Manipulation
                 if (_constraintExitTimer > 0.0f)
                 {
                     float constraintExitT = 1.0f - _constraintExitTimer / ConstrainSeconds;
-                    transform.position = Vector3.Lerp(_constraintExitPos, transform.position, constraintExitT);
-                    transform.rotation = Quaternion.Lerp(_constraintExitRot, transform.rotation, constraintExitT);
+                    transform.SetPositionAndRotation(Vector3.Lerp(_constraintExitPos, transform.position, constraintExitT), Quaternion.Lerp(_constraintExitRot, transform.rotation, constraintExitT));
                 }
             }
             else if (_manipulationMode == UxrManipulationMode.RotateAroundAxis && grabPoint >= 0)
@@ -1382,8 +1380,7 @@ namespace UltimateXR.Manipulation
 
             if (UxrGrabManager.Instance.GetHandsGrabbingCount(this) == 1)
             {
-                transform.position = UxrInterpolator.SmoothDampPosition(positionBeforeUpdate, transform.position, _translationResistance);
-                transform.rotation = UxrInterpolator.SmoothDampRotation(rotationBeforeUpdate, transform.rotation, _rotationResistance);
+                transform.SetPositionAndRotation(UxrInterpolator.SmoothDampPosition(positionBeforeUpdate, transform.position, _translationResistance), UxrInterpolator.SmoothDampRotation(rotationBeforeUpdate, transform.rotation, _rotationResistance));
             }
 
             if (propagateEvents)

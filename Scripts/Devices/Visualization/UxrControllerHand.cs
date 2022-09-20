@@ -261,8 +261,7 @@ namespace UltimateXR.Devices.Visualization
                 finger.FingerIKSolver.ComputeLinkData();
                 finger.FingerIKSolver.enabled       = finger.ComponentEnabled;
                 finger.LocalEffectorInitialPos      = finger.FingerIKSolver.Links[0].Bone.parent.InverseTransformPoint(finger.FingerIKSolver.EndEffector.position);
-                finger.FingerIKSolver.Goal.position = finger.FingerIKSolver.EndEffector.position;
-                finger.FingerIKSolver.Goal.rotation = finger.FingerIKSolver.EndEffector.rotation;
+                finger.FingerIKSolver.Goal.SetPositionAndRotation(finger.FingerIKSolver.EndEffector.position, finger.FingerIKSolver.EndEffector.rotation);
                 finger.CurrentFingerGoal            = null;
                 finger.TimerToGoal                  = -1.0f;
             }

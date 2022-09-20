@@ -71,7 +71,7 @@ namespace UltimateXR.Animation.IK.Editor
                                      angle1Max - angle1Min,
                                      link.LinkLength * 0.5f);
                 Handles.color = new Color(Mathf.Abs(link.RotationAxis1.x), Mathf.Abs(link.RotationAxis1.y), Mathf.Abs(link.RotationAxis1.z), 1.0f);
-                Handles.DrawLine(link.Bone.position, link.Bone.position + link.Bone.TransformDirection(link.LocalSpaceAxis1ZeroAngleVector) * link.LinkLength * 0.6f);
+                Handles.DrawLine(link.Bone.position, link.Bone.position + 0.6f * link.LinkLength * link.Bone.TransformDirection(link.LocalSpaceAxis1ZeroAngleVector));
 
                 if (link.Constraint == UxrCcdConstraintType.TwoAxes)
                 {
@@ -86,7 +86,7 @@ namespace UltimateXR.Animation.IK.Editor
                                          angle2Max - angle2Min,
                                          link.LinkLength * 0.5f);
                     Handles.color = new Color(Mathf.Abs(link.RotationAxis2.x), Mathf.Abs(link.RotationAxis2.y), Mathf.Abs(link.RotationAxis2.z), 1.0f);
-                    Handles.DrawLine(link.Bone.position, link.Bone.position + link.Bone.TransformDirection(link.LocalSpaceAxis2ZeroAngleVector) * link.LinkLength * 0.6f);
+                    Handles.DrawLine(link.Bone.position, link.Bone.position + 0.6f * link.LinkLength * link.Bone.TransformDirection(link.LocalSpaceAxis2ZeroAngleVector));
                 }
 
                 if (index == 0 && link.Bone != null && solverCcd.EndEffector != null && solverCcd.Goal != null)

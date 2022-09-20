@@ -285,11 +285,9 @@ namespace UltimateXR.Animation.IK
                 }
             }
 
-            Forearm.position = elbowPosition;
-            Forearm.rotation = forearmRotationTarget * _forearmUniversalLocalAxes.UniversalToActualAxesRotation;
+            Forearm.SetPositionAndRotation(elbowPosition, forearmRotationTarget * _forearmUniversalLocalAxes.UniversalToActualAxesRotation);
 
-            Hand.position = finalHandPosition;
-            Hand.rotation = finalHandRotation;
+            Hand.SetPositionAndRotation(finalHandPosition, finalHandRotation);
         }
 
         #endregion

@@ -74,10 +74,8 @@ namespace UltimateXR.Animation.GameObjects
             {
                 return;
             }
-
-            UxrObjectBlink blinkComponent = gameObject.GetComponent<UxrObjectBlink>();
-
-            if (blinkComponent != null)
+            
+            if (gameObject.TryGetComponent<UxrObjectBlink>(out var blinkComponent))
             {
                 blinkComponent.StopBlinkingInternal();
             }

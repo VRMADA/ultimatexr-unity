@@ -149,9 +149,7 @@ namespace UltimateXR.Locomotion
 
             foreach (Renderer targetRenderer in _targetRenderers)
             {
-                UxrTeleportTargetMaterialID teleportMaterialID = targetRenderer.gameObject.GetComponent<UxrTeleportTargetMaterialID>();
-
-                if (teleportMaterialID != null)
+                if (targetRenderer.gameObject.TryGetComponent<UxrTeleportTargetMaterialID>(out var teleportMaterialID))
                 {
                     _object2MaterialID.Add(teleportMaterialID.gameObject, teleportMaterialID);
                 }
@@ -159,9 +157,7 @@ namespace UltimateXR.Locomotion
 
             foreach (ParticleSystemRenderer pSystemRenderer in _particleSystemRenderers)
             {
-                UxrTeleportTargetMaterialID teleportMaterialID = pSystemRenderer.gameObject.GetComponent<UxrTeleportTargetMaterialID>();
-
-                if (teleportMaterialID != null)
+                if (pSystemRenderer.gameObject.TryGetComponent<UxrTeleportTargetMaterialID>(out var teleportMaterialID))
                 {
                     _object2MaterialID.Add(teleportMaterialID.gameObject, teleportMaterialID);
                 }

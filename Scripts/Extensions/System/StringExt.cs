@@ -152,7 +152,7 @@ namespace UltimateXR.Extensions.System
 
                 while (candidateInfo.Parent != null)
                 {
-                    if (string.Compare(candidateInfo.Parent.FullName, otherInfo.FullName, StringComparison.OrdinalIgnoreCase) == 0)
+                    if (string.Equals(candidateInfo.Parent.FullName, otherInfo.FullName, StringComparison.OrdinalIgnoreCase))
                     {
                         isChild = true;
                         break;
