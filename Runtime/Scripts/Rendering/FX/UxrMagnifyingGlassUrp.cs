@@ -10,8 +10,11 @@ using UltimateXR.Extensions.Unity;
 using UltimateXR.Extensions.Unity.Math;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 using UnityEngine.XR;
+
+#if ULTIMATEXR_UNITY_URP
+using UnityEngine.Rendering.Universal;
+#endif
 
 namespace UltimateXR.Rendering.FX
 {

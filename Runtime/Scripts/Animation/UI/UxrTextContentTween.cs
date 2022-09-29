@@ -10,15 +10,18 @@ using UltimateXR.Animation.Interpolation;
 using UltimateXR.Extensions.Unity;
 using UnityEngine;
 using UnityEngine.UI;
+#if ULTIMATEXR_UNITY_TMPRO
+using TMPro;
+#endif
 
 namespace UltimateXR.Animation.UI
 {
     /// <summary>
-    ///     Tweening component to animate <see cref="Text.text" /> programatically or using the inspector.
+    ///     Tweening component to animate a UI text component programatically or using the inspector. Supports both Unity's
+    ///     Text and TMPro.
     ///     The text interpolation can be used to create a typewriter kind of effect.
     ///     Programatically it also offers the possibility to interpolate parameters in a text string.
     /// </summary>
-    [RequireComponent(typeof(Text))]
     [DisallowMultipleComponent]
     public class UxrTextContentTween : UxrTween
     {
@@ -32,9 +35,59 @@ namespace UltimateXR.Animation.UI
         #region Public Types & Data
 
         /// <summary>
-        ///     Gets the <see cref="Text" /> component whose string will be interpolated.
+        ///     Gets the <see cref="UnityEngine.UI.Text" /> component whose string will be interpolated.
         /// </summary>
         public Text TargetText => GetCachedComponent<Text>();
+
+#if ULTIMATEXR_UNITY_TMPRO
+
+        /// <summary>
+        ///     Gets the <see cref="TextMeshProUGUI" /> component whose string will be interpolated.
+        /// </summary>
+        public TextMeshProUGUI TargetTextTMPro => GetCachedComponent<TextMeshProUGUI>();
+
+#endif
+
+        /// <summary>
+        ///     Gets or sets the text value.
+        /// </summary>
+        public string Text
+        {
+            get
+            {
+                if (TargetText != null)
+                {
+                    return TargetText.text;
+                }
+
+#if ULTIMATEXR_UNITY_TMPRO
+
+                if (TargetTextTMPro != null)
+                {
+                    return TargetTextTMPro.text;
+                }
+
+#endif
+                return null;
+            }
+
+            set
+            {
+                if (TargetText != null)
+                {
+                    TargetText.text = value;
+                }
+
+#if ULTIMATEXR_UNITY_TMPRO
+
+                if (TargetTextTMPro != null)
+                {
+                    TargetTextTMPro.text = value;
+                }
+
+#endif
+            }
+        }
 
         /// <summary>
         ///     Gets whether the interpolation uses format string parameters.
@@ -85,10 +138,9 @@ namespace UltimateXR.Animation.UI
         #region Public Methods
 
         /// <summary>
-        ///     Creates and starts a tweening animation for the <see cref="Text.text" /> string of a Unity <see cref="Text" />
-        ///     component.
+        ///     Creates and starts a tweening animation for a Unity UI Text component or TMPro text component.
         /// </summary>
-        /// <param name="textComponent">Target <see cref="Text" /></param>
+        /// <param name="gameObject">Target GameObject with either a Unity UI Text component or Text Mesh Pro text component</param>
         /// <param name="startText">Start text</param>
         /// <param name="endText">End text</param>
         /// <param name="settings">Interpolation settings that control the animation</param>
@@ -97,9 +149,9 @@ namespace UltimateXR.Animation.UI
         ///     Tweening component that will update itself automatically. Can be used to stop the animation prematurely or
         ///     change parameters on the fly.
         /// </returns>
-        public static UxrTextContentTween Animate(Text textComponent, string startText, string endText, UxrInterpolationSettings settings, Action<UxrTween> finishedCallback = null)
+        public static UxrTextContentTween Animate(GameObject gameObject, string startText, string endText, UxrInterpolationSettings settings, Action<UxrTween> finishedCallback = null)
         {
-            UxrTextContentTween textContentTween = textComponent.GetOrAddComponent<UxrTextContentTween>();
+            UxrTextContentTween textContentTween = gameObject.GetOrAddComponent<UxrTextContentTween>();
 
             textContentTween.UsesFormatString      = false;
             textContentTween.StartText             = startText;
@@ -112,12 +164,11 @@ namespace UltimateXR.Animation.UI
         }
 
         /// <summary>
-        ///     Creates and starts a tweening animation for the <see cref="Text.text" /> string of a Unity <see cref="Text" />
-        ///     component. See
+        ///     Creates and starts a tweening animation for a Unity UI Text component or TMPro text component. See
         ///     <see cref="UxrInterpolator.InterpolateText(float,bool,string,object[])">UxrInterpolator.InterpolateText</see> for
         ///     information on how <paramref name="formatString" /> and <paramref name="formatStringArgs" /> work.
         /// </summary>
-        /// <param name="textComponent">Target <see cref="Text" /></param>
+        /// <param name="gameObject">Target GameObject with either a Unity UI Text component or Text Mesh Pro text component</param>
         /// <param name="settings">Interpolation settings that control the animation</param>
         /// <param name="finishedCallback">Optional callback when the animation finished. Use null to ignore.</param>
         /// <param name="formatString">
@@ -132,9 +183,9 @@ namespace UltimateXR.Animation.UI
         ///     Tweening component that will update itself automatically. Can be used to stop the animation prematurely or
         ///     change parameters on the fly.
         /// </returns>
-        public static UxrTextContentTween Animate(Text textComponent, UxrInterpolationSettings settings, Action<UxrTween> finishedCallback, string formatString, object[] formatStringArgs)
+        public static UxrTextContentTween Animate(GameObject gameObject, UxrInterpolationSettings settings, Action<UxrTween> finishedCallback, string formatString, object[] formatStringArgs)
         {
-            UxrTextContentTween textContentTween = textComponent.GetOrAddComponent<UxrTextContentTween>();
+            UxrTextContentTween textContentTween = gameObject.GetOrAddComponent<UxrTextContentTween>();
 
             textContentTween.UsesFormatString      = true;
             textContentTween.InterpolationSettings = settings;
@@ -151,12 +202,32 @@ namespace UltimateXR.Animation.UI
         #region Protected Overrides UxrTween
 
         /// <inheritdoc />
-        protected override Behaviour TargetBehaviour => TargetText;
+        protected override Behaviour TargetBehaviour
+        {
+            get
+            {
+                if (TargetText != null)
+                {
+                    return TargetText;
+                }
+
+#if ULTIMATEXR_UNITY_TMPRO
+
+                if (TargetTextTMPro != null)
+                {
+                    return TargetTextTMPro;
+                }
+
+#endif
+
+                return null;
+            }
+        }
 
         /// <inheritdoc />
         protected override void StoreOriginalValue()
         {
-            _originalText = TargetText.text;
+            _originalText = Text;
         }
 
         /// <inheritdoc />
@@ -164,7 +235,7 @@ namespace UltimateXR.Animation.UI
         {
             if (HasOriginalValueStored)
             {
-                TargetText.text = _originalText;
+                Text = _originalText;
             }
         }
 
@@ -178,11 +249,11 @@ namespace UltimateXR.Animation.UI
 
             if (!UsesFormatString)
             {
-                TargetText.text = UxrInterpolator.InterpolateText(StartText, EndText, t, true);
+                Text = UxrInterpolator.InterpolateText(StartText, EndText, t, true);
             }
             else
             {
-                TargetText.text = UxrInterpolator.InterpolateText(t, true, FormatString, FormatStringArgs);
+                Text = UxrInterpolator.InterpolateText(t, true, FormatString, FormatStringArgs);
             }
         }
 

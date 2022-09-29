@@ -321,8 +321,16 @@ namespace UltimateXR.Avatar.Rig
             bool isLeft = avatar.transform.InverseTransformPoint(forearm.position).x < 0.0f;
 
             float   elbowAngle = Vector3.Angle(armForward, forearmForward);
-            Vector3 elbowAxis  = elbowAngle > ElbowMinAngleThreshold ? Vector3.Cross(forearmForward, armForward).normalized : Vector3.up; // Assume T-pose if elbow angle is too small
-            elbowAxis = isLeft ? -elbowAxis : elbowAxis;
+            Vector3 elbowAxis  = Vector3.Cross(forearmForward, armForward).normalized;
+
+            if (elbowAngle > ElbowMinAngleThreshold)
+            {
+                elbowAxis = Vector3.up; // Assume T-pose if elbow angle is too small
+            }
+            else
+            {
+                elbowAxis = isLeft ? -elbowAxis : elbowAxis;
+            }
 
             return forearm.TransformDirection(forearm.InverseTransformDirection(elbowAxis).GetClosestAxis());
         }

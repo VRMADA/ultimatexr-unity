@@ -131,14 +131,14 @@ namespace UltimateXR.UI.UnityInputModule
 
             IList<Graphic> listGraphics = GraphicRegistry.GetGraphicsForCanvas(canvas);
 
-            foreach (Graphic graphic in listGraphics)
+            for (int i = 0; i < listGraphics.Count; ++i)
             {
-                if (graphic.depth == -1 || !graphic.raycastTarget)
+                if (listGraphics[i].depth == -1 || !listGraphics[i].raycastTarget)
                 {
                     continue;
                 }
 
-                float distance = Vector3.Dot(graphic.transform.forward, graphic.transform.position - ray.origin) / Vector3.Dot(graphic.transform.forward, ray.direction);
+                float distance = Vector3.Dot(listGraphics[i].transform.forward, listGraphics[i].transform.position - ray.origin) / Vector3.Dot(listGraphics[i].transform.forward, ray.direction);
 
                 if (distance < 0.0f)
                 {
@@ -153,21 +153,21 @@ namespace UltimateXR.UI.UnityInputModule
                 Vector3 position        = ray.GetPoint(distance);
                 Vector2 pointerPosition = cam.WorldToScreenPoint(position);
 
-                if (!RectTransformUtility.RectangleContainsScreenPoint(graphic.rectTransform, pointerPosition, cam))
+                if (!RectTransformUtility.RectangleContainsScreenPoint(listGraphics[i].rectTransform, pointerPosition, cam))
                 {
                     continue;
                 }
 
-                if (graphic.Raycast(pointerPosition, cam))
+                if (listGraphics[i].Raycast(pointerPosition, cam))
                 {
                     var result = new RaycastResult
                                  {
-                                             gameObject     = graphic.gameObject,
+                                             gameObject     = listGraphics[i].gameObject,
                                              module         = this,
                                              distance       = distance,
                                              screenPosition = pointerPosition,
                                              worldPosition  = position,
-                                             depth          = graphic.depth,
+                                             depth          = listGraphics[i].depth,
                                              sortingLayer   = canvas.sortingLayerID,
                                              sortingOrder   = canvas.sortingOrder,
                                  };

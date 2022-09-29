@@ -66,14 +66,14 @@ namespace UltimateXR.Locomotion.Editor
 
         #region Private Types & Data
 
-        private GUIContent ContentArcSegments           { get; } = new GUIContent("Arc Segments",                      "");
-        private GUIContent ContentArcWidth              { get; } = new GUIContent("Arc Width",                         "");
-        private GUIContent ContentArcScrollSpeedValid   { get; } = new GUIContent("Arc Scroll Speed (Valid Target)",   "");
-        private GUIContent ContentArcScrollSpeedInvalid { get; } = new GUIContent("Arc Scroll Speed (Invalid Target)", "");
-        private GUIContent ContentArcMaterialValid      { get; } = new GUIContent("Arc Material (Valid Target)",       "");
-        private GUIContent ContentArcMaterialInvalid    { get; } = new GUIContent("Arc Material (Invalid Target)",     "");
-        private GUIContent ContentArcFadeLength         { get; } = new GUIContent("Arc Fade Length",                   "");
-        private GUIContent ContentRaycastStepsQuality   { get; } = new GUIContent("Blocking Raycast Steps Quality",    "");
+        private GUIContent ContentArcSegments           { get; } = new GUIContent("Arc Segments",                      "The number of subdivisions to use to render the arc");
+        private GUIContent ContentArcWidth              { get; } = new GUIContent("Arc Width",                         "The width of the arc");
+        private GUIContent ContentArcScrollSpeedValid   { get; } = new GUIContent("Arc Scroll Speed (Valid Target)",   "The arc material scroll speed when the destination is valid");
+        private GUIContent ContentArcScrollSpeedInvalid { get; } = new GUIContent("Arc Scroll Speed (Invalid Target)", "The arc material scroll speed when the destination is invalid");
+        private GUIContent ContentArcMaterialValid      { get; } = new GUIContent("Arc Material (Valid Target)",       "The arc material used when the destination is valid");
+        private GUIContent ContentArcMaterialInvalid    { get; } = new GUIContent("Arc Material (Invalid Target)",     "The arc material used when the destination is invalid");
+        private GUIContent ContentArcFadeLength         { get; } = new GUIContent("Arc Fade Length",                   "The fade length used when the arc exits the hand or collides with a target to hide intersections");
+        private GUIContent ContentRaycastStepsQuality   { get; } = new GUIContent("Blocking Raycast Steps Quality",    "How many subdivisions along the arc to perform to raycasts against the scenario");
 
         private SerializedProperty _propArcSegments;
         private SerializedProperty _propArcWidth;
