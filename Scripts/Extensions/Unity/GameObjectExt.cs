@@ -180,13 +180,18 @@ namespace UltimateXR.Extensions.Unity
         /// <summary>
         ///     Calculates the <see cref="GameObject" /> <see cref="Bounds" />. The bounds are the <see cref="Renderer" />'s bounds
         ///     if there is one in the GameObject. Otherwise it will encapsulate all renderers found in the children.
+        ///     If <paramref name="forceRecurseIntoChildren" /> is true, it will also encapsulate all renderers found in
+        ///     the children no matter if the GameObject has a Renderer component or not.
         /// </summary>
         /// <param name="self">The GameObject whose <see cref="Bounds" /> to get</param>
+        /// <param name="forceRecurseIntoChildren">
+        ///     Whether to also encapsulate all renderers found in the children no matter if the
+        ///     GameObject has a Renderer component or not
+        /// </param>
         /// <returns>
-        ///     <see cref="Bounds" /> of the GameObject if there is a <see cref="Renderer" /> component in it, or the
-        ///     <see cref="Bounds" /> that encapsulates all children renderers otherwise
+        ///     <see cref="Bounds" /> in world-space.
         /// </returns>
-        public static Bounds GetBounds(this GameObject self)
+        public static Bounds GetBounds(this GameObject self, bool forceRecurseIntoChildren)
         {
             Renderer renderer = self.GetComponent<Renderer>();
 
@@ -195,12 +200,17 @@ namespace UltimateXR.Extensions.Unity
                 return renderer.bounds;
             }
 
-            Renderer[] renderers = self.GetComponentsInChildren<Renderer>();
+            IEnumerable<Renderer> renderers = self.GetComponentsInChildren<Renderer>().Where(r => !r.hideFlags.HasFlag(HideFlags.HideInHierarchy));
+
+            if (!renderers.Any())
+            {
+                return new Bounds(self.transform.position, Vector3.zero);
+            }
 
             Vector3 min = Vector3Ext.Min(renderers.Select(r => r.bounds.min));
             Vector3 max = Vector3Ext.Max(renderers.Select(r => r.bounds.max));
 
-            return new Bounds((max - min) * 0.5f, max - min);
+            return new Bounds((max + min) * 0.5f, max - min);
         }
 
         /// <summary>
@@ -216,8 +226,7 @@ namespace UltimateXR.Extensions.Unity
         ///     GameObject has a Renderer component or not
         /// </param>
         /// <returns>
-        ///     Local <see cref="Bounds" /> of the GameObject if there is a <see cref="Renderer" /> component in it, or the
-        ///     <see cref="Bounds" /> that encapsulates all children renderers otherwise
+        ///     Local <see cref="Bounds" />.
         /// </returns>
         public static Bounds GetLocalBounds(this GameObject self, bool forceRecurseIntoChildren)
         {
@@ -229,6 +238,11 @@ namespace UltimateXR.Extensions.Unity
             }
 
             IEnumerable<Renderer> renderers = self.GetComponentsInChildren<Renderer>().Where(r => !r.hideFlags.HasFlag(HideFlags.HideInHierarchy));
+
+            if (!renderers.Any())
+            {
+                return new Bounds();
+            }
 
             IEnumerable<Vector3> allMinMaxToLocal = renderers.Select(r => self.transform.InverseTransformPoint(r.transform.TransformPoint(r.localBounds.min))).Concat(renderers.Select(r => self.transform.InverseTransformPoint(r.transform.TransformPoint(r.localBounds.max))));
             Vector3     min       = Vector3Ext.Min(allMinMaxToLocal);
