@@ -75,6 +75,8 @@ namespace UltimateXR.Rendering.FX
         /// </summary>
         protected override void OnDestroy()
         {
+            base.OnDestroy();
+            
             foreach (KeyValuePair<Camera, Camera> camPair in _reflectionCameras)
             {
                 if (camPair.Value != null)

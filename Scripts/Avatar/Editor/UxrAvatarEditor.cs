@@ -7,10 +7,12 @@ using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Avatar.Controllers;
 using UltimateXR.Avatar.Rig;
+using UltimateXR.Core;
 using UltimateXR.Devices;
 using UltimateXR.Editor;
 using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
+using UltimateXR.Extensions.Unity.Render;
 using UltimateXR.Manipulation.HandPoses;
 using UltimateXR.Manipulation.HandPoses.Editor;
 using UnityEditor;
@@ -206,6 +208,8 @@ namespace UltimateXR.Avatar.Editor
                                 Selection.activeGameObject = newInstance.gameObject;
                                 avatar                     = newInstance.GetComponent<UxrAvatar>();
                             }
+
+                            return;
                         }
                     }
                 }
@@ -567,6 +571,39 @@ namespace UltimateXR.Avatar.Editor
                     }
                 }
             }
+        }
+
+        /// <summary>
+        ///     Draws visual guides on the avatar.
+        /// </summary>
+        private void OnSceneGUI()
+        {
+            UxrAvatar avatar = (UxrAvatar)serializedObject.targetObject;
+
+            if (avatar == null)
+            {
+                return;
+            }
+
+            /*
+            // Draw finger tips and finger print positions
+            
+            Color handlesColor = Handles.color;
+            Handles.matrix = Matrix4x4.identity;
+
+            foreach (UxrAvatarArmInfo arm in avatar.AvatarRigInfo.Arms)
+            {
+                foreach (UxrAvatarFingerInfo finger in arm.Fingers)
+                {
+                    Handles.color = ColorExt.ColorAlpha(Color.blue, UxrEditorUtils.HandlesAlpha);
+                    Handles.DrawSolidDisc(finger.TipPosition, finger.TipDirection, 0.004f);
+                    Handles.color = ColorExt.ColorAlpha(Color.green, UxrEditorUtils.HandlesAlpha);
+                    Handles.DrawSolidDisc(finger.FingerPrintPosition, finger.FingerPrintDirection, 0.004f);
+                }
+            }
+
+            Handles.color = handlesColor;
+            */
         }
 
         #endregion

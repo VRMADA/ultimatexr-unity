@@ -1335,9 +1335,7 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
 
                 // Force update of skin meshes, sometimes they don't get updated even if the transforms are changed
 
-                SkinnedMeshRenderer[] skins = _avatar.GetComponentsInChildren<SkinnedMeshRenderer>();
-
-                foreach (SkinnedMeshRenderer skin in skins)
+                foreach (SkinnedMeshRenderer skin in _avatar.GetAllAvatarRendererComponents())
                 {
                     bool enabled = skin.enabled;
                     skin.enabled = false;
@@ -2316,10 +2314,10 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
         /// </summary>
         private void BuildFingerSpinners()
         {
-            UxrUniversalLocalAxes leftHandAxes    = _avatar.AvatarRigInfo.LeftHandUniversalLocalAxes;
-            UxrUniversalLocalAxes rightHandAxes   = _avatar.AvatarRigInfo.RightHandUniversalLocalAxes;
-            UxrUniversalLocalAxes leftFingerAxes  = _avatar.AvatarRigInfo.LeftFingerUniversalLocalAxes;
-            UxrUniversalLocalAxes rightFingerAxes = _avatar.AvatarRigInfo.RightFingerUniversalLocalAxes;
+            UxrUniversalLocalAxes leftHandAxes    = _avatar.AvatarRigInfo.GetArmInfo(UxrHandSide.Left).HandUniversalLocalAxes;
+            UxrUniversalLocalAxes rightHandAxes   = _avatar.AvatarRigInfo.GetArmInfo(UxrHandSide.Right).HandUniversalLocalAxes;
+            UxrUniversalLocalAxes leftFingerAxes  = _avatar.AvatarRigInfo.GetArmInfo(UxrHandSide.Left).FingerUniversalLocalAxes;
+            UxrUniversalLocalAxes rightFingerAxes = _avatar.AvatarRigInfo.GetArmInfo(UxrHandSide.Right).FingerUniversalLocalAxes;
             UxrAvatarHand         leftHand        = _avatar.LeftHand;
             UxrAvatarHand         rightHand       = _avatar.RightHand;
             Transform             leftHandBone    = _avatar.LeftHandBone;

@@ -11,11 +11,10 @@ using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.Unity.Math;
 using UltimateXR.Extensions.Unity.Render;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace UltimateXR.Extensions.Unity
 {
-    using UnityObject = Object;
+    using UnityObject = UnityEngine.Object;
 
     /// <summary>
     ///     <see cref="Transform" /> extensions.
@@ -296,7 +295,7 @@ namespace UltimateXR.Extensions.Unity
         /// <param name="padding">Pivot separation between the different children</param>
         /// <param name="axis">Axis where the children will be aligned</param>
         /// <param name="space">Space to use for the alignment axis</param>
-        /// <exception cref="System.ArgumentNullException">Transform is null</exception>
+        /// <exception cref="ArgumentNullException">Transform is null</exception>
         public static void AlignChildrenOnAxis(this Transform transform, float padding, Vector3 axis, Space space = Space.World)
         {
             if (transform == null)
@@ -330,7 +329,7 @@ namespace UltimateXR.Extensions.Unity
         /// <param name="padding">Pivot separation between the different children</param>
         /// <param name="axis">Axis where the children will be aligned</param>
         /// <param name="space">Space to use for the alignment axis</param>
-        /// <exception cref="System.ArgumentNullException">Transform is null</exception>
+        /// <exception cref="ArgumentNullException">Transform is null</exception>
         public static void AlignOnAxis(this IEnumerable<Transform> transforms, float padding, Vector3 axis, Space space = Space.World)
         {
             if (transforms == null)
@@ -778,13 +777,105 @@ namespace UltimateXR.Extensions.Unity
         }
 
         /// <summary>
+        ///     Gets the parent local to world transform matrix.
+        /// </summary>
+        /// <param name="self">Transform to get the parent matrix of</param>
+        /// <returns>Parent local-to-world matrix or Identity if it has no parent</returns>
+        public static Matrix4x4 GetParentWorldMatrix(this Transform self)
+        {
+            return self.parent != null ? self.parent.localToWorldMatrix : Matrix4x4.identity;
+        }
+
+        /// <summary>
+        ///     Gets the parent rotation or the identity Quaternion if it doesn't exist.
+        /// </summary>
+        /// <param name="self">Transform to get the parent rotation of</param>
+        /// <returns>Parent rotation or Identity if it has no parent</returns>
+        public static Quaternion GetParentRotation(this Transform self)
+        {
+            return self.parent != null ? self.parent.rotation : Quaternion.identity;
+        }
+
+        /// <summary>
+        ///     Gets the given position in <paramref name="transform" /> local coordinates. If <paramref name="transform" /> is
+        ///     null, <paramref name="position" /> will be returned.
+        /// </summary>
+        /// <param name="transform">Transform to get the local coordinates in</param>
+        /// <param name="position">Position</param>
+        /// <returns>Coordinates in local space or <paramref name="position" /> if <paramref name="transform" /> is null</returns>
+        public static Vector3 GetLocalPosition(Transform transform, Vector3 position)
+        {
+            return transform != null ? transform.InverseTransformPoint(position) : position;
+        }
+
+        /// <summary>
+        ///     Transforms a position to world space coordinates. If <paramref name="transform" /> is null,
+        ///     <paramref name="localPosition" /> will be returned.
+        /// </summary>
+        /// <param name="transform">Transform with the space of the local coordinates</param>
+        /// <param name="localPosition">Position in local coordinates</param>
+        /// <returns>Coordinates in world space or <paramref name="localPosition" /> if <paramref name="transform" /> is null</returns>
+        public static Vector3 GetWorldPosition(Transform transform, Vector3 localPosition)
+        {
+            return transform != null ? transform.TransformPoint(localPosition) : localPosition;
+        }
+
+        /// <summary>
+        ///     Gets the given rotation in <paramref name="transform" /> local coordinates. If <paramref name="transform" /> is
+        ///     null, <paramref name="rotation" /> will be returned.
+        /// </summary>
+        /// <param name="transform">Transform to get the local coordinates in</param>
+        /// <param name="rotation">Rotation</param>
+        /// <returns>Rotation in local space or <paramref name="rotation" /> if <paramref name="transform" /> is null</returns>
+        public static Quaternion GetLocalRotation(Transform transform, Quaternion rotation)
+        {
+            return transform != null ? Quaternion.Inverse(transform.rotation) : rotation;
+        }
+
+        /// <summary>
+        ///     Transforms a rotation to world space. If <paramref name="transform" /> is null, <paramref name="localRotation" />
+        ///     will be returned.
+        /// </summary>
+        /// <param name="transform">Transform with the space of the local rotation</param>
+        /// <param name="localRotation">Local rotation</param>
+        /// <returns>Rotation in world space or <paramref name="localRotation" /> if <paramref name="transform" /> is null</returns>
+        public static Quaternion GetWorldRotation(Transform transform, Quaternion localRotation)
+        {
+            return transform != null ? transform.rotation * localRotation : localRotation;
+        }
+
+        /// <summary>
+        ///     Gets the given direction in <paramref name="transform" /> local coordinates. If <paramref name="transform" /> is
+        ///     null, <paramref name="direction" /> will be returned.
+        /// </summary>
+        /// <param name="transform">Transform to get the local coordinates in</param>
+        /// <param name="direction">Direction</param>
+        /// <returns>Direction in local space or <paramref name="direction" /> if <paramref name="transform" /> is null</returns>
+        public static Vector3 GetLocalDirection(Transform transform, Vector3 direction)
+        {
+            return transform != null ? Quaternion.Inverse(transform.rotation) * direction : direction;
+        }
+
+        /// <summary>
+        ///     Transforms a direction to world space. If <paramref name="transform" /> is null, <paramref name="localDirection" />
+        ///     will be returned.
+        /// </summary>
+        /// <param name="transform">Transform with the space of the local direction</param>
+        /// <param name="localDirection">Direction</param>
+        /// <returns>Rotation in world space or <paramref name="localDirection" /> if <paramref name="transform" /> is null</returns>
+        public static Vector3 GetWorldDirection(Transform transform, Vector3 localDirection)
+        {
+            return transform != null ? transform.rotation * localDirection : localDirection;
+        }
+
+        /// <summary>
         ///     Computes the bounds of all MeshRenderers that hang from a parent transform.
         /// </summary>
         /// <param name="self">Parent Transform to get all the MeshRenderers of</param>
         /// <param name="space">Space in which to retrieve the bounds</param>
         /// <param name="includeInactive">Whether to include inactive MeshRenderers</param>
         /// <returns>Bounds containing all MeshRenderers</returns>
-        /// <exception cref="System.ArgumentNullException">Transform is null</exception>
+        /// <exception cref="ArgumentNullException">Transform is null</exception>
         public static Bounds CalculateBounds(this Transform self, Space space = Space.World, bool includeInactive = false)
         {
             self.ThrowIfNull(nameof(self));
@@ -817,7 +908,7 @@ namespace UltimateXR.Extensions.Unity
         /// <param name="transform">RectTransform to process</param>
         /// <param name="space">Space in which to retrieve the bounds</param>
         /// <returns>Bounds of the RectTransform</returns>
-        /// <exception cref="System.ArgumentNullException">Transform is null</exception>
+        /// <exception cref="ArgumentNullException">Transform is null</exception>
         public static Bounds CalculateRectBounds(this RectTransform transform, Space space = Space.World)
         {
             if (transform == null)
@@ -836,7 +927,7 @@ namespace UltimateXR.Extensions.Unity
         /// <param name="boxCollider">BoxCollider to get the bounds of</param>
         /// <param name="space">Space in which to retrieve the bounds</param>
         /// <returns>BoxCollider bounds</returns>
-        /// <exception cref="System.ArgumentNullException">BoxCollider is null</exception>
+        /// <exception cref="ArgumentNullException">BoxCollider is null</exception>
         public static Bounds CalculateBounds(this BoxCollider boxCollider, Space space = Space.World)
         {
             if (boxCollider == null)
@@ -865,7 +956,7 @@ namespace UltimateXR.Extensions.Unity
         /// <param name="space">Space in which to retrieve the bounds</param>
         /// <param name="includeInactive">Whether to include inactive MeshRenderers</param>
         /// <returns>Bounds containing all MeshRenderers</returns>
-        /// <exception cref="System.ArgumentNullException">transforms is null</exception>
+        /// <exception cref="ArgumentNullException">transforms is null</exception>
         public static Bounds CalculateBounds(this IEnumerable<Transform> transforms, Space space = Space.World, bool includeInactive = false)
         {
             if (transforms == null)
@@ -906,7 +997,7 @@ namespace UltimateXR.Extensions.Unity
         /// <param name="transform">Transform to process all children of</param>
         /// <param name="includeInactive">Whether to include inactive MeshRenderers</param>
         /// <returns>Bounds with the largest squared length size vector</returns>
-        /// <exception cref="System.ArgumentNullException">transform is null</exception>
+        /// <exception cref="ArgumentNullException">transform is null</exception>
         public static Bounds GetWiderBoundsInChildren(this Transform transform, bool includeInactive = false)
         {
             if (transform == null)
@@ -939,7 +1030,7 @@ namespace UltimateXR.Extensions.Unity
         /// <param name="transforms">Transforms to process all children of</param>
         /// <param name="includeInactive">Whether to include inactive MeshRenderers</param>
         /// <returns>Bounds with the largest squared length size vector</returns>
-        /// <exception cref="System.ArgumentNullException">transforms is null</exception>
+        /// <exception cref="ArgumentNullException">transforms is null</exception>
         public static Bounds GetWiderBounds(this IEnumerable<Transform> transforms, bool includeInactive = false)
         {
             if (transforms == null)
@@ -971,7 +1062,7 @@ namespace UltimateXR.Extensions.Unity
         /// <param name="transform">Transform applied to the bounds</param>
         /// <param name="localBounds">Bounds in local space</param>
         /// <returns>Transformed bounds</returns>
-        /// <exception cref="System.ArgumentNullException">transform is null</exception>
+        /// <exception cref="ArgumentNullException">transform is null</exception>
         public static Bounds TransformBounds(this Transform transform, Bounds localBounds)
         {
             if (transform == null)
@@ -1001,7 +1092,7 @@ namespace UltimateXR.Extensions.Unity
         /// <param name="transform">Transform defining the local space where to move the bounds to</param>
         /// <param name="worldBounds">Bounds in world space</param>
         /// <returns>Transformed bounds</returns>
-        /// <exception cref="System.ArgumentNullException">transform is null</exception>
+        /// <exception cref="ArgumentNullException">transform is null</exception>
         public static Bounds InverseTransformBounds(this Transform transform, Bounds worldBounds)
         {
             if (transform == null)

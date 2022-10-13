@@ -34,7 +34,7 @@ namespace UltimateXR.Animation.IK
             _handSide           = transform.HasParent(Avatar.AvatarRig.LeftArm.UpperArm) ? UxrHandSide.Left : UxrHandSide.Right;
             _startLocalRotation = transform.localRotation;
 
-            UxrUniversalLocalAxes handUniversalLocalAxes = Avatar.AvatarRigInfo.GetHandUniversalLocalAxes(_handSide);
+            UxrUniversalLocalAxes handUniversalLocalAxes = Avatar.AvatarRigInfo.GetArmInfo(_handSide).HandUniversalLocalAxes;
             _torsionLocalAxis = transform.InverseTransformDirection(handUniversalLocalAxes.WorldForward).GetClosestAxis();
         }
 
@@ -47,7 +47,7 @@ namespace UltimateXR.Animation.IK
         /// </summary>
         protected override void InternalSolveIK()
         {
-            float angle = _handSide == UxrHandSide.Left ? Avatar.AvatarRigInfo.LeftWristTorsionInfo.WristTorsionAngle : Avatar.AvatarRigInfo.RightWristTorsionInfo.WristTorsionAngle;
+            float angle = Avatar.AvatarRigInfo.GetArmInfo(_handSide).WristTorsionInfo.WristTorsionAngle;
             transform.localRotation = Quaternion.AngleAxis(-angle * _amount, _torsionLocalAxis) * _startLocalRotation;
         }
 

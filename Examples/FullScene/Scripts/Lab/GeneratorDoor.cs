@@ -35,7 +35,8 @@ namespace UltimateXR.Examples.FullScene.Lab
             get => LockHandleOpenValue > 0.5f;
             private set
             {
-                _grabbableLock.transform.localRotation = _grabbableLock.InitialLocalRotation * Quaternion.AngleAxis(value ? _lockHandleAngleOpen : _lockHandleAngleClosed, Vector3.forward);
+                // Set rotation using the correct property to avoid interference between grabbable object constraint calculation and manually setting its transform.
+                _grabbableLock.SingleRotationAxisDegrees = value ? _lockHandleAngleOpen : _lockHandleAngleClosed;
 
                 for (int i = 0; i < _locks.Length; ++i)
                 {
@@ -68,9 +69,6 @@ namespace UltimateXR.Examples.FullScene.Lab
             {
                 _lockInitialRotation[i] = _locks[i].localRotation;
             }
-
-            _lockHandleAngleConstraintMin = _grabbableLock.RotationAngleLimitsMin;
-            _lockHandleAngleConstraintMax = _grabbableLock.RotationAngleLimitsMax;
 
             IsBatteryInContact = _batteryAnchor.Anchor.CurrentPlacedObject != null;
         }
@@ -150,13 +148,11 @@ namespace UltimateXR.Examples.FullScene.Lab
 
             if (_batteryAnchor.Anchor.CurrentPlacedObject != null && _batteryAnchor.Anchor.CurrentPlacedObject.transform.localPosition.z > 0.01f)
             {
-                _grabbableLock.RotationAngleLimitsMin = _grabbableLock.transform.localRotation.eulerAngles;
-                _grabbableLock.RotationAngleLimitsMax = _grabbableLock.transform.localRotation.eulerAngles;
+                _grabbableLock.RotationConstraint = UxrRotationConstraintMode.Locked;
             }
             else
             {
-                _grabbableLock.RotationAngleLimitsMin = _lockHandleAngleConstraintMin;
-                _grabbableLock.RotationAngleLimitsMax = _lockHandleAngleConstraintMax;
+                _grabbableLock.RotationConstraint = UxrRotationConstraintMode.RestrictLocalRotation;
             }
         }
 
@@ -198,8 +194,6 @@ namespace UltimateXR.Examples.FullScene.Lab
 
         private bool         _isBatteryInContact;
         private Quaternion[] _lockInitialRotation;
-        private Vector3      _lockHandleAngleConstraintMin;
-        private Vector3      _lockHandleAngleConstraintMax;
 
         #endregion
     }

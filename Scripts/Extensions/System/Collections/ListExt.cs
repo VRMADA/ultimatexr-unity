@@ -22,7 +22,7 @@ namespace UltimateXR.Extensions.System.Collections
         /// <param name="self">List where to look for the item</param>
         /// <param name="item">Item to look for</param>
         /// <typeparam name="T">Element type</typeparam>
-        /// <returns>Element index</returns>
+        /// <returns>Element index or -1 if not found</returns>
         /// <remarks>Equals() is used for comparison</remarks>
         public static int IndexOf<T>(this IReadOnlyList<T> self, T item)
         {

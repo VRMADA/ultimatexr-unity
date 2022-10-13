@@ -3,7 +3,6 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Avatar;
@@ -12,7 +11,6 @@ using UltimateXR.Core;
 using UltimateXR.Core.Caching;
 using UltimateXR.Devices;
 using UltimateXR.Extensions.Unity;
-using UltimateXR.Manipulation;
 using UnityEngine;
 
 namespace UltimateXR.Locomotion
@@ -26,8 +24,9 @@ namespace UltimateXR.Locomotion
 
         // General parameters
 
-        [SerializeField] private UxrHandSide          _controllerHand           = UxrHandSide.Left;
-        [SerializeField] private bool                 _useControllerForward     = true;
+        [SerializeField] private UxrHandSide          _controllerHand       = UxrHandSide.Left;
+        [SerializeField] private bool                 _useControllerForward = true;
+        [SerializeField] private bool                 _parentToDestination;
         [SerializeField] private float                _shakeFilter              = 0.4f;
         [SerializeField] private UxrTranslationType   _translationType          = UxrTranslationType.Fade;
         [SerializeField] private Color                _fadeTranslationColor     = Color.black;
@@ -330,8 +329,9 @@ namespace UltimateXR.Locomotion
             if (_teleportTarget != null)
             {
                 _teleportTarget.transform.rotation = Avatar.transform.rotation;
-                TeleportPosition                   = Avatar.transform.position;
-                TeleportDirection                  = Avatar.ProjectedCameraForward;
+                TeleportReference                  = null;
+                TeleportLocalPosition              = Avatar.transform.position;
+                TeleportLocalDirection             = Avatar.ProjectedCameraForward;
             }
 
             _layerMaskRaycast.value = BlockingTargetLayers.value | ValidTargetLayers.value;
@@ -432,14 +432,15 @@ namespace UltimateXR.Locomotion
             {
                 Vector3 newPosition = Avatar.CameraFloorPosition - Avatar.ProjectedCameraForward * _backStepDistance;
 
-                if (IsValidTeleport(true, ref newPosition, Avatar.transform.up, out bool _))
+                if (Physics.Raycast(newPosition + Vector3.up * RaycastAboveGround, -Vector3.up, out RaycastHit backStepRaycast, _maxAllowedHeightDifference > 0.0f ? _maxAllowedHeightDifference : RaycastLongDistance, BlockingTargetLayers, TriggerCollidersInteraction))
                 {
-                    _isBackStepAvailable = false;
-                    _isValidTeleport     = true;
-                    TeleportPosition     = newPosition;
-                    TeleportDirection    = Avatar.ProjectedCameraForward;
-                    TryTeleportUsingCurrentTarget();
-                    return;
+                    if (NotifyDestinationRaycast(backStepRaycast, true))
+                    {
+                        _isBackStepAvailable   = false;
+                        TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Avatar.ProjectedCameraForward);
+                        TryTeleportUsingCurrentTarget();
+                        return;
+                    }
                 }
             }
 
@@ -519,7 +520,7 @@ namespace UltimateXR.Locomotion
             {
                 Vector3 direction = eyePosEnd - eyePosStart;
 
-                if (Physics.Raycast(eyePosStart, direction.normalized, out RaycastHit _, direction.magnitude, BlockingTargetLayers, TriggerCollidersInteraction))
+                if (HasBlockingRaycastHit(eyePosStart, direction.normalized, direction.magnitude, out RaycastHit _))
                 {
                     // There is something blocking in between
                     return false;
@@ -593,42 +594,16 @@ namespace UltimateXR.Locomotion
         ///     Checks whether the given raycast hits have any that are blocking. A blocking raycast can either be a valid or
         ///     invalid teleport destination depending on many factors. Use <see cref="IsValidDestination" /> to check whether the
         ///     given position is valid.
+        ///     This method filters out invalid raycasts such as against anything part of an avatar or a grabbed object.
         /// </summary>
-        /// <param name="inputHits">Set of raycast hits to check</param>
+        /// <param name="origin">Ray origin</param>
+        /// <param name="direction">Ray direction</param>
+        /// <param name="maxDistance">Raycast maximum distance</param>
         /// <param name="outputHit">Result blocking raycast</param>
         /// <returns>Whether there is a blocking raycast returned in <paramref name="outputHit" /></returns>
-        protected bool HasBlockingRaycastHit(RaycastHit[] inputHits, out RaycastHit outputHit)
+        protected bool HasBlockingRaycastHit(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit outputHit)
         {
-            bool hasBlockingHit = false;
-            outputHit = default;
-
-            if (inputHits.Count() > 1)
-            {
-                Array.Sort(inputHits, (a, b) => a.distance.CompareTo(b.distance));
-            }
-
-            foreach (RaycastHit singleHit in inputHits)
-            {
-                if (singleHit.collider.GetComponentInParent<UxrAvatar>() != null)
-                {
-                    // Filter out colliding against part of an avatar
-                    continue;
-                }
-
-                UxrGrabbableObject grabbableObject = singleHit.collider.GetComponentInParent<UxrGrabbableObject>();
-
-                if (grabbableObject != null && grabbableObject.IsBeingGrabbed)
-                {
-                    // Filter out colliding against a grabbed object
-                    continue;
-                }
-
-                outputHit      = singleHit;
-                hasBlockingHit = true;
-                break;
-            }
-
-            return hasBlockingHit;
+            return HasBlockingRaycastHit(Avatar, origin, direction, maxDistance, LayerMaskRaycast, TriggerCollidersInteraction, out outputHit);
         }
 
         /// <summary>
@@ -636,12 +611,16 @@ namespace UltimateXR.Locomotion
         ///     sets the appropriate internal state that can later be executed using <see cref="TryTeleportUsingCurrentTarget" />.
         /// </summary>
         /// <param name="hit">Raycast that will be processed as a potential teleport destination</param>
+        /// <param name="checkBlockingInBetween">
+        ///     Should it check for blocking elements in a straight line from the current position to the new position?
+        /// </param>
         /// <returns>Whether the destination is a valid teleport location</returns>
-        protected bool NotifyDestinationRaycast(RaycastHit hit)
+        protected bool NotifyDestinationRaycast(RaycastHit hit, bool checkBlockingInBetween)
         {
             _isValidTeleport = true;
-            
+
             bool ignoreDestination = hit.collider.GetComponentInParent<UxrIgnoreTeleportDestination>() != null;
+            TeleportReference = hit.collider != null ? hit.collider.transform : null;
 
             // Check for UxrTeleportSpawnCollider component
 
@@ -655,8 +634,9 @@ namespace UltimateXR.Locomotion
 
                 if (spawnPos != null)
                 {
-                    TeleportPosition  = spawnPos.position;
-                    TeleportDirection = Vector3.ProjectOnPlane(spawnPos.forward, Vector3.up);
+                    TeleportReference      = spawnPos;
+                    TeleportLocalPosition  = TransformExt.GetLocalPosition(TeleportReference, spawnPos.position);
+                    TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Vector3.ProjectOnPlane(spawnPos.forward, Vector3.up));
 
                     EnableTeleportObjects(true, true);
                 }
@@ -666,7 +646,7 @@ namespace UltimateXR.Locomotion
                 Vector3 teleportPos = hit.point;
                 bool    showTarget  = true;
 
-                _isValidTeleport = IsValidTeleport(false, ref teleportPos, hit.normal, out bool validSlope) && !ignoreDestination;
+                _isValidTeleport = IsValidTeleport(checkBlockingInBetween, ref teleportPos, hit.normal, out bool validSlope) && !ignoreDestination;
 
                 if (_isValidTeleport && validSlope)
                 {
@@ -685,15 +665,15 @@ namespace UltimateXR.Locomotion
                 {
                     // Place target
 
-                    TeleportPosition = teleportPos;
+                    TeleportLocalPosition = TransformExt.GetLocalPosition(TeleportReference, teleportPos);
 
                     if (ReorientationType == UxrReorientationType.KeepOrientation)
                     {
-                        TeleportDirection = Avatar.ProjectedCameraForward;
+                        TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Avatar.ProjectedCameraForward);
                     }
                     else if (ReorientationType == UxrReorientationType.UseTeleportFromToDirection)
                     {
-                        TeleportDirection = Vector3.ProjectOnPlane(TeleportPosition - Avatar.CameraPosition, Vector3.up);
+                        TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Vector3.ProjectOnPlane(teleportPos - Avatar.CameraPosition, Vector3.up));
                     }
                     else if (ReorientationType == UxrReorientationType.AllowUserJoystickRedirect)
                     {
@@ -701,7 +681,7 @@ namespace UltimateXR.Locomotion
                         Vector3 projectedForward  = Vector3.ProjectOnPlane(ControllerForward, Vector3.up).normalized;
                         Vector3 joystickDirection = new Vector3(joystickValue.x, 0.0f, joystickValue.y).normalized;
 
-                        TeleportDirection = Quaternion.LookRotation(projectedForward, Vector3.up) * Quaternion.LookRotation(joystickDirection, Vector3.up) * Vector3.forward;
+                        TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Quaternion.LookRotation(projectedForward, Vector3.up) * Quaternion.LookRotation(joystickDirection, Vector3.up) * Vector3.forward);
                     }
                 }
             }
@@ -741,24 +721,33 @@ namespace UltimateXR.Locomotion
                     UxrManager.Instance.TeleportFadeColor = FadeTranslationColor;
                 }
 
-                UxrManager.Instance.TeleportLocalAvatar(TeleportPosition,
-                                                        Quaternion.LookRotation(TeleportDirection),
-                                                        _translationType,
-                                                        TranslationSeconds,
-                                                        () =>
-                                                        {
-                                                            if (_lastSpawnCollider != null)
-                                                            {
-                                                                _lastSpawnCollider.RaiseTeleported(new UxrAvatarMoveEventArgs(Avatar, avatarPos, avatarRot, TeleportPosition, Quaternion.LookRotation(TeleportDirection, avatarUp)));
-                                                            }
-                                                        },
-                                                        finished =>
-                                                        {
-                                                            _isValidTeleport  = false;
-                                                            IsTeleporting     = false;
-                                                            ControllerStart   = RawControllerStart;
-                                                            ControllerForward = RawControllerForward;
-                                                        });
+                bool parentToDestination = ParentToDestination;
+
+                if (TeleportReference != null && TeleportReference.TryGetComponent(out UxrParentAvatarDestination parentAvatarDestination))
+                {
+                    parentToDestination = parentAvatarDestination.ParentAvatar;
+                }
+
+                UxrManager.Instance.TeleportLocalAvatarRelative(TeleportReference,
+                                                                parentToDestination,
+                                                                TransformExt.GetWorldPosition(TeleportReference, TeleportLocalPosition),
+                                                                Quaternion.LookRotation(TransformExt.GetWorldDirection(TeleportReference, TeleportLocalDirection)),
+                                                                _translationType,
+                                                                TranslationSeconds,
+                                                                () =>
+                                                                {
+                                                                    if (_lastSpawnCollider != null)
+                                                                    {
+                                                                        _lastSpawnCollider.RaiseTeleported(new UxrAvatarMoveEventArgs(Avatar, avatarPos, avatarRot, Avatar.CameraFloorPosition, Quaternion.LookRotation(Avatar.ProjectedCameraForward, avatarUp)));
+                                                                    }
+                                                                },
+                                                                finished =>
+                                                                {
+                                                                    _isValidTeleport  = false;
+                                                                    IsTeleporting     = false;
+                                                                    ControllerStart   = RawControllerStart;
+                                                                    ControllerForward = RawControllerForward;
+                                                                });
             }
 
             NotifyTeleportSpawnCollider(null);
@@ -896,7 +885,7 @@ namespace UltimateXR.Locomotion
                                                       {
                                                           if (_lastSpawnCollider != null)
                                                           {
-                                                              _lastSpawnCollider.RaiseTeleported(new UxrAvatarMoveEventArgs(Avatar, avatarPos, avatarRot, TeleportPosition, Quaternion.LookRotation(TeleportDirection, avatarUp)));
+                                                              _lastSpawnCollider.RaiseTeleported(new UxrAvatarMoveEventArgs(Avatar, avatarPos, avatarRot, Avatar.CameraFloorPosition, Quaternion.LookRotation(Avatar.ProjectedCameraForward, avatarUp)));
                                                           }
                                                       },
                                                       finished =>
@@ -951,7 +940,7 @@ namespace UltimateXR.Locomotion
                 Vector3 cameraPos          = UxrAvatar.LocalAvatar.CameraPosition;
                 Vector3 cameraToController = ControllerStart - cameraPos;
 
-                return !HasBlockingRaycastHit(Physics.RaycastAll(cameraPos, cameraToController.normalized, cameraToController.magnitude, LayerMaskRaycast, TriggerCollidersInteraction), out RaycastHit hit);
+                return !HasBlockingRaycastHit(cameraPos, cameraToController.normalized, cameraToController.magnitude, out RaycastHit hit);
             }
         }
 
@@ -959,6 +948,17 @@ namespace UltimateXR.Locomotion
         ///     Gets the <see cref="LayerMask" /> used for ray-casting either valid or invalid teleport destinations.
         /// </summary>
         protected LayerMask LayerMaskRaycast => _layerMaskRaycast;
+
+        /// <summary>
+        ///     Gets or sets whether to parent the avatar to the destination object (<see cref="TeleportReference" />) after
+        ///     teleporting.
+        ///     This can also be overriden using a <see cref="UxrParentAvatarDestination" /> component.
+        /// </summary>
+        protected bool ParentToDestination
+        {
+            get => _parentToDestination;
+            set => _parentToDestination = value;
+        }
 
         /// <summary>
         ///     Gets or sets whether the component is currently teleporting the avatar.
@@ -976,36 +976,49 @@ namespace UltimateXR.Locomotion
         protected Vector3 ControllerForward { get; private set; }
 
         /// <summary>
-        ///     Gets or sets the current teleport destination.
+        ///     Gets or sets the transform that will be used as reference for <see cref="TeleportPosition" /> and
+        ///     <see cref="TeleportDirection" /> to keep the relative positioning/orientation to while performing potential
+        ///     transitions, such as fades, before the actual teleporting. It is usually assigned the transform of the object that
+        ///     was hit with the destination raycast.
+        ///     The reference transform is used to make teleport transitions work correctly when the avatar is on a moving object.
+        ///     Without it, using absolute position and rotation only, would spawn the avatar with an incorrect offset due to the
+        ///     delay the transition introduces before the teleport.
         /// </summary>
-        protected Vector3 TeleportPosition
+        protected Transform TeleportReference { get; private set; }
+
+        /// <summary>
+        ///     Gets or sets the current teleport destination in <see cref="TeleportReference" /> space. If
+        ///     <see cref="TeleportReference" /> is null, it will be considered as world-space position.
+        /// </summary>
+        protected Vector3 TeleportLocalPosition
         {
-            get => _teleportPosition;
+            get => _teleportLocalPosition;
             set
             {
-                _teleportPosition = value;
+                _teleportLocalPosition = value;
 
                 if (_teleportTarget != null)
                 {
-                    _teleportTarget.transform.position = value + Vector3.up * TargetPlacementAboveHit;
-                    _teleportTarget.OrientArrow(Quaternion.LookRotation(TeleportDirection));
+                    _teleportTarget.transform.position = TransformExt.GetWorldPosition(TeleportReference, value) + Vector3.up * TargetPlacementAboveHit;
+                    _teleportTarget.OrientArrow(Quaternion.LookRotation(TransformExt.GetWorldDirection(TeleportReference, TeleportLocalDirection)));
                 }
             }
         }
 
         /// <summary>
-        ///     Gets or sets the current teleport direction.
+        ///     Gets or sets the current teleport direction in in <see cref="TeleportReference" /> space. If
+        ///     <see cref="TeleportReference" /> is null, it will be considered as world-space rotation.
         /// </summary>
-        protected Vector3 TeleportDirection
+        protected Vector3 TeleportLocalDirection
         {
-            get => _teleportDirection;
+            get => _teleportLocalDirection;
             set
             {
-                _teleportDirection = value;
+                _teleportLocalDirection = value;
 
                 if (_teleportTarget != null)
                 {
-                    _teleportTarget.OrientArrow(Quaternion.LookRotation(value));
+                    _teleportTarget.OrientArrow(Quaternion.LookRotation(TeleportReference != null ? TeleportReference.rotation * value : value));
                 }
             }
         }
@@ -1080,6 +1093,8 @@ namespace UltimateXR.Locomotion
             }
         }
 
+        private const float RaycastAboveGround                   = 0.05f;
+        private const float RaycastLongDistance                  = 1000.0f;
         private const float HeadRadius                           = 0.2f;
         private const float DeltaTimeMultiplierFilterMin         = 25.0f;
         private const float DeltaTimeMultiplierFilterMax         = 5.0f;
@@ -1091,8 +1106,8 @@ namespace UltimateXR.Locomotion
 
         private bool                     _isBackStepAvailable;
         private bool                     _isValidTeleport;
-        private Vector3                  _teleportPosition;
-        private Vector3                  _teleportDirection;
+        private Vector3                  _teleportLocalPosition;
+        private Vector3                  _teleportLocalDirection;
         private LayerMask                _layerMaskRaycast = 0;
         private UxrTeleportTarget        _teleportTarget;
         private UxrTeleportSpawnCollider _lastSpawnCollider;

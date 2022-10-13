@@ -20,14 +20,14 @@ namespace UltimateXR.Manipulation
             #region Public Types & Data
 
             /// <summary>
-            ///     Hand bone position when the grip was released.
+            ///     Hand bone position in local avatar coordinates when the grip was released.
             /// </summary>
-            public Vector3 StartPosition { get; }
+            public Vector3 StartLocalAvatarPosition { get; }
 
             /// <summary>
-            ///     Hand bone rotation when the grip was released.
+            ///     Hand bone rotation in local avatar coordinates when the grip was released.
             /// </summary>
-            public Quaternion StartRotation { get; }
+            public Quaternion StartLocalAvatarRotation { get; }
 
             /// <summary>
             ///     Timer value to control the interpolation.
@@ -48,9 +48,9 @@ namespace UltimateXR.Manipulation
             {
                 Matrix4x4 grabberMtx = Matrix4x4.TRS(grabberPosition, grabberRotation, Vector3.one);
 
-                Timer         = UxrGrabbableObject.HandLockSeconds;
-                StartPosition = grabberMtx.MultiplyPoint(grabber.HandBoneRelativePos);
-                StartRotation = grabberMtx.rotation * grabber.HandBoneRelativeRot;
+                Timer                    = UxrGrabbableObject.HandLockSeconds;
+                StartLocalAvatarPosition = grabber.Avatar.transform.InverseTransformPoint(grabberMtx.MultiplyPoint(grabber.HandBoneRelativePos));
+                StartLocalAvatarRotation = Quaternion.Inverse(grabber.Avatar.transform.rotation) * grabberMtx.rotation * grabber.HandBoneRelativeRot;
             }
 
             #endregion

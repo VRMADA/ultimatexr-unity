@@ -3,7 +3,10 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System.Linq;
 using UltimateXR.Animation.Splines;
+using UltimateXR.Core;
+using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity.Math;
 using UnityEngine;
 
@@ -95,6 +98,175 @@ namespace UltimateXR.Extensions.Unity.Render
             splineMesh.triangles = indices;
 
             return splineMesh;
+        }
+
+        /// <summary>
+        ///     Computes the number of vertices that a bone influences in a skinned mesh.
+        /// </summary>
+        /// <param name="skin">Skinned mesh</param>
+        /// <param name="bone">Bone to check</param>
+        /// <param name="weightThreshold">Weight above which will be considered significant influence</param>
+        /// <returns>
+        ///     Number of vertices influenced by <paramref name="bone" /> with a weight above
+        ///     <paramref name="weightThreshold" />.
+        /// </returns>
+        public static int GetBoneInfluenceVertexCount(SkinnedMeshRenderer skin, Transform bone, float weightThreshold = UxrConstants.Geometry.SignificantBoneWeight)
+        {
+            Transform[] skinBones = skin.bones;
+            int         boneIndex = skinBones.IndexOf(bone);
+
+            if (boneIndex == -1)
+            {
+                return 0;
+            }
+
+            BoneWeight[] boneWeights = skin.sharedMesh.boneWeights;
+
+            return boneWeights.Count(w => HasBoneInfluence(w, boneIndex, weightThreshold));
+        }
+
+        /// <summary>
+        ///     Computes the number of vertices that a bone influences in a skinned mesh.
+        /// </summary>
+        /// <param name="skin">Skinned mesh</param>
+        /// <param name="bone">Bone to check</param>
+        /// <param name="weightThreshold">Weight above which to consider significant influence</param>
+        /// <returns>
+        ///     Number of vertices influenced by <paramref name="bone" /> with a weight above
+        ///     <paramref name="weightThreshold" />
+        /// </returns>
+        public static bool HasBoneInfluence(SkinnedMeshRenderer skin, Transform bone, float weightThreshold = UxrConstants.Geometry.SignificantBoneWeight)
+        {
+            Transform[] skinBones = skin.bones;
+            int         boneIndex = skinBones.IndexOf(bone);
+
+            if (boneIndex == -1)
+            {
+                return false;
+            }
+
+            BoneWeight[] boneWeights = skin.sharedMesh.boneWeights;
+
+            return boneWeights.Any(w => HasBoneInfluence(w, boneIndex, weightThreshold));
+        }
+
+        /// <summary>
+        ///     Checks whether a given bone index has influence on a skinned mesh vertex.
+        /// </summary>
+        /// <param name="boneWeight">Vertex's bone weight information</param>
+        /// <param name="boneIndex">Bone index</param>
+        /// <param name="weightThreshold">Weight above which will be considered significant influence</param>
+        /// <returns>Whether the bone influences the vertex in a significant amount</returns>
+        public static bool HasBoneInfluence(in BoneWeight boneWeight, int boneIndex, float weightThreshold = UxrConstants.Geometry.SignificantBoneWeight)
+        {
+            if (boneWeight.boneIndex0 == boneIndex && boneWeight.weight0 > weightThreshold)
+            {
+                return true;
+            }
+
+            if (boneWeight.boneIndex1 == boneIndex && boneWeight.weight1 > weightThreshold)
+            {
+                return true;
+            }
+
+            if (boneWeight.boneIndex2 == boneIndex && boneWeight.weight2 > weightThreshold)
+            {
+                return true;
+            }
+
+            if (boneWeight.boneIndex3 == boneIndex && boneWeight.weight3 > weightThreshold)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        ///     Computes the bounding box that contains all the vertices that a bone has influence on in a skinned mesh. The
+        ///     bounding box is computed in local bone space.
+        /// </summary>
+        /// <param name="skin">Skinned mesh</param>
+        /// <param name="bone">Bone to check</param>
+        /// <param name="weightThreshold">Weight above which to consider significant influence</param>
+        /// <returns>
+        ///     Bounding box in local <paramref name="bone"/> coordinates.
+        /// </returns>
+        public static Bounds GetBoneInfluenceBounds(SkinnedMeshRenderer skin, Transform bone, float weightThreshold = UxrConstants.Geometry.SignificantBoneWeight)
+        {
+            Transform[] skinBones = skin.bones;
+            int         boneIndex = skinBones.IndexOf(bone);
+
+            if (boneIndex == -1)
+            {
+                return new Bounds();
+            }
+
+            Vector3[]    vertices      = skin.sharedMesh.vertices;
+            BoneWeight[] boneWeights   = skin.sharedMesh.boneWeights;
+            Transform[]  bones         = skin.bones;
+            Matrix4x4[]  boneBindPoses = skin.sharedMesh.bindposes;
+            Vector3      min           = Vector3.zero;
+            Vector3      max           = Vector3.zero;
+            bool         initialized   = false;
+
+            for (int i = 0; i < boneWeights.Length; ++i)
+            {
+                if (HasBoneInfluence(boneWeights[i], boneIndex, weightThreshold))
+                {
+                    Vector3 localVertex = bones[boneIndex].InverseTransformPoint(GetSkinnedWorldVertex(skin, boneWeights[i], vertices[i], bones, boneBindPoses));
+
+                    if (!initialized)
+                    {
+                        initialized = true;
+                        min         = localVertex;
+                        max         = localVertex;
+                    }
+                    else
+                    {
+                        min = Vector3Ext.Min(localVertex, min);
+                        max = Vector3Ext.Max(localVertex, max);
+                    }
+                }
+            }
+
+            return new Bounds((min + max) * 0.5f, max - min);
+        }
+
+        /// <summary>
+        ///     Gets a skinned vertex in world coordinates.
+        /// </summary>
+        /// <param name="skin">Skin</param>
+        /// <param name="boneWeight">Vertex bone weights info</param>
+        /// <param name="vertex">Vertex in local skin coordinates when the skin is in the bind pose</param>
+        /// <param name="bones">Bone list</param>
+        /// <param name="boneBindPoses">Bone bind poses</param>
+        /// <returns>Vertex in world coordinates</returns>
+        public static Vector3 GetSkinnedWorldVertex(SkinnedMeshRenderer skin, BoneWeight boneWeight, Vector3 vertex, Transform[] bones, Matrix4x4[] boneBindPoses)
+        {
+            Vector3 result = Vector3.zero;
+
+            if (boneWeight.weight0 > UxrConstants.Geometry.SmallestBoneWeight)
+            {
+                result += bones[boneWeight.boneIndex0].localToWorldMatrix.MultiplyPoint(boneBindPoses[boneWeight.boneIndex0].MultiplyPoint(vertex)) * boneWeight.weight0;
+            }
+
+            if (boneWeight.weight1 > UxrConstants.Geometry.SmallestBoneWeight)
+            {
+                result += bones[boneWeight.boneIndex1].localToWorldMatrix.MultiplyPoint(boneBindPoses[boneWeight.boneIndex1].MultiplyPoint(vertex)) * boneWeight.weight1;
+            }
+
+            if (boneWeight.weight2 > UxrConstants.Geometry.SmallestBoneWeight)
+            {
+                result += bones[boneWeight.boneIndex2].localToWorldMatrix.MultiplyPoint(boneBindPoses[boneWeight.boneIndex2].MultiplyPoint(vertex)) * boneWeight.weight2;
+            }
+
+            if (boneWeight.weight3 > UxrConstants.Geometry.SmallestBoneWeight)
+            {
+                result += bones[boneWeight.boneIndex3].localToWorldMatrix.MultiplyPoint(boneBindPoses[boneWeight.boneIndex3].MultiplyPoint(vertex)) * boneWeight.weight3;
+            }
+
+            return result;
         }
 
         #endregion

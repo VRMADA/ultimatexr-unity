@@ -3,6 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Core;
 using UnityEngine;
 
 namespace UltimateXR.Avatar
@@ -13,7 +14,7 @@ namespace UltimateXR.Avatar
     ///     <list type="bullet">
     ///         <item>
     ///             <see
-    ///                 cref="UxrManager.MoveAvatarTo(VRMADA.UltimateXR.Avatar.UxrAvatar,UnityEngine.Vector3,UnityEngine.Vector3)">
+    ///                 cref="UxrManager.MoveAvatarTo(UltimateXR.Avatar.UxrAvatar,UnityEngine.Vector3,UnityEngine.Vector3,bool)">
     ///                 UxrManager.Instance.MoveAvatarTo
     ///             </see>
     ///         </item>
@@ -22,7 +23,7 @@ namespace UltimateXR.Avatar
     ///         </item>
     ///         <item>
     ///             <see
-    ///                 cref="UxrManager.TeleportLocalAvatar(UnityEngine.Vector3,UnityEngine.Quaternion,bool,UnityEngine.Color,float,System.Action,System.Action)">
+    ///                 cref="UxrManager.TeleportLocalAvatar">
     ///                 UxrManager.Instance.TeleportLocalAvatar
     ///             </see>
     ///         </item>

@@ -78,6 +78,14 @@ namespace UltimateXR.Manipulation
         public Quaternion AlignRotationOnGrab { get; set; }
 
         /// <summary>
+        ///     Gets or sets the source in local <see cref="UxrGrabber" /> coordinates where the source of leverage will be
+        ///     computed for <see cref="UxrRotationProvider.HandPositionAroundPivot" /> manipulation. This will improve rotation
+        ///     behaviour when the hands are rotated because otherwise the source of leverage is the grabber itself and rotating
+        ///     the hand will keep the grabber more or less stationary.
+        /// </summary>
+        public Vector3 GrabberLocalLeverageSource { get; set; }
+
+        /// <summary>
         ///     Gets or sets the <see cref="UxrGrabber" /> position in local avatar coordinates at the moment the
         ///     <see cref="UxrGrabbableObject" /> was grabbed.
         /// </summary>
@@ -90,14 +98,21 @@ namespace UltimateXR.Manipulation
         public Quaternion GrabberLocalAvatarRotationOnGrab { get; set; }
 
         /// <summary>
-        ///     Gets or sets the world-space hand bone position at the moment the <see cref="UxrGrabbableObject" /> was grabbed.
+        ///     Gets or sets the leverage source <see cref="GrabberLocalLeverageSource" /> in local avatar coordinates at the moment the <see cref="UxrGrabbableObject" /> was grabbed.
         /// </summary>
-        public Vector3 HandBonePositionOnGrab { get; set; }
+        public Vector3 GrabberLocalAvatarLeverageSourceOnGrab { get; set; }
 
         /// <summary>
-        ///     Gets or sets the world-space hand bone rotation at the moment the <see cref="UxrGrabbableObject" /> was grabbed.
+        ///     Gets or sets the hand bone position in local avatar coordinates at the moment the <see cref="UxrGrabbableObject" />
+        ///     was grabbed.
         /// </summary>
-        public Quaternion HandBoneRotationOnGrab { get; set; }
+        public Vector3 HandBoneLocalAvatarPositionOnGrab { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the hand bone rotation in local avatar coordinates at the moment the <see cref="UxrGrabbableObject" />
+        ///     was grabbed.
+        /// </summary>
+        public Quaternion HandBoneLocalAvatarRotationOnGrab { get; set; }
 
         /// <summary>
         ///     Gets or sets the decreasing timer that is initialized at <see cref="UxrGrabbableObject.ObjectAlignmentSeconds" />

@@ -390,22 +390,28 @@ namespace UltimateXR.Avatar.Controllers
             
             // Check with the help of the grab manager if we need to override the grab buttons based on proximity to a grabbable object that used non-default grab buttons.
 
-            if (UxrGrabManager.Instance.GetClosestGrabbableObject(Avatar, UxrHandSide.Left, out UxrGrabbableObject grabbableObjectLeft, out int grabPointLeft))
+            if (!UxrGrabManager.Instance.IsHandGrabbing(Avatar, UxrHandSide.Left))
             {
-                LeftHandGrabButtonsOverride = grabbableObjectLeft.GetGrabPoint(grabPointLeft).UseDefaultGrabButtons ? UxrInputButtons.Everything : grabbableObjectLeft.GetGrabPoint(grabPointLeft).InputButtons;
-            }
-            else
-            {
-                LeftHandGrabButtonsOverride = UxrInputButtons.Everything;
+                if (UxrGrabManager.Instance.GetClosestGrabbableObject(Avatar, UxrHandSide.Left, out UxrGrabbableObject grabbableObjectLeft, out int grabPointLeft))
+                {
+                    LeftHandGrabButtonsOverride = grabbableObjectLeft.GetGrabPoint(grabPointLeft).UseDefaultGrabButtons ? UxrInputButtons.Everything : grabbableObjectLeft.GetGrabPoint(grabPointLeft).InputButtons;
+                }
+                else
+                {
+                    LeftHandGrabButtonsOverride = UxrInputButtons.Everything;
+                }
             }
 
-            if (UxrGrabManager.Instance.GetClosestGrabbableObject(Avatar, UxrHandSide.Right, out UxrGrabbableObject grabbableObjectRight, out int grabPointRight))
+            if (!UxrGrabManager.Instance.IsHandGrabbing(Avatar, UxrHandSide.Right))
             {
-                RightHandGrabButtonsOverride = grabbableObjectRight.GetGrabPoint(grabPointRight).UseDefaultGrabButtons ? UxrInputButtons.Everything : grabbableObjectRight.GetGrabPoint(grabPointRight).InputButtons;
-            }
-            else
-            {
-                RightHandGrabButtonsOverride = UxrInputButtons.Everything;
+                if (UxrGrabManager.Instance.GetClosestGrabbableObject(Avatar, UxrHandSide.Right, out UxrGrabbableObject grabbableObjectRight, out int grabPointRight))
+                {
+                    RightHandGrabButtonsOverride = grabbableObjectRight.GetGrabPoint(grabPointRight).UseDefaultGrabButtons ? UxrInputButtons.Everything : grabbableObjectRight.GetGrabPoint(grabPointRight).InputButtons;
+                }
+                else
+                {
+                    RightHandGrabButtonsOverride = UxrInputButtons.Everything;
+                }
             }
 
             // Update only internal vars (are we grabbing and/or pointing?) but don't execute the actions. We might change things like the grab pose name at runtime

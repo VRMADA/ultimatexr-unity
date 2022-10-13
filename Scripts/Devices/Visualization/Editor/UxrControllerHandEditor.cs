@@ -97,8 +97,8 @@ namespace UltimateXR.Devices.Visualization.Editor
                         {
                             UxrAvatarRig.UpdateHandUsingDescriptor(controllerHand.Hand,
                                                                    selectedHandPose.GetHandDescriptor(handSide, selectedHandPose.PoseType, UxrBlendPoseType.OpenGrip),
-                                                                   avatar.AvatarRigInfo.GetHandUniversalLocalAxes(handSide),
-                                                                   avatar.AvatarRigInfo.GetFingerUniversalLocalAxes(handSide));
+                                                                   avatar.AvatarRigInfo.GetArmInfo(handSide).HandUniversalLocalAxes,
+                                                                   avatar.AvatarRigInfo.GetArmInfo(handSide).FingerUniversalLocalAxes);
                         }
 
                         GUI.enabled = true;

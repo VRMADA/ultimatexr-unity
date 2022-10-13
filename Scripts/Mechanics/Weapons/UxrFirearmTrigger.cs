@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System;
 using UltimateXR.Audio;
+using UltimateXR.Core.Math;
 using UltimateXR.Haptics;
 using UltimateXR.Manipulation;
 using UnityEngine;
@@ -31,7 +32,8 @@ namespace UltimateXR.Mechanics.Weapons
         [SerializeField] private UxrGrabbableObject       _triggerGrabbable;
         [SerializeField] private int                      _grabbableGrabPointIndex;
         [SerializeField] private Transform                _triggerTransform;
-        [SerializeField] private Vector3                  _triggerRotationOffset;
+        [SerializeField] private UxrAxis                  _triggerRotationAxis    = UxrAxis.X;
+        [SerializeField] private float                    _triggerRotationDegrees = 40.0f;
         [SerializeField] private UxrGrabbableObjectAnchor _ammunitionMagAnchor;
         [SerializeField] private float                    _recoilAngleOneHand   = 0.5f;
         [SerializeField] private float                    _recoilAngleTwoHands  = 2.0f;
@@ -90,9 +92,14 @@ namespace UltimateXR.Mechanics.Weapons
         public Transform TriggerTransform => _triggerTransform;
 
         /// <summary>
-        ///     Gets the local euler angles that the trigger will use to rotate when it is fully pressed.
+        ///     Gets the trigger rotation axis.
         /// </summary>
-        public Vector3 TriggerRotationOffset => _triggerRotationOffset;
+        public UxrAxis TriggerRotationAxis => _triggerRotationAxis;
+
+        /// <summary>
+        ///     Gets the amount of degrees that the trigger will rotate when it is fully pressed.
+        /// </summary>
+        public float TriggerRotationDegrees => _triggerRotationDegrees;
 
         /// <summary>
         ///     Gets the anchor where mags for ammo that will be shot using the trigger will be attached to.
@@ -139,9 +146,9 @@ namespace UltimateXR.Mechanics.Weapons
         internal bool HasReloaded { get; set; }
 
         /// <summary>
-        ///     Gets or sets the trigger's initial local euler angles.
+        ///     Gets or sets the trigger's initial local rotation.
         /// </summary>
-        internal Vector3 TriggerInitialLocalEuler { get; set; }
+        internal Quaternion TriggerInitialLocalRotation { get; set; }
 
         /// <summary>
         ///     Gets or sets the decreasing timer in seconds that will reach zero when the recoil animation finished.

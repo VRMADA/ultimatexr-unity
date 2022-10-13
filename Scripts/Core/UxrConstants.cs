@@ -13,13 +13,14 @@ namespace UltimateXR.Core
         #region Public Types & Data
 
         public const int MajorVersion = 0;
-        public const int MinorVersion = 8;
-        public const int PatchVersion = 4;
+        public const int MinorVersion = 9;
+        public const int PatchVersion = 0;
 
         public const string CoreModule         = "Core";
         public const string LocomotionModule   = "Locomotion";
         public const string ManipulationModule = "Manipulation";
         public const string UiModule           = "UI";
+        public const string WeaponsModule      = "Weapons";
 
         public const float TeleportTranslationSeconds = 0.2f;
         public const float TeleportRotationSeconds    = 0.1f;

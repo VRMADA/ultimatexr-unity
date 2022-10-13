@@ -81,7 +81,7 @@ namespace UltimateXR.Examples.FullScene.Lab
                         // Add constraints and place
 
                         GrabbableObject.TranslationConstraint = UxrTranslationConstraintMode.RestrictLocalOffset;
-                        GrabbableObject.RotationConstraint    = UxrRotationConstraintMode.RestrictLocalRotation;
+                        GrabbableObject.RotationConstraint    = UxrRotationConstraintMode.Locked;
 
                         UxrGrabManager.Instance.PlaceObject(GrabbableObject, batteryAnchor.Anchor, UxrPlacementType.Smooth, false);
 

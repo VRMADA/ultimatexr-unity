@@ -14,7 +14,7 @@ namespace UltimateXR.Core.Math
     ///     See the UxrAxisPropertyDrawer editor class for the integration with Unity Editor.
     /// </summary>
     [Serializable]
-    public class UxrAxis
+    public class UxrAxis : IEquatable<UxrAxis>
     {
         #region Inspector Properties/Serialized Fields
 
@@ -33,6 +33,11 @@ namespace UltimateXR.Core.Math
         /// </summary>
         public UxrAxis Perpendicular => (_axis + 1) % 3;
 
+        /// <summary>
+        ///     Returns the other perpendicular axis.
+        /// </summary>
+        public UxrAxis OtherPerpendicular => (_axis + 2) % 3;
+
         #endregion
 
         #region Constructors & Finalizer
@@ -43,7 +48,118 @@ namespace UltimateXR.Core.Math
         /// <param name="axis">Axis as an integer value</param>
         public UxrAxis(int axis)
         {
+#if UNITY_EDITOR
+            
+            if (axis < 0 || axis > 3)
+            {
+                Debug.LogError($"Assigning invalid value to axis: {axis}");
+            }
+            
+#endif
             _axis = Mathf.Clamp(axis, 0, 2);
+        }
+
+        #endregion
+
+        #region Implicit IEquatable<UxrAxis>
+
+        /// <inheritdoc />
+        public bool Equals(UxrAxis other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+            
+            return _axis == other._axis;
+        }
+
+        #endregion
+
+        #region Public Overrides object
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return _axis switch
+                   {
+                               0 => "Right",
+                               1 => "Up",
+                               _ => "Forward"
+                   };
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((UxrAxis)obj);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return _axis;
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        ///     Returns the remaining axis which is not axis1 nor axis2.
+        /// </summary>
+        /// <param name="axis1">Axis 1</param>
+        /// <param name="axis2">Axis 2</param>
+        /// <returns>The remaining axis which is not axis1 nor axis2</returns>
+        public static UxrAxis OtherThan(UxrAxis axis1, UxrAxis axis2)
+        {
+            if (axis1 == axis2)
+            {
+                Debug.LogError($"{nameof(UxrAxis)}: Got same axis for {nameof(OtherThan)} (axis1)");
+                return axis1.Perpendicular;
+            }
+
+            int smaller = axis1._axis < axis2._axis ? axis1._axis : axis2._axis;
+            int bigger  = axis1._axis > axis2._axis ? axis1._axis : axis2._axis;
+
+            if (smaller == 0 && bigger == 1)
+            {
+                return 2;
+            }
+            if (smaller == 0 && bigger == 2)
+            {
+                return 1;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        ///     Gets the color representing
+        /// </summary>
+        /// <param name="alpha"></param>
+        /// <returns></returns>
+        public Color GetColor(float alpha)
+        {
+            Vector3 axis = this;
+            return new Color(Mathf.Abs(axis.x), Mathf.Abs(axis.y), Mathf.Abs(axis.z), alpha);
         }
 
         #endregion
@@ -83,6 +199,38 @@ namespace UltimateXR.Core.Math
         public static implicit operator UxrAxis(int axis)
         {
             return new UxrAxis(axis);
+        }
+
+        /// <summary>
+        ///     Equality operator.
+        /// </summary>
+        /// <param name="a">Operand A</param>
+        /// <param name="b">Operand B</param>
+        /// <returns>Whether the two operands are equal</returns>
+        public static bool operator ==(UxrAxis a, UxrAxis b)
+        {
+            if (ReferenceEquals(a, null) && ReferenceEquals(b, null))
+            {
+                return true;
+            }
+
+            if (ReferenceEquals(a, null) || ReferenceEquals(b, null))
+            {
+                return false;
+            }
+
+            return a.Equals(b);
+        }
+
+        /// <summary>
+        ///     Inequality operator.
+        /// </summary>
+        /// <param name="a">Operand A</param>
+        /// <param name="b">Operand B</param>
+        /// <returns>Whether the two operands are different</returns>
+        public static bool operator !=(UxrAxis a, UxrAxis b)
+        {
+            return !(a == b);
         }
 
         /// <summary>

@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using UltimateXR.Core;
 using UltimateXR.Core.Components.Singleton;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ namespace UltimateXR.Mechanics.Weapons
     ///     Singleton manager in charge of updating projectiles, computing hits against entities and damage done on
     ///     <see cref="UxrActor" /> components.
     /// </summary>
-    public partial class UxrWeaponManager : UxrSingleton<UxrWeaponManager>
+    public partial class UxrWeaponManager : UxrSingleton<UxrWeaponManager>, IUxrLogger
     {
         #region Public Types & Data
 
@@ -35,6 +36,13 @@ namespace UltimateXR.Mechanics.Weapons
         ///     against the scenario that still generate decals, FX, etc.
         /// </summary>
         public event EventHandler<UxrNonDamagingImpactEventArgs> NonActorImpacted;
+
+        #endregion
+
+        #region Implicit IUxrLogger
+
+        /// <inheritdoc />
+        public UxrLogLevel LogLevel { get; set; } = UxrLogLevel.Relevant;
 
         #endregion
 
@@ -103,6 +111,8 @@ namespace UltimateXR.Mechanics.Weapons
         /// </summary>
         protected override void OnDestroy()
         {
+            base.OnDestroy();
+            
             UxrActor.GlobalEnabled  -= Actor_Enabled;
             UxrActor.GlobalDisabled -= Actor_Disabled;
         }
@@ -180,6 +190,12 @@ namespace UltimateXR.Mechanics.Weapons
         /// <param name="e">Event parameters</param>
         private void OnDamageReceived(UxrDamageEventArgs e)
         {
+            if (LogLevel >= UxrLogLevel.Relevant)
+            {
+                string sourceInfo = e.ActorSource != null ? $" from actor {e.ActorSource.name}." : string.Empty;
+                Debug.Log($"{UxrConstants.WeaponsModule}: Actor {e.ActorTarget.name} received {e.Damage} damage of type {e.DamageType}{sourceInfo}. Did die? {e.Dies}.");
+            }
+
             DamageReceived?.Invoke(this, e);
         }
 

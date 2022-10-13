@@ -18,6 +18,11 @@ namespace UltimateXR.Manipulation
         /// <summary>
         ///     Local rotation constraint.
         /// </summary>
-        RestrictLocalRotation
+        RestrictLocalRotation,
+
+        /// <summary>
+        ///     The <see cref="UxrGrabbableObject"/> cannot rotate.
+        /// </summary>
+        Locked
     }
 }

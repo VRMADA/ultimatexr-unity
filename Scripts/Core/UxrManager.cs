@@ -290,11 +290,11 @@ namespace UltimateXR.Core
         ///     the user, either other users through the network or other scenarios such as automated replays.
         /// </summary>
         /// <param name="newFloorPosition">
-        ///     Floor-level position the avatar will be teleported over. The camera position will be on top of the floor position,
-        ///     keeping the original eye-level.
+        ///     World-space floor-level position the avatar will be teleported over. The camera position will be on top of the
+        ///     floor position, keeping the original eye-level.
         /// </param>
         /// <param name="newRotation">
-        ///     Rotation the avatar will be teleported to. The camera will point in the rotation's forward direction.
+        ///     World-space rotation the avatar will be teleported to. The camera will point in the rotation's forward direction.
         /// </param>
         /// <param name="translationType">The type of translation to use. By default it will teleport immediately</param>
         /// <param name="transitionSeconds">
@@ -343,24 +343,98 @@ namespace UltimateXR.Core
         }
 
         /// <summary>
+        ///     Teleports the local <see cref="UxrAvatar" /> while making sure to keep relative position/orientation on moving
+        ///     objects. Some <paramref name="translationType" /> values have a transition before the teleport to avoid motion
+        ///     sickness. On worlds with moving platforms it is important to specify the destination transform so that:
+        ///     <list type="bullet">
+        ///         <item>Relative position/orientation to the destination is preserved.</item>
+        ///         <item>Optionally the local avatar can be parented to the new destination.</item>
+        ///     </list>
+        ///     The local avatar is the avatar controlled by the user using the headset and input controllers. Non-local avatars
+        ///     are other avatars instantiated in the scene but not controlled by the user, either other users through the network
+        ///     or other scenarios such as automated replays.
+        /// </summary>
+        /// <param name="referenceTransform">
+        ///     The object the avatar should keep relative position/orientation to. This should be the moving object the avatar has
+        ///     teleported on top of
+        /// </param>
+        /// <param name="parentToReference">
+        ///     Whether to parent the avatar to <paramref name="referenceTransform" />. The avatar should be parented if it's being
+        ///     teleported to a moving hierarchy it is not part of
+        /// </param>
+        /// <param name="newFloorPosition">
+        ///     World-space floor-level position the avatar will be teleported over. The camera position will be on top of the
+        ///     floor position, keeping the original eye-level.
+        /// </param>
+        /// <param name="newRotation">
+        ///     World-space rotation the avatar will be teleported to. The camera will point in the rotation's forward direction.
+        /// </param>
+        /// <param name="translationType">The type of translation to use. By default it will teleport immediately</param>
+        /// <param name="transitionSeconds">
+        ///     If <paramref name="translationType" /> has a duration, it will specify how long the
+        ///     teleport transition will take in seconds. By default it is <see cref="UxrConstants.TeleportTranslationSeconds" />
+        /// </param>
+        /// <param name="teleportedCallback">
+        ///     Optional callback executed depending on the teleportation mode:
+        ///     <list type="bullet">
+        ///         <item><see cref="UxrTranslationType.Immediate" />: Right after finishing the teleportation.</item>
+        ///         <item>
+        ///             <see cref="UxrTranslationType.Fade" />: When the screen is completely faded out and the avatar has been
+        ///             moved, before fading back in. This can be used to enable/disable/change GameObjects in the scene since the
+        ///             screen at this point is fully rendered using the fade color.
+        ///         </item>
+        ///         <item><see cref="UxrTranslationType.Smooth" />: Right after finishing the teleportation.</item>
+        ///     </list>
+        /// </param>
+        /// <param name="finishedCallback">
+        ///     Optional callback executed right after the teleportation finished. It will receive a boolean parameter telling
+        ///     whether the teleport finished completely (true) or was cancelled (false). If a fade effect has been requested, the
+        ///     callback is executed right after the screen has faded back in.
+        /// </param>
+        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <returns>Coroutine enumerator</returns>
+        /// <remarks>
+        ///     If <see cref="UxrTranslationType.Fade" /> translation mode was specified, the default black fade color can be
+        ///     changed using <see cref="TeleportFadeColor" />.
+        /// </remarks>
+        public void TeleportLocalAvatarRelative(Transform          referenceTransform,
+                                                bool               parentToReference,
+                                                Vector3            newFloorPosition,
+                                                Quaternion         newRotation,
+                                                UxrTranslationType translationType    = UxrTranslationType.Immediate,
+                                                float              transitionSeconds  = UxrConstants.TeleportTranslationSeconds,
+                                                Action             teleportedCallback = null,
+                                                Action<bool>       finishedCallback   = null,
+                                                bool               propagateEvents    = true)
+        {
+            if (_teleportCoroutine != null)
+            {
+                StopCoroutine(_teleportCoroutine);
+            }
+
+            Vector3    newRelativeFloorPosition = referenceTransform != null ? referenceTransform.InverseTransformPoint(newFloorPosition) : newFloorPosition;
+            Quaternion newRelativeRotation      = referenceTransform != null ? Quaternion.Inverse(referenceTransform.rotation) * newRotation : newRotation;
+            bool       hasFinished              = false;
+
+            _teleportCoroutine = StartCoroutine(TeleportLocalAvatarRelativeCoroutine(referenceTransform, parentToReference, newRelativeFloorPosition, newRelativeRotation, translationType, transitionSeconds, teleportedCallback, () => hasFinished = true, propagateEvents));
+
+            finishedCallback?.Invoke(hasFinished);
+        }
+
+        /// <summary>
         ///     <para>
-        ///         Asynchronous version of
-        ///         <see
-        ///             cref="TeleportLocalAvatar(UnityEngine.Vector3,UnityEngine.Quaternion,VRMADA.UltimateXR.Locomotion.UxrTranslationType,float,System.Action,System.Action)">
-        ///             TeleportLocalAvatar
-        ///         </see>
-        ///         .
+        ///         Asynchronous version of <see cref="TeleportLocalAvatar"> TeleportLocalAvatar</see>.
         ///     </para>
         ///     Teleports the local <see cref="UxrAvatar" />. The local avatar is the avatar controlled by the user using the
         ///     headset and input controllers. Non-local avatars are other avatars instantiated in the scene but not controlled by
         ///     the user, either other users through the network or other scenarios such as automated replays.
         /// </summary>
         /// <param name="newFloorPosition">
-        ///     Floor-level position the avatar will be teleported over. The camera position will be on top of the floor position,
-        ///     keeping the original eye-level.
+        ///     World-space floor-level position the avatar will be teleported over. The camera position will be on top of the
+        ///     floor position, keeping the original eye-level.
         /// </param>
         /// <param name="newRotation">
-        ///     Rotation the avatar will be teleported to. The camera will point in the rotation's forward direction.
+        ///     World-space rotation the avatar will be teleported to. The camera will point in the rotation's forward direction.
         /// </param>
         /// <param name="translationType">The type of translation to use. By default it will teleport immediately</param>
         /// <param name="transitionSeconds">
@@ -399,6 +473,77 @@ namespace UltimateXR.Core
 
             Coroutine teleportCoroutine = StartCoroutine(TeleportLocalAvatarCoroutine(newFloorPosition, newRotation, translationType, transitionSeconds, teleportedCallback, () => finished = true, propagateEvents));
             await TaskExt.WaitUntil(() => finished, ct);
+
+            if (ct.IsCancellationRequested)
+            {
+                StopCoroutine(teleportCoroutine);
+            }
+        }
+
+        /// <summary>
+        ///     <para>
+        ///         Asynchronous version of <see cref="TeleportLocalAvatarRelative"> TeleportLocalAvatar</see>.
+        ///     </para>
+        ///     Teleports the local <see cref="UxrAvatar" />. The local avatar is the avatar controlled by the user using the
+        ///     headset and input controllers. Non-local avatars are other avatars instantiated in the scene but not controlled by
+        ///     the user, either other users through the network or other scenarios such as automated replays.
+        /// </summary>
+        /// <param name="referenceTransform">
+        ///     The object the avatar should keep relative position/orientation to. This should be the moving object the avatar has
+        ///     teleported on top of
+        /// </param>
+        /// <param name="parentToReference">
+        ///     Whether to parent the avatar to <paramref name="referenceTransform" />. The avatar should be parented if it's being
+        ///     teleported to a moving hierarchy it is not part of
+        /// </param>
+        /// <param name="newFloorPosition">
+        ///     World-space floor-level position the avatar will be teleported over. The camera position will be on top of the
+        ///     floor position, keeping the original eye-level.
+        /// </param>
+        /// <param name="newRotation">
+        ///     World-space rotation the avatar will be teleported to. The camera will point in the rotation's forward direction.
+        /// </param>
+        /// <param name="translationType">The type of translation to use. By default it will teleport immediately</param>
+        /// <param name="transitionSeconds">
+        ///     If <paramref name="translationType" /> has a duration, it will specify how long the
+        ///     teleport transition will take in seconds. By default it is <see cref="UxrConstants.TeleportTranslationSeconds" />
+        /// </param>
+        /// <param name="teleportedCallback">
+        ///     Optional callback executed depending on the teleportation mode:
+        ///     <list type="bullet">
+        ///         <item><see cref="UxrTranslationType.Immediate" />: Right after finishing the teleportation.</item>
+        ///         <item>
+        ///             <see cref="UxrTranslationType.Fade" />: When the screen is completely faded out and the avatar has been
+        ///             moved, before fading back in. This can be used to enable/disable/change GameObjects in the scene since the
+        ///             screen at this point is fully rendered using the fade color.
+        ///         </item>
+        ///         <item><see cref="UxrTranslationType.Smooth" />: Right after finishing the teleportation.</item>
+        ///     </list>
+        /// </param>
+        /// <param name="ct">Optional cancellation token that can be used to cancel the task</param>
+        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <returns>Awaitable <see cref="Task" /> that will finish after the avatar was teleported or if it was cancelled</returns>
+        /// <exception cref="TaskCanceledException">Task was canceled using <paramref name="ct" /></exception>
+        /// <remarks>
+        ///     If <see cref="UxrTranslationType.Fade" /> translation mode was specified, the default black fade color can be
+        ///     changed using <see cref="TeleportFadeColor" />.
+        /// </remarks>
+        public async Task TeleportLocalAvatarRelativeAsync(Transform          referenceTransform,
+                                                           bool               parentToReference,
+                                                           Vector3            newFloorPosition,
+                                                           Quaternion         newRotation,
+                                                           UxrTranslationType translationType    = UxrTranslationType.Immediate,
+                                                           float              transitionSeconds  = UxrConstants.TeleportTranslationSeconds,
+                                                           Action             teleportedCallback = null,
+                                                           CancellationToken  ct                 = default,
+                                                           bool               propagateEvents    = true)
+        {
+            Vector3    newRelativeFloorPosition = referenceTransform != null ? referenceTransform.InverseTransformPoint(newFloorPosition) : newFloorPosition;
+            Quaternion newRelativeRotation      = referenceTransform != null ? Quaternion.Inverse(referenceTransform.rotation) * newRotation : newRotation;
+            bool       hasFinished              = false;
+
+            Coroutine teleportCoroutine = StartCoroutine(TeleportLocalAvatarRelativeCoroutine(referenceTransform, parentToReference, newRelativeFloorPosition, newRelativeRotation, translationType, transitionSeconds, teleportedCallback, () => hasFinished = true, propagateEvents));
+            await TaskExt.WaitUntil(() => hasFinished, ct);
 
             if (ct.IsCancellationRequested)
             {
@@ -523,6 +668,8 @@ namespace UltimateXR.Core
         /// </summary>
         protected override void OnDestroy()
         {
+            base.OnDestroy();
+
             UxrAvatar.GlobalEnabled    -= Avatar_Enabled;
             SceneManager.sceneLoaded   -= SceneManager_SceneLoaded;
             SceneManager.sceneUnloaded -= SceneManager_SceneUnloaded;
@@ -583,6 +730,9 @@ namespace UltimateXR.Core
 
         /// <summary>
         ///     Public teleporting coroutine that can be yielded from an external coroutine.
+        ///     Teleports the local <see cref="UxrAvatar" />. The local avatar is the avatar controlled by the user using the
+        ///     headset and input controllers. Non-local avatars are other avatars instantiated in the scene but not controlled by
+        ///     the user, either other users through the network or other scenarios such as automated replays.
         /// </summary>
         /// <param name="newFloorPosition">
         ///     Floor-level position the avatar will be teleported over. The camera position will be on top of the floor position,
@@ -627,24 +777,104 @@ namespace UltimateXR.Core
                                                         Action             finishedCallback   = null,
                                                         bool               propagateEvents    = true)
         {
+            yield return TeleportLocalAvatarRelativeCoroutine(null, false, newFloorPosition, newRotation, translationType, transitionSeconds, teleportedCallback, finishedCallback, propagateEvents);
+        }
+
+        /// <summary>
+        ///     Public teleporting coroutine that can be yielded from an external coroutine.
+        ///     Teleports the local <see cref="UxrAvatar" /> while making sure to keep relative position/orientation on moving
+        ///     objects. Some <paramref name="translationType" /> values have a transition before the teleport to avoid motion
+        ///     sickness. On worlds with moving platforms it is important to specify the destination transform so that:
+        ///     <list type="bullet">
+        ///         <item>Relative position/orientation to the destination is preserved.</item>
+        ///         <item>Optionally the local avatar can be parented to the new destination.</item>
+        ///     </list>
+        ///     The local avatar is the avatar controlled by the user using the headset and input controllers. Non-local avatars
+        ///     are other avatars instantiated in the scene but not controlled by the user, either other users through the network
+        ///     or other scenarios such as automated replays.
+        /// </summary>
+        /// <param name="referenceTransform">
+        ///     The object the avatar should keep relative position/orientation to. This should be the moving object the avatar has
+        ///     teleported on top of. If null, <paramref name="newRelativeFloorPosition" /> and
+        ///     <paramref name="newRelativeRotation" /> will be interpreted as world coordinates.
+        /// </param>
+        /// <param name="parentToReference">
+        ///     Whether to parent the avatar to <paramref name="referenceTransform" />. The avatar should be parented if it's being
+        ///     teleported to a moving hierarchy it is not part of
+        /// </param>
+        /// <param name="newRelativeFloorPosition">
+        ///     New floor-level position the avatar will be teleported over in <paramref name="referenceTransform" /> local
+        ///     coordinates. If <paramref name="referenceTransform" /> is null, coordinates will be interpreted as being in
+        ///     world-space. The camera position will be on top of the floor position, keeping the original eye-level.
+        /// </param>
+        /// <param name="newRelativeRotation">
+        ///     Local rotation the avatar will be teleported to with respect to <see cref="referenceTransform" />. If
+        ///     <paramref name="referenceTransform" /> is null, rotation will be in world-space. The camera will point in the
+        ///     rotation's forward direction.
+        /// </param>
+        /// <param name="translationType">The type of translation to use. By default it will teleport immediately</param>
+        /// <param name="transitionSeconds">
+        ///     If <paramref name="translationType" /> has a duration, it will specify how long the
+        ///     teleport transition will take in seconds. By default it is <see cref="UxrConstants.TeleportTranslationSeconds" />
+        /// </param>
+        /// <param name="teleportedCallback">
+        ///     Optional callback executed depending on the teleportation mode:
+        ///     <list type="bullet">
+        ///         <item><see cref="UxrTranslationType.Immediate" />: Right after finishing the teleportation.</item>
+        ///         <item>
+        ///             <see cref="UxrTranslationType.Fade" />: When the screen is completely faded out and the avatar has been
+        ///             moved, before fading back in. This can be used to enable/disable/change GameObjects in the scene since the
+        ///             screen at this point is fully rendered using the fade color.
+        ///         </item>
+        ///         <item><see cref="UxrTranslationType.Smooth" />: Right after finishing the teleportation.</item>
+        ///     </list>
+        /// </param>
+        /// <param name="finishedCallback">
+        ///     Optional callback executed right after the teleportation finished. If a fade effect has been requested, the
+        ///     callback is executed right after the screen has faded back in.
+        /// </param>
+        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <returns>Coroutine enumerator</returns>
+        /// <remarks>
+        ///     If <see cref="UxrTranslationType.Fade" /> translation mode was specified, the default black fade color can be
+        ///     changed using <see cref="TeleportFadeColor" />.
+        /// </remarks>
+        public IEnumerator TeleportLocalAvatarRelativeCoroutine(Transform          referenceTransform,
+                                                                bool               parentToReference,
+                                                                Vector3            newRelativeFloorPosition,
+                                                                Quaternion         newRelativeRotation,
+                                                                UxrTranslationType translationType    = UxrTranslationType.Immediate,
+                                                                float              transitionSeconds  = UxrConstants.TeleportTranslationSeconds,
+                                                                Action             teleportedCallback = null,
+                                                                Action             finishedCallback   = null,
+                                                                bool               propagateEvents    = true)
+        {
             if (UxrAvatar.LocalAvatar)
             {
-                Transform avatarTransform = UxrAvatar.LocalAvatar.transform;
-
-                Vector3    oldAvatarPosition = avatarTransform.position;
-                Quaternion oldAvatarRotation = avatarTransform.rotation;
+                Vector3    oldFloorPosition         = UxrAvatar.LocalAvatar.CameraFloorPosition;
+                Quaternion oldFloorRotation         = Quaternion.LookRotation(UxrAvatar.LocalAvatar.ProjectedCameraForward);
+                Quaternion inverseReferenceRotation = referenceTransform != null ? Quaternion.Inverse(referenceTransform.rotation) : Quaternion.identity;
+                Matrix4x4  inverseReferenceMatrix   = referenceTransform != null ? referenceTransform.localToWorldMatrix.inverse : Matrix4x4.identity;
+                Vector3    oldRelativePosition      = inverseReferenceMatrix * oldFloorPosition;
+                Quaternion oldRelativeRotation      = inverseReferenceRotation * oldFloorRotation;
 
                 void TranslateAvatarInternal(float t = 1.0f)
                 {
-                    Vector3    newPositionInternal = Vector3.Lerp(oldAvatarPosition, newFloorPosition, t);
-                    Quaternion newRotationInternal = oldAvatarRotation;
+                    Vector3    newPos = Vector3.Lerp(oldRelativePosition, newRelativeFloorPosition, t);
+                    Quaternion newRot = oldRelativeRotation;
 
                     if (Mathf.Approximately(t, 1.0f))
                     {
-                        newRotationInternal = newRotation;
+                        newRot = newRelativeRotation;
                     }
 
-                    MoveAvatarTo(UxrAvatar.LocalAvatar, newPositionInternal, newRotationInternal * Vector3.forward, propagateEvents);
+                    if (referenceTransform != null)
+                    {
+                        newPos = referenceTransform.TransformPoint(newPos);
+                        newRot = referenceTransform.rotation * newRot;
+                    }
+
+                    MoveAvatarTo(UxrAvatar.LocalAvatar, newPos, newRot * Vector3.forward, propagateEvents);
                 }
 
                 switch (translationType)
@@ -671,6 +901,11 @@ namespace UltimateXR.Core
                         yield return this.LoopCoroutine(transitionSeconds, TranslateAvatarInternal, UxrEasing.Linear, true);
 
                         break;
+                }
+
+                if (parentToReference && referenceTransform != null)
+                {
+                    UxrAvatar.LocalAvatar.transform.SetParent(referenceTransform);
                 }
             }
 
@@ -720,11 +955,11 @@ namespace UltimateXR.Core
         {
             if (UxrAvatar.LocalAvatar)
             {
-                Transform avatarTransform = UxrAvatar.LocalAvatar.transform;
-                Vector3   initialForward  = UxrAvatar.LocalAvatar.ProjectedCameraForward;
-
                 void RotateAvatarInternal(float t = 1.0f)
                 {
+                    Transform avatarTransform = UxrAvatar.LocalAvatar.transform;
+                    Vector3   initialForward  = UxrAvatar.LocalAvatar.ProjectedCameraForward;
+
                     MoveAvatarTo(UxrAvatar.LocalAvatar, UxrAvatar.LocalAvatar.CameraFloorPosition, initialForward.GetRotationAround(avatarTransform.up, degrees * t), propagateEvents);
                 }
 
@@ -836,9 +1071,9 @@ namespace UltimateXR.Core
                         }
                     }
                 }
-            }
 
-            TryPrecaching();
+                TryPrecaching();
+            }
         }
 
         /// <summary>
@@ -962,7 +1197,7 @@ namespace UltimateXR.Core
                     ((IUxrAvatarControllerUpdater)avatarController).UpdateAvatarAnimation();
                     OnAvatarUpdated(avatar, new UxrAvatarUpdateEventArgs(avatar, UxrUpdateStage.Animation));
                 }
-                else if(avatar.AvatarMode == UxrAvatarMode.UpdateExternally)
+                else if (avatar.AvatarMode == UxrAvatarMode.UpdateExternally)
                 {
                     // This makes sure that hand poses are updated 
                     OnAvatarUpdating(avatar, new UxrAvatarUpdateEventArgs(avatar, UxrUpdateStage.Animation));

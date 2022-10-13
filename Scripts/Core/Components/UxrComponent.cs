@@ -99,49 +99,59 @@ namespace UltimateXR.Core.Components
         public bool IsApplicationQuitting { get; private set; }
 
         /// <summary>
-        ///     The <see cref="Transform.parent" /> value at the moment of <see cref="Awake" />
+        ///     Gets the <see cref="Transform.parent" /> value at the moment of <see cref="Awake" />
         /// </summary>
         public Transform InitialParent { get; private set; }
 
         /// <summary>
-        ///     The <see cref="Transform.localPosition" /> value at the moment of <see cref="Awake" />
+        ///     Gets the <see cref="Transform.localPosition" /> value at the moment of <see cref="Awake" />
         /// </summary>
         public Vector3 InitialLocalPosition { get; private set; } = Vector3.zero;
 
         /// <summary>
-        ///     The <see cref="Transform.localRotation" /> value at the moment of <see cref="Awake" />
+        ///     Gets the <see cref="Transform.localRotation" /> value at the moment of <see cref="Awake" />
         /// </summary>
         public Quaternion InitialLocalRotation { get; private set; } = Quaternion.identity;
 
         /// <summary>
-        ///     The <see cref="Transform.localEulerAngles" /> value at the moment of <see cref="Awake" />
+        ///     Gets the <see cref="Transform.localEulerAngles" /> value at the moment of <see cref="Awake" />
         /// </summary>
         public Vector3 InitialLocalEulerAngles { get; private set; } = Vector3.zero;
 
         /// <summary>
-        ///     The <see cref="Transform.localScale" /> value at the moment of <see cref="Awake" />
+        ///     Gets the <see cref="Transform.localScale" /> value at the moment of <see cref="Awake" />
         /// </summary>
         public Vector3 InitialLocalScale { get; private set; } = Vector3.zero;
 
         /// <summary>
-        ///     The <see cref="Transform.lossyScale" /> value at the moment of <see cref="Awake" />
+        ///     Gets the <see cref="Transform.lossyScale" /> value at the moment of <see cref="Awake" />
         /// </summary>
         public Vector3 InitialLossyScale { get; private set; } = Vector3.zero;
 
         /// <summary>
-        ///     The <see cref="Transform.position" /> value at the moment of <see cref="Awake" />
+        ///     Gets the <see cref="Transform.position" /> value at the moment of <see cref="Awake" />
         /// </summary>
         public Vector3 InitialPosition { get; private set; } = Vector3.zero;
 
         /// <summary>
-        ///     The <see cref="Transform.rotation" /> value at the moment of <see cref="Awake" />
+        ///     Gets the <see cref="Transform.rotation" /> value at the moment of <see cref="Awake" />
         /// </summary>
         public Quaternion InitialRotation { get; private set; } = Quaternion.identity;
 
         /// <summary>
-        ///     The <see cref="Transform.eulerAngles" /> value at the moment of <see cref="Awake" />
+        ///     Gets the <see cref="Transform.eulerAngles" /> value at the moment of <see cref="Awake" />
         /// </summary>
         public Vector3 InitialEulerAngles { get; private set; } = Vector3.zero;
+
+        /// <summary>
+        ///     Gets the transformation matrix relative to the parent transform at the moment of <see cref="Awake"/> 
+        /// </summary>
+        public Matrix4x4 InitialRelativeMatrix { get; private set; } = Matrix4x4.identity;
+        
+        /// <summary>
+        ///     Gets the <see cref="Transform.localToWorldMatrix"/> value at the moment of <see cref="Awake"/> 
+        /// </summary>
+        public Matrix4x4 InitialLocalToWorldMatrix { get; private set; } = Matrix4x4.identity;
 
         #endregion
 
@@ -204,6 +214,28 @@ namespace UltimateXR.Core.Components
         }
 
         /// <summary>
+        ///     Caches the data of the GameObject's <see cref="Transform" /> component.
+        ///     This is called on Awake() but can be called by the user at any point of the program to re-compute the values again
+        ///     using the current state. This can be useful when an object is re-parented and the data using the new parenting
+        ///     is more meaningful.
+        /// </summary>
+        public void RecomputeInitialTransformData()
+        {
+            Transform tf = transform;
+            InitialParent             = tf.parent;
+            InitialLocalPosition      = tf.localPosition;
+            InitialLocalRotation      = tf.localRotation;
+            InitialLocalEulerAngles   = tf.localEulerAngles;
+            InitialLocalScale         = tf.localScale;
+            InitialLossyScale         = tf.lossyScale;
+            InitialPosition           = tf.position;
+            InitialRotation           = tf.rotation;
+            InitialEulerAngles        = tf.eulerAngles;
+            InitialRelativeMatrix     = Matrix4x4.TRS(tf.localPosition, tf.localRotation, tf.localScale);
+            InitialLocalToWorldMatrix = tf.localToWorldMatrix;
+        }
+
+        /// <summary>
         ///     Returns a Unity <see cref="Component" /> cached by type given that there is only one in the GameObject.
         ///     If there is more than one, it will return the first that <see cref="GameObject.GetComponent{T}" /> gets.
         ///     This method is mainly used to avoid boilerplate code in property getters that return internally cached components.
@@ -238,16 +270,7 @@ namespace UltimateXR.Core.Components
         {
             // Store initial transform data
 
-            Transform tf = transform;
-            InitialParent           = tf.parent;
-            InitialLocalPosition    = tf.localPosition;
-            InitialLocalRotation    = tf.localRotation;
-            InitialLocalEulerAngles = tf.localEulerAngles;
-            InitialLocalScale       = tf.localScale;
-            InitialLossyScale       = tf.lossyScale;
-            InitialPosition         = tf.position;
-            InitialRotation         = tf.rotation;
-            InitialEulerAngles      = tf.eulerAngles;
+            RecomputeInitialTransformData();
 
             // Compute Id using unique scene path and handling collisions
 
@@ -399,7 +422,7 @@ namespace UltimateXR.Core.Components
         /// <summary>
         ///     Static dictionary of path collisions so that unique ids are generated.
         /// </summary>
-        private static Dictionary<string, int> s_idCollisions = new Dictionary<string, int>();
+        private static readonly Dictionary<string, int> s_idCollisions = new Dictionary<string, int>();
 
         /// <summary>
         ///     Dictionary of cached components by type.

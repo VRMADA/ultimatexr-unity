@@ -3,9 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Avatar;
 using UltimateXR.Extensions.System;
+using UltimateXR.Extensions.Unity.Math;
 using UltimateXR.Manipulation;
 using UltimateXR.UI.UnityInputModule;
 using UnityEngine;
@@ -148,8 +150,9 @@ namespace UltimateXR.Extensions.Unity
         public static Vector3 GetGeometricCenter(this GameObject self)
         {
             MeshRenderer[] meshRenderers = self.GetComponentsInChildren<MeshRenderer>();
-            Vector3        min           = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
-            Vector3        max           = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+            bool           initialized   = false;
+            Vector3        min           = Vector3.zero;
+            Vector3        max           = Vector3.zero;
 
             if (meshRenderers.Length == 0)
             {
@@ -158,11 +161,80 @@ namespace UltimateXR.Extensions.Unity
 
             foreach (MeshRenderer renderer in meshRenderers)
             {
-                min = Vector3.Min(min, renderer.bounds.min);
-                max = Vector3.Max(max, renderer.bounds.max);
+                if (!initialized)
+                {
+                    initialized = true;
+                    min         = renderer.bounds.min;
+                    max         = renderer.bounds.max;
+                }
+                else
+                {
+                    min = Vector3.Min(min, renderer.bounds.min);
+                    max = Vector3.Max(max, renderer.bounds.max);
+                }
             }
 
             return (min + max) * 0.5f;
+        }
+
+        /// <summary>
+        ///     Calculates the <see cref="GameObject" /> <see cref="Bounds" />. The bounds are the <see cref="Renderer" />'s bounds
+        ///     if there is one in the GameObject. Otherwise it will encapsulate all renderers found in the children.
+        /// </summary>
+        /// <param name="self">The GameObject whose <see cref="Bounds" /> to get</param>
+        /// <returns>
+        ///     <see cref="Bounds" /> of the GameObject if there is a <see cref="Renderer" /> component in it, or the
+        ///     <see cref="Bounds" /> that encapsulates all children renderers otherwise
+        /// </returns>
+        public static Bounds GetBounds(this GameObject self)
+        {
+            Renderer renderer = self.GetComponent<Renderer>();
+
+            if (renderer != null)
+            {
+                return renderer.bounds;
+            }
+
+            Renderer[] renderers = self.GetComponentsInChildren<Renderer>();
+
+            Vector3 min = Vector3Ext.Min(renderers.Select(r => r.bounds.min));
+            Vector3 max = Vector3Ext.Max(renderers.Select(r => r.bounds.max));
+
+            return new Bounds((max - min) * 0.5f, max - min);
+        }
+
+        /// <summary>
+        ///     Calculates the <see cref="GameObject" /> <see cref="Bounds" /> in local space. The bounds are the
+        ///     <see cref="Renderer" />'s bounds if there is one in the GameObject. Otherwise it will encapsulate all renderers
+        ///     found in the children.
+        ///     If <paramref name="forceRecurseIntoChildren" /> is true, it will also encapsulate all renderers found in
+        ///     the children no matter if the GameObject has a Renderer component or not.
+        /// </summary>
+        /// <param name="self">The GameObject whose local <see cref="Bounds" /> to get</param>
+        /// <param name="forceRecurseIntoChildren">
+        ///     Whether to also encapsulate all renderers found in the children no matter if the
+        ///     GameObject has a Renderer component or not
+        /// </param>
+        /// <returns>
+        ///     Local <see cref="Bounds" /> of the GameObject if there is a <see cref="Renderer" /> component in it, or the
+        ///     <see cref="Bounds" /> that encapsulates all children renderers otherwise
+        /// </returns>
+        public static Bounds GetLocalBounds(this GameObject self, bool forceRecurseIntoChildren)
+        {
+            Renderer renderer = self.GetComponent<Renderer>();
+
+            if (renderer != null && !forceRecurseIntoChildren)
+            {
+                return renderer.localBounds;
+            }
+
+            IEnumerable<Renderer> renderers = self.GetComponentsInChildren<Renderer>().Where(r => !r.hideFlags.HasFlag(HideFlags.HideInHierarchy));
+
+            IEnumerable<Vector3> allMinMaxToLocal = renderers.Select(r => self.transform.InverseTransformPoint(r.transform.TransformPoint(r.localBounds.min))).Concat(renderers.Select(r => self.transform.InverseTransformPoint(r.transform.TransformPoint(r.localBounds.max))));
+            Vector3     min       = Vector3Ext.Min(allMinMaxToLocal);
+            Vector3     max       = Vector3Ext.Max(allMinMaxToLocal);
+
+            return new Bounds((max + min) * 0.5f, max - min);
         }
 
         /// <summary>

@@ -6,10 +6,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Core;
-using UltimateXR.Devices.Visualization;
 using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
+using UltimateXR.Extensions.Unity.Render;
 using UnityEngine;
 
 namespace UltimateXR.Avatar.Rig
@@ -31,11 +31,10 @@ namespace UltimateXR.Avatar.Rig
                 return null;
             }
 
-            SkinnedMeshRenderer[] skins               = avatar.GetComponentsInChildren<SkinnedMeshRenderer>();
-            SkinnedMeshRenderer   mostInfluentialSkin = null;
-            int                   maxInfluenceCount   = 0;
+            SkinnedMeshRenderer mostInfluentialSkin = null;
+            int                 maxInfluenceCount   = 0;
 
-            foreach (SkinnedMeshRenderer skin in skins)
+            foreach (SkinnedMeshRenderer skin in avatar.GetAllAvatarRendererComponents())
             {
                 if (!skin.gameObject.activeInHierarchy)
                 {
@@ -46,33 +45,7 @@ namespace UltimateXR.Avatar.Rig
 
                 foreach (Transform bone in avatar.GetHand(handSide).Transforms)
                 {
-                    Transform[] skinBones = skin.bones;
-
-                    if (skinBones.Contains(bone))
-                    {
-                        int          boneIndex   = skinBones.IndexOf(bone);
-                        BoneWeight[] boneWeights = skin.sharedMesh.boneWeights;
-
-                        foreach (BoneWeight boneWeight in boneWeights)
-                        {
-                            if (boneWeight.boneIndex0 == boneIndex && boneWeight.weight0 > SignificantWeightInfluence)
-                            {
-                                influenceCount++;
-                            }
-                            if (boneWeight.boneIndex1 == boneIndex && boneWeight.weight1 > SignificantWeightInfluence)
-                            {
-                                influenceCount++;
-                            }
-                            if (boneWeight.boneIndex2 == boneIndex && boneWeight.weight2 > SignificantWeightInfluence)
-                            {
-                                influenceCount++;
-                            }
-                            if (boneWeight.boneIndex3 == boneIndex && boneWeight.weight3 > SignificantWeightInfluence)
-                            {
-                                influenceCount++;
-                            }
-                        }
-                    }
+                    influenceCount += MeshExt.GetBoneInfluenceVertexCount(skin, bone);
                 }
 
                 if (influenceCount > maxInfluenceCount)
@@ -280,7 +253,7 @@ namespace UltimateXR.Avatar.Rig
         ///     Tries to infer rig elements by doing some checks on names and bone hierarchy.
         ///     This is useful when we have a rig that has no full humanoid avatar set up on its animator .
         /// </summary>
-        public static void TryToInferMissingRigElements(UxrAvatarRig rig, SkinnedMeshRenderer[] skins)
+        public static void TryToInferMissingRigElements(UxrAvatarRig rig, IEnumerable<SkinnedMeshRenderer> skins)
         {
             if (rig != null)
             {
@@ -434,13 +407,10 @@ namespace UltimateXR.Avatar.Rig
                     rig.RightArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "wrist", "r");
                 }
 
-                for (int i = 0; i < skins.Length; ++i)
+                foreach (SkinnedMeshRenderer skin in skins)
                 {
-                    if (skins[i])
-                    {
-                        TryToResolveArm(rig._leftArm,  skins[i]);
-                        TryToResolveArm(rig._rightArm, skins[i]);
-                    }
+                    TryToResolveArm(rig._leftArm,  skin);
+                    TryToResolveArm(rig._rightArm, skin);
                 }
 
                 // Legs
@@ -682,19 +652,6 @@ namespace UltimateXR.Avatar.Rig
         #region Private Methods
 
         /// <summary>
-        ///     Checks whether the bone is a valid bone when trying to infer rig elements.
-        /// </summary>
-        /// <param name="bone">Bone to check</param>
-        /// <returns>Whether it is a valid bone</returns>
-        private static bool IsValidAvatarBone(Transform bone)
-        {
-            // Is it part of an enabled controller hand or a hand integration? -> Ignore
-
-            UxrControllerHand controllerHand = bone.GetComponentInParent<UxrControllerHand>();
-            return !(controllerHand != null && controllerHand.enabled) && bone.GetComponentInParent<UxrHandIntegration>() == null;
-        }
-
-        /// <summary>
         ///     Tries to fine a bone with a unique name in the hierarchy.
         /// </summary>
         /// <param name="skins">Skins with the bones where to look for</param>
@@ -704,12 +661,9 @@ namespace UltimateXR.Avatar.Rig
         /// </param>
         /// <param name="alternatives">Different alternative names to use in case <paramref name="name" /> isn't found</param>
         /// <returns>The transform or null if it wasn't found or there were two or more candidates</returns>
-        private static Transform TryToResolveBoneUniqueOr(SkinnedMeshRenderer[] skins, string name, params string[] alternatives)
+        private static Transform TryToResolveBoneUniqueOr(IEnumerable<SkinnedMeshRenderer> skins, string name, params string[] alternatives)
         {
-            Transform candidate;
-            int       candidateOccurrences;
-
-            TryToResolveNonControllerHandBoneUniqueOr(skins, out candidate, out candidateOccurrences, name, alternatives);
+            TryToResolveNonControllerHandBoneUniqueOr(skins, out Transform candidate, out int candidateOccurrences, name, alternatives);
 
             return candidate != null && candidateOccurrences == 1 ? candidate : null;
         }
@@ -725,7 +679,7 @@ namespace UltimateXR.Avatar.Rig
         ///     name, ends with the name or contains the name but always uniquely.
         /// </param>
         /// <param name="alternatives">Different alternative names to use in case <paramref name="name" /> isn't found</param>
-        private static void TryToResolveNonControllerHandBoneUniqueOr(SkinnedMeshRenderer[] skins, out Transform candidate, out int candidateCount, string name, params string[] alternatives)
+        private static void TryToResolveNonControllerHandBoneUniqueOr(IEnumerable<SkinnedMeshRenderer> skins, out Transform candidate, out int candidateCount, string name, params string[] alternatives)
         {
             candidate      = null;
             candidateCount = 0;
@@ -734,39 +688,31 @@ namespace UltimateXR.Avatar.Rig
 
             Dictionary<Transform, int> dictionaryProcessed = new Dictionary<Transform, int>();
 
-            for (int skinIndex = 0; skinIndex < skins.Length; ++skinIndex)
+            foreach (SkinnedMeshRenderer skin in skins)
             {
-                SkinnedMeshRenderer skin = skins[skinIndex];
-
-                for (int i = 0; i < skin.bones.Length; ++i)
+                foreach (Transform bone in skin.bones)
                 {
-                    if (dictionaryProcessed.ContainsKey(skin.bones[i]))
+                    if (dictionaryProcessed.ContainsKey(bone))
                     {
                         continue;
                     }
-                    dictionaryProcessed.Add(skin.bones[i], 1);
 
-                    // Invalid bone? -> Ignore
-
-                    if (!IsValidAvatarBone(skin.bones[i]))
-                    {
-                        continue;
-                    }
+                    dictionaryProcessed.Add(bone, 1);
 
                     // Look for name or alternatives
 
-                    string nameToLower = skin.bones[i].name.ToLower();
+                    string nameToLower = bone.name.ToLower();
 
                     if (IsWordEnd(nameToLower, name.ToLower()))
                     {
                         candidateCountClean++;
                         candidateCount = candidateCountClean;
-                        candidate      = skin.bones[i];
+                        candidate      = bone;
                         continue;
                     }
                     if (nameToLower.Contains(name.ToLower()) && candidateCountClean == 0)
                     {
-                        candidate = skin.bones[i];
+                        candidate = bone;
                         candidateCount++;
                         continue;
                     }
@@ -775,20 +721,20 @@ namespace UltimateXR.Avatar.Rig
                     {
                         if (IsWordEnd(nameToLower, alternatives[j].ToLower()))
                         {
-                            if (candidate != skin.bones[i])
+                            if (candidate != bone)
                             {
                                 candidateCountClean++;
                                 candidateCount = candidateCountClean;
-                                candidate      = skin.bones[i];
+                                candidate      = bone;
                                 break;
                             }
                         }
                         else if (nameToLower.Contains(alternatives[j].ToLower()) && candidateCountClean == 0)
                         {
-                            if (candidate != skin.bones[i])
+                            if (candidate != bone)
                             {
                                 candidateCount++;
-                                candidate = skin.bones[i];
+                                candidate = bone;
                                 break;
                             }
                         }
@@ -840,12 +786,9 @@ namespace UltimateXR.Avatar.Rig
         ///     <paramref name="name" />.
         /// </param>
         /// <returns>The transform or null if it wasn't found or there were two or more candidates</returns>
-        private static Transform TryToResolveBoneUniqueAnd(SkinnedMeshRenderer[] skins, string name, params string[] additionalStrings)
+        private static Transform TryToResolveBoneUniqueAnd(IEnumerable<SkinnedMeshRenderer> skins, string name, params string[] additionalStrings)
         {
-            Transform candidate;
-            int       candidateCount;
-
-            TryToResolveNonControllerHandBoneUniqueAnd(skins, out candidate, out candidateCount, name, additionalStrings);
+            TryToResolveNonControllerHandBoneUniqueAnd(skins, out Transform candidate, out int candidateCount, name, additionalStrings);
 
             return candidate != null && candidateCount == 1 ? candidate : null;
         }
@@ -865,7 +808,7 @@ namespace UltimateXR.Avatar.Rig
         ///     Additional strings that also need to meet the same requirement as
         ///     <paramref name="name" />.
         /// </param>
-        private static void TryToResolveNonControllerHandBoneUniqueAnd(SkinnedMeshRenderer[] skins, out Transform candidate, out int candidateCount, string name, params string[] additionalStrings)
+        private static void TryToResolveNonControllerHandBoneUniqueAnd(IEnumerable<SkinnedMeshRenderer> skins, out Transform candidate, out int candidateCount, string name, params string[] additionalStrings)
         {
             candidate      = null;
             candidateCount = 0;
@@ -874,28 +817,20 @@ namespace UltimateXR.Avatar.Rig
 
             Dictionary<Transform, int> dictionaryProcessed = new Dictionary<Transform, int>();
 
-            for (int skinIndex = 0; skinIndex < skins.Length; ++skinIndex)
+            foreach (SkinnedMeshRenderer skin in skins)
             {
-                SkinnedMeshRenderer skin = skins[skinIndex];
-
-                for (int i = 0; i < skin.bones.Length; ++i)
+                foreach (Transform bone in skin.bones)
                 {
-                    if (dictionaryProcessed.ContainsKey(skin.bones[i]))
+                    if (dictionaryProcessed.ContainsKey(bone))
                     {
                         continue;
                     }
-                    dictionaryProcessed.Add(skin.bones[i], 1);
 
-                    // Invalid bone?
-
-                    if (!IsValidAvatarBone(skin.bones[i]))
-                    {
-                        continue;
-                    }
+                    dictionaryProcessed.Add(bone, 1);
 
                     // Find occurrences of the given name
 
-                    int occurrences = skin.bones[i].name.GetOccurrenceCount(name, false);
+                    int occurrences = bone.name.GetOccurrenceCount(name, false);
 
                     if (occurrences == 0)
                     {
@@ -908,7 +843,7 @@ namespace UltimateXR.Avatar.Rig
 
                     foreach (string additionalString in additionalStrings)
                     {
-                        int additionalOccurrences = skin.bones[i].name.GetOccurrenceCount(additionalString, false);
+                        int additionalOccurrences = bone.name.GetOccurrenceCount(additionalString, false);
 
                         if (additionalOccurrences == 0)
                         {
@@ -925,24 +860,24 @@ namespace UltimateXR.Avatar.Rig
                     {
                         if (candidate == null)
                         {
-                            candidate      = skin.bones[i];
+                            candidate      = bone;
                             candidateCount = 1;
                             maxOccurrences = occurrences;
                         }
-                        else if (candidate.HasParent(skin.bones[i]))
+                        else if (candidate.HasParent(bone))
                         {
-                            candidate      = skin.bones[i];
+                            candidate      = bone;
                             candidateCount = 1;
                             maxOccurrences = occurrences;
                         }
-                        else if (skin.bones[i].HasParent(candidate))
+                        else if (bone.HasParent(candidate))
                         {
                         }
                         else
                         {
                             if (occurrences > maxOccurrences)
                             {
-                                candidate      = skin.bones[i];
+                                candidate      = bone;
                                 candidateCount = 1;
                                 maxOccurrences = occurrences;
                             }
@@ -1199,12 +1134,6 @@ namespace UltimateXR.Avatar.Rig
 
             return false;
         }
-
-        #endregion
-
-        #region Private Types & Data
-
-        private const float SignificantWeightInfluence = 0.5f;
 
         #endregion
     }

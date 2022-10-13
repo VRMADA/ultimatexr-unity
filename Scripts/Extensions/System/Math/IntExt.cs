@@ -3,6 +3,8 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UnityEngine;
+
 namespace UltimateXR.Extensions.System.Math
 {
     /// <summary>
@@ -76,6 +78,31 @@ namespace UltimateXR.Extensions.System.Math
         public static uint WithoutFlags(this uint self, uint flags)
         {
             return self & ~flags;
+        }
+
+        /// <summary>
+        ///     Clamps a value so that it doesn't go beyond a given range.
+        /// </summary>
+        /// <param name="self">Value to clamp</param>
+        /// <param name="min">Minimum value</param>
+        /// <param name="max">Maximum value</param>
+        /// <returns>Clamped value between [min, max]</returns>
+        public static int Clamp(this ref int self, int min, int max)
+        {
+            self = Mathf.Clamp(self, min, max);
+            return self;
+        }
+
+        /// <summary>
+        ///     Returns a clamped value.
+        /// </summary>
+        /// <param name="self">Value to clamp</param>
+        /// <param name="min">Minimum value</param>
+        /// <param name="max">Maximum value</param>
+        /// <returns>Clamped value between [min, max]</returns>
+        public static int Clamped(this int self, int min, int max)
+        {
+            return Mathf.Clamp(self, min, max);
         }
 
         #endregion

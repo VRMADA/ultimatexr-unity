@@ -48,4 +48,4 @@ namespace UltimateXR.Devices
         Any            = 1 << 31,
         Everything     = ~None
     }
-}
+} 

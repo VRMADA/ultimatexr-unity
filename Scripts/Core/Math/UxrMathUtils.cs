@@ -11,12 +11,12 @@ namespace UltimateXR.Core.Math
     /// <summary>
     ///     Contains math computations involving elements that do not belong to a specific class.
     ///     Most math is available through extensions classes in namespaces such as
-    ///     <see cref="VRMADA.UltimateXR.Extensions.System.Math">UltimateXR.Extensions.System.Math</see> or
-    ///     <see cref="VRMADA.UltimateXR.Extensions.Unity.Math">UltimateXR.Extensions.Unity.Math</see>.
+    ///     <see cref="UltimateXR.Extensions.System.Math">UltimateXR.Extensions.System.Math</see> or
+    ///     <see cref="UltimateXR.Extensions.Unity.Math">UltimateXR.Extensions.Unity.Math</see>.
     ///     Math related to animation is also available through classes in namespaces such as
-    ///     <see cref="VRMADA.UltimateXR.Animation.IK">UltimateXR.Animation.IK</see>,
-    ///     <see cref="VRMADA.UltimateXR.Animation.Interpolation">UltimateXRAnimation.Interpolation</see> or
-    ///     <see cref="VRMADA.UltimateXR.Animation.Splines">UltimateXR.Animation.Splines</see>.
+    ///     <see cref="UltimateXR.Animation.IK">UltimateXR.Animation.IK</see>,
+    ///     <see cref="UltimateXR.Animation.Interpolation">UltimateXRAnimation.Interpolation</see> or
+    ///     <see cref="UltimateXR.Animation.Splines">UltimateXR.Animation.Splines</see>.
     ///     This class will contain math functionality that cannot be assigned to any extensions class.
     /// </summary>
     public static class UxrMathUtils

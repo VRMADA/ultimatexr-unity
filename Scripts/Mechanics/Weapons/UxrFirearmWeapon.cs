@@ -238,7 +238,7 @@ namespace UltimateXR.Mechanics.Weapons
 
                 if (trigger.TriggerTransform)
                 {
-                    trigger.TriggerInitialLocalEuler = trigger.TriggerTransform.localEulerAngles;
+                    trigger.TriggerInitialLocalRotation = trigger.TriggerTransform.localRotation;
                 }
 
                 if (trigger.AmmunitionMagAnchor != null)
@@ -281,7 +281,7 @@ namespace UltimateXR.Mechanics.Weapons
 
                     if (trigger.TriggerTransform != null)
                     {
-                        trigger.TriggerTransform.localEulerAngles = trigger.TriggerInitialLocalEuler + trigger.TriggerRotationOffset * triggerPressAmount;
+                        trigger.TriggerTransform.localRotation = trigger.TriggerInitialLocalRotation * Quaternion.AngleAxis(trigger.TriggerRotationDegrees * triggerPressAmount, trigger.TriggerRotationAxis);
                     }
 
                     // Now depending on the weapon type check if we need to shoot
@@ -420,7 +420,7 @@ namespace UltimateXR.Mechanics.Weapons
 
                     float   amplitude    = 1.0f - recoilT;
                     Vector3 recoilOffset = grabbingHandCount == 1 ? amplitude * trigger.RecoilOffsetOneHand : amplitude * trigger.RecoilOffsetTwoHands;
-
+                    
                     grabbableTransform.position += recoilRight * recoilOffset.x + recoilUp * recoilOffset.y + recoilForward * recoilOffset.z;
                     grabbableTransform.RotateAround(recoilPosition, -recoilRight, grabbingHandCount == 1 ? amplitude * trigger.RecoilAngleOneHand : amplitude * trigger.RecoilAngleTwoHands);
                 }
@@ -539,7 +539,7 @@ namespace UltimateXR.Mechanics.Weapons
         /// <param name="triggerValue">Pressed value between range [0.0, 1.0]</param>
         private static void SetTriggerPressed(UxrFirearmTrigger trigger, float triggerValue)
         {
-            trigger.TriggerTransform.localEulerAngles = trigger.TriggerInitialLocalEuler + trigger.TriggerRotationOffset * triggerValue;
+            trigger.TriggerTransform.localRotation = trigger.TriggerInitialLocalRotation * Quaternion.AngleAxis(trigger.TriggerRotationDegrees * triggerValue, trigger.TriggerRotationAxis);
         }
 
         /// <summary>

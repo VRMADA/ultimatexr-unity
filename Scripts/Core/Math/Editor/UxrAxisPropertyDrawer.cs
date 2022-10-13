@@ -49,7 +49,19 @@ namespace UltimateXR.Core.Math.Editor
 
             SerializedProperty propertyAxis = property.FindPropertyRelative("_axis");
 
-            propertyAxis.intValue = EditorGUI.Popup(UxrEditorUtils.GetRect(position, 0), property.displayName, propertyAxis.intValue, AxesAsStrings);
+            if (property.serializedObject.isEditingMultipleObjects)
+            {
+                // Multi-selection doesn't work correctly with PropertyDrawers when not using PropertyFields. Disable UI.
+                // https://answers.unity.com/questions/1214493/custompropertydrawer-cant-restrict-multi-editing.html
+                bool isGuiEnabled = GUI.enabled; 
+                GUI.enabled = false;
+                EditorGUI.PropertyField(UxrEditorUtils.GetRect(position, 0), propertyAxis, label);
+                GUI.enabled = isGuiEnabled;
+            }
+            else
+            {
+                propertyAxis.intValue = EditorGUI.Popup(UxrEditorUtils.GetRect(position, 0), label, propertyAxis.intValue, UxrEditorUtils.ToGUIContentArray(AxesAsStrings));
+            }
         }
 
         #endregion

@@ -134,10 +134,7 @@ namespace UltimateXR.Manipulation.HandPoses
         /// <param name="computeRelativeMatrixOnly">Whether to compute the relative transform to the hand only</param>
         public void Compute(UxrAvatar avatar, UxrHandSide handSide, bool computeRelativeMatrixOnly = false)
         {
-            Compute(handSide == UxrHandSide.Left ? avatar.AvatarRig.LeftArm : avatar.AvatarRig.RightArm,
-                    handSide == UxrHandSide.Left ? avatar.AvatarRigInfo.LeftHandUniversalLocalAxes : avatar.AvatarRigInfo.RightHandUniversalLocalAxes,
-                    handSide == UxrHandSide.Left ? avatar.AvatarRigInfo.LeftFingerUniversalLocalAxes : avatar.AvatarRigInfo.RightFingerUniversalLocalAxes,
-                    computeRelativeMatrixOnly);
+            Compute(handSide == UxrHandSide.Left ? avatar.AvatarRig.LeftArm : avatar.AvatarRig.RightArm, avatar.AvatarRigInfo.GetArmInfo(handSide).HandUniversalLocalAxes, avatar.AvatarRigInfo.GetArmInfo(handSide).FingerUniversalLocalAxes, computeRelativeMatrixOnly);
         }
 
         /// <summary>
