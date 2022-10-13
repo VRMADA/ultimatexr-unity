@@ -229,7 +229,7 @@ namespace UltimateXR.Animation.IK
             }
 
             // Compute elbow aperture value [0.0, 1.0] depending on the relaxedElbowAperture parameter and the current wrist torsion
-            float wristDegrees                = _side == UxrHandSide.Left ? -Avatar.AvatarRigInfo.LeftWristTorsionInfo.WristTorsionAngle : Avatar.AvatarRigInfo.RightWristTorsionInfo.WristTorsionAngle;
+            float wristDegrees                = _side == UxrHandSide.Left ? -Avatar.AvatarRigInfo.GetArmInfo(UxrHandSide.Left).WristTorsionInfo.WristTorsionAngle : Avatar.AvatarRigInfo.GetArmInfo(UxrHandSide.Right).WristTorsionInfo.WristTorsionAngle;
             float elbowApertureBiasDueToWrist = wristDegrees / WristTorsionDegreesFactor * _elbowApertureRotation;
             float elbowAperture               = Mathf.Clamp01(_relaxedElbowAperture + elbowApertureBiasDueToWrist);
 
@@ -413,12 +413,12 @@ namespace UltimateXR.Animation.IK
                 Hand = Avatar.GetHandBone(_side);
             }
 
-            _upperArmLength = _side == UxrHandSide.Left ? Avatar.AvatarRigInfo.LeftUpperArmLength : Avatar.AvatarRigInfo.RightUpperArmLength;
-            _forearmLength  = _side == UxrHandSide.Left ? Avatar.AvatarRigInfo.LeftForearmLength : Avatar.AvatarRigInfo.RightForearmLength;
+            _upperArmLength = Avatar.AvatarRigInfo.GetArmInfo(_side).UpperArmLength;
+            _forearmLength  = Avatar.AvatarRigInfo.GetArmInfo(_side).ForearmLength;
 
-            _clavicleUniversalLocalAxes = Avatar.AvatarRigInfo.GetClavicleUniversalLocalAxes(_side);
-            _armUniversalLocalAxes      = Avatar.AvatarRigInfo.GetArmUniversalLocalAxes(_side);
-            _forearmUniversalLocalAxes  = Avatar.AvatarRigInfo.GetForearmUniversalLocalAxes(_side);
+            _clavicleUniversalLocalAxes = Avatar.AvatarRigInfo.GetArmInfo(_side).ClavicleUniversalLocalAxes;
+            _armUniversalLocalAxes      = Avatar.AvatarRigInfo.GetArmInfo(_side).ArmUniversalLocalAxes;
+            _forearmUniversalLocalAxes  = Avatar.AvatarRigInfo.GetArmInfo(_side).ForearmUniversalLocalAxes;
 
             // Compute arm range of motion neutral direction
             _armNeutralForwardInParent = Vector3.forward;

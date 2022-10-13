@@ -71,6 +71,11 @@ namespace UltimateXR.CameraUtils
         /// </returns>
         public static bool IsAvatarPeekingThroughGeometry(UxrAvatar avatar)
         {
+            if (avatar == null)
+            {
+                return false;
+            }
+            
             UxrCameraWallFade wallFade = avatar.CameraComponent != null ? avatar.CameraComponent.GetComponent<UxrCameraWallFade>() : null;
             return wallFade && wallFade._quadObject.activeSelf; //.IsInsideWall;
         }

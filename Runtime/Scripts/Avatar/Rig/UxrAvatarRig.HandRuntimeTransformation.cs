@@ -58,7 +58,7 @@ namespace UltimateXR.Avatar.Rig
         /// <param name="spread">Spread angle in degrees for the finger (finger "left" or "right" amount with respect to the wrist)</param>
         public static void CurlFinger(UxrAvatar avatar, UxrHandSide handSide, UxrAvatarFinger finger, float proximalCurl, float intermediateCurl, float distalCurl, float spread = 0.0f)
         {
-            UxrUniversalLocalAxes fingerAxes = handSide == UxrHandSide.Left ? avatar.AvatarRigInfo.LeftFingerUniversalLocalAxes : avatar.AvatarRigInfo.RightFingerUniversalLocalAxes;
+            UxrUniversalLocalAxes fingerAxes = avatar.AvatarRigInfo.GetArmInfo(handSide).FingerUniversalLocalAxes;
 
             if (avatar.GetInitialBoneLocalRotation(finger.Proximal, out Quaternion localRotationProximal))
             {

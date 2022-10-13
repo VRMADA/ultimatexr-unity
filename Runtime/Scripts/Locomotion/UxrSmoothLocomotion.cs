@@ -17,7 +17,8 @@ namespace UltimateXR.Locomotion
     {
         #region Inspector Properties/Serialized Fields
 
-        [Header("General parameters")] [SerializeField] private float            _metersPerSecondNormal          = 2.0f;
+        [Header("General parameters")] [SerializeField] private bool             _parentToDestination;
+        [SerializeField]                                private float            _metersPerSecondNormal          = 2.0f;
         [SerializeField]                                private float            _metersPerSecondSprint          = 4.0f;
         [SerializeField]                                private UxrWalkDirection _walkDirection                  = UxrWalkDirection.ControllerForward;
         [SerializeField]                                private float            _rotationDegreesPerSecondNormal = 120.0f;
@@ -27,11 +28,12 @@ namespace UltimateXR.Locomotion
         [Header("Input parameters")] [SerializeField] private UxrHandSide     _sprintButtonHand = UxrHandSide.Left;
         [SerializeField]                              private UxrInputButtons _sprintButton     = UxrInputButtons.Joystick;
 
-        [Header("Constraints")] [SerializeField] private LayerMask _collisionLayerMask = ~0;
-        [SerializeField]                         private float     _capsuleRadius      = 0.25f;
-        [SerializeField]                         private float     _maxStepHeight      = 0.2f;
-        [SerializeField] [Range(0.0f, 80.0f)]    private float     _maxSlopeDegrees    = 35.0f;
-        [SerializeField]                         private float     _stepDistanceCheck  = 0.2f;
+        [Header("Constraints")] [SerializeField] private QueryTriggerInteraction _triggerCollidersInteraction = QueryTriggerInteraction.Ignore;
+        [SerializeField]                         private LayerMask               _collisionLayerMask          = ~0;
+        [SerializeField]                         private float                   _capsuleRadius               = 0.25f;
+        [SerializeField]                         private float                   _maxStepHeight               = 0.2f;
+        [SerializeField] [Range(0.0f, 80.0f)]    private float                   _maxSlopeDegrees             = 35.0f;
+        [SerializeField]                         private float                   _stepDistanceCheck           = 0.2f;
 
         #endregion
 
@@ -180,8 +182,11 @@ namespace UltimateXR.Locomotion
 
                 // Rotation. We perform it here since it doesn't require any collision checks.
 
-                float rotationSpeed = isSprinting ? _rotationDegreesPerSecondSprint : _rotationDegreesPerSecondNormal;
-                UxrManager.Instance.RotateAvatar(Avatar, joystickRight.x * rotationSpeed * Time.deltaTime);
+                if (!Mathf.Approximately(joystickRight.x, 0.0f))
+                {
+                    float rotationSpeed = isSprinting ? _rotationDegreesPerSecondSprint : _rotationDegreesPerSecondNormal;
+                    UxrManager.Instance.RotateAvatar(Avatar, joystickRight.x * rotationSpeed * Time.deltaTime);
+                }
 
                 UpdateLocomotionPhysics(Time.deltaTime);
             }
@@ -210,10 +215,10 @@ namespace UltimateXR.Locomotion
 
                 Vector3 newRequestedCameraPos = cameraPos + _translationSpeed * deltaTime;
 
-                if (!Physics.CapsuleCast(capsuleTop, capsuleBottom, _capsuleRadius, _translationSpeed.normalized, (newRequestedCameraPos - capsuleTop).magnitude, _collisionLayerMask))
+                if (!HasBlockingCapsuleCastHit(Avatar, capsuleTop, capsuleBottom, _capsuleRadius, _translationSpeed.normalized, (newRequestedCameraPos - capsuleTop).magnitude, _collisionLayerMask, _triggerCollidersInteraction, out RaycastHit _))
                 {
                     // Nothing in front. Now check for slope and maximum step height
-                    if (Physics.Raycast(cameraPos + _translationSpeed.normalized * _stepDistanceCheck, -Vector3.up, out RaycastHit hitInfo, cameraHeight + _maxStepHeight, _collisionLayerMask))
+                    if (HasBlockingRaycastHit(Avatar, cameraPos + _translationSpeed.normalized * _stepDistanceCheck, -Vector3.up, cameraHeight + _maxStepHeight, _collisionLayerMask, _triggerCollidersInteraction, out RaycastHit hitInfo))
                     {
                         float heightIncrement = hitInfo.point.y - avatarPos.y;
                         float slopeDegrees    = Mathf.Atan(heightIncrement / _stepDistanceCheck) * Mathf.Rad2Deg;
@@ -225,11 +230,13 @@ namespace UltimateXR.Locomotion
 
                             UxrManager.Instance.TranslateAvatar(Avatar, translation);
                         }
+
+                        CheckSetAvatarParent(hitInfo);
                     }
                     else
                     {
                         // No collisions found, just keep walking. Probably to a fall.
-                        UxrManager.Instance.TranslateAvatar(Avatar, _translationSpeed * Time.fixedDeltaTime);
+                        UxrManager.Instance.TranslateAvatar(Avatar, _translationSpeed * deltaTime);
                     }
                 }
             }
@@ -240,23 +247,24 @@ namespace UltimateXR.Locomotion
             {
                 // Falling
 
-                if (Physics.Raycast(avatarPos + Vector3.up * SafeFloorDistance, -Vector3.up, out RaycastHit hitInfo, Mathf.Abs(_fallSpeed * Time.fixedDeltaTime) + SafeFloorDistance * 2.0f, _collisionLayerMask))
+                if (HasBlockingRaycastHit(Avatar, avatarPos + Vector3.up * SafeFloorDistance, -Vector3.up, Mathf.Abs(_fallSpeed * deltaTime) + SafeFloorDistance * 2.0f, _collisionLayerMask, _triggerCollidersInteraction, out RaycastHit hitInfo))
                 {
                     // Hit ground
                     _isFalling = false;
                     _fallSpeed = 0.0f;
 
                     UxrManager.Instance.MoveAvatarTo(Avatar, hitInfo.point.y);
+                    CheckSetAvatarParent(hitInfo);
                 }
                 else
                 {
                     // Keep falling
-                    _fallSpeed += Time.deltaTime * _gravity;
+                    _fallSpeed += deltaTime * _gravity;
 
-                    UxrManager.Instance.MoveAvatarTo(Avatar, Avatar.transform.position.y + _fallSpeed * Time.fixedDeltaTime);
+                    UxrManager.Instance.MoveAvatarTo(Avatar, Avatar.transform.position.y + _fallSpeed * deltaTime);
                 }
             }
-            else if (!_isFalling && !Physics.Raycast(cameraPos, -Vector3.up, cameraPos.y - avatarPos.y + SafeFloorDistance, _collisionLayerMask))
+            else if (!_isFalling && !HasBlockingRaycastHit(Avatar, cameraPos, -Vector3.up, cameraPos.y - avatarPos.y + SafeFloorDistance, _collisionLayerMask, _triggerCollidersInteraction, out RaycastHit _))
             {
                 // Start falling
                 _isFalling = true;
@@ -270,6 +278,18 @@ namespace UltimateXR.Locomotion
         }
 
         /// <summary>
+        ///     Checks whether to parent the avatar to a new transform.
+        /// </summary>
+        /// <param name="hitInfo">Raycast hit information with the potential parent collider</param>
+        private void CheckSetAvatarParent(RaycastHit hitInfo)
+        {
+            if (_parentToDestination && hitInfo.collider.transform != null && Avatar.transform.parent != hitInfo.collider.transform)
+            {
+                Avatar.transform.SetParent(hitInfo.collider.transform);
+            }
+        }
+
+        /// <summary>
         ///     Tries to place the user on the ground.
         /// </summary>
         private void TryGround()
@@ -279,9 +299,10 @@ namespace UltimateXR.Locomotion
                 _translationSpeed = Vector3.zero;
                 _fallSpeed        = 0.0f;
 
-                if (Physics.Raycast(Avatar.transform.position + Vector3.up, -Vector3.up, out RaycastHit hitInfo, 2.0f, _collisionLayerMask, QueryTriggerInteraction.Ignore))
+                if (HasBlockingRaycastHit(Avatar, Avatar.transform.position + Vector3.up, -Vector3.up, 2.0f, _collisionLayerMask, _triggerCollidersInteraction, out RaycastHit hitInfo))
                 {
                     UxrManager.Instance.MoveAvatarTo(Avatar, hitInfo.point);
+                    CheckSetAvatarParent(hitInfo);
                 }
             }
         }

@@ -14,6 +14,20 @@ namespace UltimateXR.Editor
 {
     public static partial class UxrEditorUtils
     {
+        #region Public Types & Data
+
+        /// <summary>
+        ///     Default <see cref="HandlesAlpha" /> value.
+        /// </summary>
+        public const float DefaultHandlesAlpha = 0.3f;
+
+        /// <summary>
+        ///     Gets or sets the transparency value for handles used in Editor.OnSceneGUI.
+        /// </summary>
+        public static float HandlesAlpha { get; set; } = DefaultHandlesAlpha;
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>

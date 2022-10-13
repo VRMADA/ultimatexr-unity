@@ -196,12 +196,11 @@ namespace UltimateXR.Locomotion
                         // Process blocking hit.
                         // Use RaycastAll to avoid putting "permitted" objects in between "blocking" objects to teleport through walls or any other cheats.
 
-                        if (HasBlockingRaycastHit(Physics.RaycastAll(point1, direction, distanceBetweenPoints, LayerMaskRaycast, TriggerCollidersInteraction), out RaycastHit hit))
+                        if (HasBlockingRaycastHit(point1, direction, distanceBetweenPoints, out RaycastHit hit))
                         {
-                            endTime      = time + deltaTime * (hit.distance / distanceBetweenPoints);
-                            hitSomething = true;
-
-                            isValidTeleport = NotifyDestinationRaycast(hit);
+                            endTime         = time + deltaTime * (hit.distance / distanceBetweenPoints);
+                            hitSomething    = true;
+                            isValidTeleport = NotifyDestinationRaycast(hit, false);
                             break;
                         }
                     }

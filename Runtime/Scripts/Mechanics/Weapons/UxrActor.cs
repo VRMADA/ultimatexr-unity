@@ -121,6 +121,20 @@ namespace UltimateXR.Mechanics.Weapons
 
         #endregion
 
+        #region Unity
+
+        /// <summary>
+        ///     Makes sure the <see cref="UxrWeaponManager" /> singleton instance is available so that actors are registered."/>
+        /// </summary>
+        protected override void Awake()
+        {
+            base.Awake();
+
+            UxrWeaponManager.Instance.Poke();
+        }
+
+        #endregion
+
         #region Event Trigger Methods
 
         /// <summary>
@@ -138,6 +152,8 @@ namespace UltimateXR.Mechanics.Weapons
 
             if (!e.IsCanceled)
             {
+                bool destroy = false;
+                
                 if (_automaticDamageHandling)
                 {
                     _life -= e.Damage;
@@ -149,10 +165,7 @@ namespace UltimateXR.Mechanics.Weapons
 
                     if (_automaticDeadHandling)
                     {
-                        if (this != null && gameObject != null)
-                        {
-                            DieInternal();
-                        }
+                        destroy = true;
                     }
                     else
                     {
@@ -175,6 +188,11 @@ namespace UltimateXR.Mechanics.Weapons
                 }
 
                 DamageReceived?.Invoke(this, e);
+
+                if (destroy)
+                {
+                    DieInternal();
+                }
             }
         }
 

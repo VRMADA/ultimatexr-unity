@@ -22,10 +22,7 @@ namespace UltimateXR.Avatar.Rig
         /// <param name="handDescriptor">The descriptor to get the data from</param>
         public static void UpdateHandUsingDescriptor(UxrAvatar avatar, UxrHandSide handSide, UxrHandDescriptor handDescriptor)
         {
-            UpdateHandUsingDescriptor(avatar.GetHand(handSide),
-                                      handDescriptor,
-                                      handSide == UxrHandSide.Left ? avatar.AvatarRigInfo.LeftHandUniversalLocalAxes : avatar.AvatarRigInfo.RightHandUniversalLocalAxes,
-                                      handSide == UxrHandSide.Left ? avatar.AvatarRigInfo.LeftFingerUniversalLocalAxes : avatar.AvatarRigInfo.RightFingerUniversalLocalAxes);
+            UpdateHandUsingDescriptor(avatar.GetHand(handSide), handDescriptor, avatar.AvatarRigInfo.GetArmInfo(handSide).HandUniversalLocalAxes, avatar.AvatarRigInfo.GetArmInfo(handSide).FingerUniversalLocalAxes);
         }
 
         /// <summary>
@@ -38,12 +35,7 @@ namespace UltimateXR.Avatar.Rig
         /// <param name="blend">The interpolation value [0.0, 1.0]</param>
         public static void UpdateHandUsingDescriptor(UxrAvatar avatar, UxrHandSide handSide, UxrHandDescriptor handDescriptorA, UxrHandDescriptor handDescriptorB, float blend)
         {
-            UpdateHandUsingDescriptor(avatar.GetHand(handSide),
-                                      handDescriptorA,
-                                      handDescriptorB,
-                                      blend,
-                                      handSide == UxrHandSide.Left ? avatar.AvatarRigInfo.LeftHandUniversalLocalAxes : avatar.AvatarRigInfo.RightHandUniversalLocalAxes,
-                                      handSide == UxrHandSide.Left ? avatar.AvatarRigInfo.LeftFingerUniversalLocalAxes : avatar.AvatarRigInfo.RightFingerUniversalLocalAxes);
+            UpdateHandUsingDescriptor(avatar.GetHand(handSide), handDescriptorA, handDescriptorB, blend, avatar.AvatarRigInfo.GetArmInfo(handSide).HandUniversalLocalAxes, avatar.AvatarRigInfo.GetArmInfo(handSide).FingerUniversalLocalAxes);
         }
 
         /// <summary>

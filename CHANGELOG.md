@@ -7,6 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2022-10-13
+
+### Changed
+
+- Improve some UxrGrabbableObject parameter tooltips.
+
+### Fixed
+
+- Fix GameObjectExt.GetBounds and GetLocalBounds exceptions when no renderers are found.
+- Fix GameObjectExt.GetBounds not computing value correctly.
+
+## [0.9.0] - 2022-10-13
+
+### Added
+
+- Add new UxrGrabbableObject constraints functionality with improved manipulation.
+- Add UxrGrabbableObject gizmos to visualize rotation/translation constraints.
+- Add new UxrGrabbableObject rotation/translation constraint modes.
+- Add support to UxrGrabbableObject for rotation constraints on all 3 axes.
+- Add support to UxrGrabbableObject for a single rotation constraint over 360 degrees.
+- Improve manipulation behavior when grabbing objects to detect the grip and know which part
+  of the hand creates more leverage.
+- Add possibility to parent to destination in locomotion components: UxrTeleportLocomotion and 
+  UxrSmoothLocomotion.
+- Add new teleport methods to UxrManager to teleport relative to moving objects.
+- Add new functionality to GameObjectExt to compute bounds recursively.
+- Add new functionality to MeshExt to compute skinned mesh vertices and bone influences.
+- Add new misc functionality to FloatExt, IntExt, Vector3Ext, Vector3IntExt and TransformExt.
+- Add new data to UxrAvatarRigInfo.
+- Add versioning to avatar rig info serialization and automatic updating.
+- Add IUxrLogger interface to unify logging in managers.
+- Add logging to UxrWeaponManager.
+- Add new properties to UxrComponent with initial Transform data.
+- Add new UxrAxis properties and functionality.
+- Add possibility to access avatar grabbers at edit-time.
+
+### Changed
+
+- Improve all UxrGrabbableObject and hand grab/release/constrain transitions.
+- Move UxrGrabbableObject constraints to the top of the inspector.
+- Replace GrabAndMove/RotateAroundAxis manipulation modes by new constraint system.
+- Change UxrGrabbableObject rotation and translation constraints reference.
+  Rotations are performed around the grabbable object local axes.
+  Translations are performed along the initial grabbable object local axes.
+- Improve UxrAvatarRig reference solving.
+
+### Removed
+
+- Remove parent reference to UxrGrabbableObject rotation/translation constraints.
+- Remove UxrManipulationMode. New constraint system and UxrRotationProvider is used instead.
+
+### Fixed
+
+- Fix manipulation not working correctly on moving platforms.
+- Fix incorrect manipulation release on objects with non-default grab button(s).
+- Fix UxrGrabbableObject release multipliers not working correctly with values less than 1.
+- Fix UxrGrabbableObject Constrain events not being called in some cases.
+- Fix UxrAvatarEditor throwing exception when using Fix button to save prefab variant.
+- Fix UxrCameraWallFade throwing exception when there are no avatars.
+- Fix constrained rotations not being able to go over 180 degrees.
+- Fix pre-caching triggered by non-local avatars. Only local avatar triggers pre-caching now.
+- Fix locomotion components detecting avatar or grabbed objects as obstacles.
+- Fix locomotion not working correctly on moving platforms.
+- Fix UxrWeaponManager not tracking actors correctly.
+- Fix UxrMagnifyingGlassUrp error when not using URP.
+- Fix CyborgAvatar_URP base to use index controllers correctly.
+- Fix some CyborgAvatar_BRP base materials that were using the URP variants.
+
 ## [0.8.4] - 2022-08-05
 
 ### Added
@@ -71,7 +139,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First public release!
 
-[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.8.4...HEAD
+[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.1
+[0.9.0]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.0
 [0.8.4]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.8.4
 [0.8.3]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.8.3
 [0.8.2]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.8.2

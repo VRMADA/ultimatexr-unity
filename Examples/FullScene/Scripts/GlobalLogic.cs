@@ -126,7 +126,7 @@ namespace UltimateXR.Examples.FullScene
         /// </summary>
         private void UxrManager_AvatarsUpdated()
         {
-            if (UxrCameraWallFade.IsAvatarPeekingThroughGeometry(UxrAvatar.LocalAvatar))
+            if (UxrAvatar.LocalAvatar == null || UxrCameraWallFade.IsAvatarPeekingThroughGeometry(UxrAvatar.LocalAvatar))
             {
                 return;
             }

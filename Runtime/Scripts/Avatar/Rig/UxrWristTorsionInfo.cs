@@ -3,7 +3,6 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using UltimateXR.Core.Math;
 using UnityEngine;
 
 namespace UltimateXR.Avatar.Rig
@@ -42,20 +41,19 @@ namespace UltimateXR.Avatar.Rig
         /// </summary>
         /// <param name="forearm">Forearm bone</param>
         /// <param name="hand">Hand bone</param>
-        /// <param name="forearmUniversalLocalAxes">Forearm universal axes</param>
-        /// <param name="handUniversalLocalAxes">Hand universal axes</param>
-        public void UpdateInfo(Transform forearm, Transform hand, UxrUniversalLocalAxes forearmUniversalLocalAxes, UxrUniversalLocalAxes handUniversalLocalAxes)
+        /// <param name="armInfo">Arm information</param>
+        public void UpdateInfo(Transform forearm, Transform hand, UxrAvatarArmInfo armInfo)
         {
-            if (hand && forearm && forearmUniversalLocalAxes != null && handUniversalLocalAxes != null)
+            if (hand && forearm && armInfo.ForearmUniversalLocalAxes != null && armInfo.HandUniversalLocalAxes != null)
             {
-                Vector3 currentHandForwardInForearm = forearm.InverseTransformDirection(handUniversalLocalAxes.WorldForward);
-                Vector3 currentHandUpInForearm      = forearm.InverseTransformDirection(handUniversalLocalAxes.WorldUp);
-                Vector3 currentHandRightInForearm   = forearm.InverseTransformDirection(handUniversalLocalAxes.WorldRight);
+                Vector3 currentHandForwardInForearm = forearm.InverseTransformDirection(armInfo.HandUniversalLocalAxes.WorldForward);
+                Vector3 currentHandUpInForearm      = forearm.InverseTransformDirection(armInfo.HandUniversalLocalAxes.WorldUp);
+                Vector3 currentHandRightInForearm   = forearm.InverseTransformDirection(armInfo.HandUniversalLocalAxes.WorldRight);
 
-                currentHandUpInForearm    = Vector3.ProjectOnPlane(currentHandUpInForearm,    forearmUniversalLocalAxes.LocalForward);
-                currentHandRightInForearm = Vector3.ProjectOnPlane(currentHandRightInForearm, forearmUniversalLocalAxes.LocalForward);
+                currentHandUpInForearm    = Vector3.ProjectOnPlane(currentHandUpInForearm,    armInfo.ForearmUniversalLocalAxes.LocalForward);
+                currentHandRightInForearm = Vector3.ProjectOnPlane(currentHandRightInForearm, armInfo.ForearmUniversalLocalAxes.LocalForward);
 
-                float angleRight = Vector3.SignedAngle(forearmUniversalLocalAxes.LocalRight, currentHandRightInForearm, forearmUniversalLocalAxes.LocalForward);
+                float angleRight = Vector3.SignedAngle(armInfo.ForearmUniversalLocalAxes.LocalRight, currentHandRightInForearm, armInfo.ForearmUniversalLocalAxes.LocalForward);
                 float angle      = angleRight; // Works better than angleUp because of hand movement constraints
 
                 // Check for twists greater than 180 degrees, to know which way to turn to

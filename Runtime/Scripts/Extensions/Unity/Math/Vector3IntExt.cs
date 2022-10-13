@@ -20,14 +20,14 @@ namespace UltimateXR.Extensions.Unity.Math
         #region Public Types & Data
 
         /// <summary>
-        ///     Representation of the negative infinity vector.
+        ///     Representation of the minimum int values per component.
         /// </summary>
-        public static ref readonly Vector3Int NegativeInfinity => ref s_negativeInfinity;
+        public static ref readonly Vector3Int MinValue => ref s_minValue;
 
         /// <summary>
-        ///     Representation of the positive infinity vector.
+        ///     Representation of the maximum int values per component.
         /// </summary>
-        public static ref readonly Vector3Int PositiveInfinity => ref s_positiveInfinity;
+        public static ref readonly Vector3Int MaxValue => ref s_maxValue;
 
         #endregion
 
@@ -105,7 +105,7 @@ namespace UltimateXR.Extensions.Unity.Math
         ///     Tries to parse a <see cref="Vector3Int" /> from a string.
         /// </summary>
         /// <param name="s">Source string</param>
-        /// <param name="result">Parsed vector or <see cref="PositiveInfinity" /> if there was an error</param>
+        /// <param name="result">Parsed vector or <see cref="MaxValue" /> if there was an error</param>
         /// <returns>Whether the vector was parsed successfully</returns>
         public static bool TryParse(string s, out Vector3Int result)
         {
@@ -116,7 +116,7 @@ namespace UltimateXR.Extensions.Unity.Math
             }
             catch
             {
-                result = PositiveInfinity;
+                result = MaxValue;
                 return false;
             }
         }
@@ -166,8 +166,8 @@ namespace UltimateXR.Extensions.Unity.Math
         private const string CardinalSeparator = ",";
 
         private static readonly char[]     s_cardinalSeparator = CardinalSeparator.ToCharArray();
-        private static readonly Vector3Int s_negativeInfinity  = int.MinValue * Vector3Int.one;
-        private static readonly Vector3Int s_positiveInfinity  = int.MaxValue * Vector3Int.one;
+        private static readonly Vector3Int s_minValue          = int.MinValue * Vector3Int.one;
+        private static readonly Vector3Int s_maxValue          = int.MaxValue * Vector3Int.one;
 
         #endregion
     }

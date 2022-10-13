@@ -25,6 +25,7 @@ namespace UltimateXR.Locomotion.Editor
         {
             _propControllerHand           = serializedObject.FindProperty("_controllerHand");
             _propUseControllerForward     = serializedObject.FindProperty("_useControllerForward");
+            _propParentToDestination      = serializedObject.FindProperty("_parentToDestination");
             _propShakeFilter              = serializedObject.FindProperty("_shakeFilter");
             _propTranslationType          = serializedObject.FindProperty("_translationType");
             _propFadeTranslationColor     = serializedObject.FindProperty("_fadeTranslationColor");
@@ -69,6 +70,7 @@ namespace UltimateXR.Locomotion.Editor
             {
                 EditorGUILayout.PropertyField(_propControllerHand,       ContentControllerHand);
                 EditorGUILayout.PropertyField(_propUseControllerForward, ContentUseControllerForward);
+                EditorGUILayout.PropertyField(_propParentToDestination,  ContentParentToDestination);
                 EditorGUILayout.Slider(_propShakeFilter, 0.0f, 1.0f, ContentShakeFilter);
             }
 
@@ -173,6 +175,7 @@ namespace UltimateXR.Locomotion.Editor
 
         private GUIContent ContentControllerHand              { get; } = new GUIContent("Controller Hand",               "Which hand controls the input");
         private GUIContent ContentUseControllerForward        { get; } = new GUIContent("Use Controller Forward",        "Will the teleport use the controller's forward vector instead of its own transform forward?");
+        private GUIContent ContentParentToDestination         { get; } = new GUIContent("Parent To Destination",         "Whether to parent the avatar to the destination object after teleport. Use it when building applications with moving vehicles or platforms the avatar can move on, so that the avatar keeps the relative position/orientation after teleporting.");
         private GUIContent ContentShakeFilter                 { get; } = new GUIContent("Shake Filter",                  "The amount of filtering to apply to the hand movement to smooth it out");
         private GUIContent ContentTranslationType             { get; } = new GUIContent("Translation Type",              "Which translation method to use");
         private GUIContent ContentFadeTranslationColor        { get; } = new GUIContent("Translation Fade Color",        "The fade color when Fade translation type is used");
@@ -201,6 +204,7 @@ namespace UltimateXR.Locomotion.Editor
 
         private SerializedProperty _propControllerHand;
         private SerializedProperty _propUseControllerForward;
+        private SerializedProperty _propParentToDestination;
         private SerializedProperty _propShakeFilter;
         private SerializedProperty _propTranslationType;
         private SerializedProperty _propFadeTranslationColor;

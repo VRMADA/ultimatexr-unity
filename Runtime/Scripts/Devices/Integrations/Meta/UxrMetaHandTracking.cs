@@ -111,19 +111,20 @@ namespace UltimateXR.Devices.Integrations.Meta
                     SetCalibrationPose(UxrHandSide.Left);
                 }
 
-                UxrUniversalLocalAxes leftHandParentAxes = wristLeft.parent == Avatar.AvatarRig.LeftArm.Forearm ? Avatar.AvatarRigInfo.LeftForearmUniversalLocalAxes : Avatar.AvatarRigInfo.LeftHandUniversalLocalAxes;
+                UxrAvatarArmInfo      leftArmInfo        = Avatar.AvatarRigInfo.GetArmInfo(UxrHandSide.Left);
+                UxrUniversalLocalAxes leftHandParentAxes = wristLeft.parent == Avatar.AvatarRig.LeftArm.Forearm ? leftArmInfo.ForearmUniversalLocalAxes : leftArmInfo.HandUniversalLocalAxes;
 
                 Vector3    sensorLeftPos = Avatar.transform.TransformPoint(_leftHandState.RootPose.Position.FromFlippedZVector3f());
-                Quaternion sensorLeftRot = Avatar.transform.rotation * ToCorrectCoordinateSystem(_leftHandState.RootPose.Orientation, FlipMode.FlipZ, _leftHandOculusRotation, leftHandParentAxes, Avatar.AvatarRigInfo.LeftHandUniversalLocalAxes);
+                Quaternion sensorLeftRot = Avatar.transform.rotation * ToCorrectCoordinateSystem(_leftHandState.RootPose.Orientation, FlipMode.FlipZ, _leftHandOculusRotation, leftHandParentAxes, leftArmInfo.HandUniversalLocalAxes);
 
                 wristLeft.position = sensorLeftPos;
                 wristLeft.rotation = sensorLeftRot;
 
-                UpdateFinger(UxrHandSide.Left, Avatar.LeftHand.Index,  OVRPlugin.BoneId.Hand_Index1,  3, _leftFingerOculusRotation, Avatar.AvatarRigInfo.LeftHandUniversalLocalAxes, Avatar.AvatarRigInfo.LeftFingerUniversalLocalAxes);
-                UpdateFinger(UxrHandSide.Left, Avatar.LeftHand.Middle, OVRPlugin.BoneId.Hand_Middle1, 3, _leftFingerOculusRotation, Avatar.AvatarRigInfo.LeftHandUniversalLocalAxes, Avatar.AvatarRigInfo.LeftFingerUniversalLocalAxes);
-                UpdateFinger(UxrHandSide.Left, Avatar.LeftHand.Ring,   OVRPlugin.BoneId.Hand_Ring1,   3, _leftFingerOculusRotation, Avatar.AvatarRigInfo.LeftHandUniversalLocalAxes, Avatar.AvatarRigInfo.LeftFingerUniversalLocalAxes);
-                UpdateFinger(UxrHandSide.Left, Avatar.LeftHand.Little, OVRPlugin.BoneId.Hand_Pinky0,  4, _leftFingerOculusRotation, Avatar.AvatarRigInfo.LeftHandUniversalLocalAxes, Avatar.AvatarRigInfo.LeftFingerUniversalLocalAxes);
-                UpdateFinger(UxrHandSide.Left, Avatar.LeftHand.Thumb,  OVRPlugin.BoneId.Hand_Thumb0,  4, _leftFingerOculusRotation, Avatar.AvatarRigInfo.LeftHandUniversalLocalAxes, Avatar.AvatarRigInfo.LeftFingerUniversalLocalAxes);
+                UpdateFinger(UxrHandSide.Left, Avatar.LeftHand.Index,  OVRPlugin.BoneId.Hand_Index1,  3, _leftFingerOculusRotation, leftArmInfo.HandUniversalLocalAxes, leftArmInfo.FingerUniversalLocalAxes);
+                UpdateFinger(UxrHandSide.Left, Avatar.LeftHand.Middle, OVRPlugin.BoneId.Hand_Middle1, 3, _leftFingerOculusRotation, leftArmInfo.HandUniversalLocalAxes, leftArmInfo.FingerUniversalLocalAxes);
+                UpdateFinger(UxrHandSide.Left, Avatar.LeftHand.Ring,   OVRPlugin.BoneId.Hand_Ring1,   3, _leftFingerOculusRotation, leftArmInfo.HandUniversalLocalAxes, leftArmInfo.FingerUniversalLocalAxes);
+                UpdateFinger(UxrHandSide.Left, Avatar.LeftHand.Little, OVRPlugin.BoneId.Hand_Pinky0,  4, _leftFingerOculusRotation, leftArmInfo.HandUniversalLocalAxes, leftArmInfo.FingerUniversalLocalAxes);
+                UpdateFinger(UxrHandSide.Left, Avatar.LeftHand.Thumb,  OVRPlugin.BoneId.Hand_Thumb0,  4, _leftFingerOculusRotation, leftArmInfo.HandUniversalLocalAxes, leftArmInfo.FingerUniversalLocalAxes);
             }
 
             if (_isRightHandAvailable && wristRight != null)
@@ -133,19 +134,20 @@ namespace UltimateXR.Devices.Integrations.Meta
                     SetCalibrationPose(UxrHandSide.Right);
                 }
 
-                UxrUniversalLocalAxes rightHandParentAxes = wristRight.parent == Avatar.AvatarRig.RightArm.Forearm ? Avatar.AvatarRigInfo.RightForearmUniversalLocalAxes : Avatar.AvatarRigInfo.RightHandUniversalLocalAxes;
+                UxrAvatarArmInfo      rightArmInfo        = Avatar.AvatarRigInfo.GetArmInfo(UxrHandSide.Right);
+                UxrUniversalLocalAxes rightHandParentAxes = wristRight.parent == Avatar.AvatarRig.RightArm.Forearm ? rightArmInfo.ForearmUniversalLocalAxes : rightArmInfo.HandUniversalLocalAxes;
 
                 Vector3    sensorRightPos = Avatar.transform.TransformPoint(_rightHandState.RootPose.Position.FromFlippedZVector3f());
-                Quaternion sensorRightRot = Avatar.transform.rotation * ToCorrectCoordinateSystem(_rightHandState.RootPose.Orientation, FlipMode.FlipZ, _rightHandOculusRotation, rightHandParentAxes, Avatar.AvatarRigInfo.RightHandUniversalLocalAxes);
+                Quaternion sensorRightRot = Avatar.transform.rotation * ToCorrectCoordinateSystem(_rightHandState.RootPose.Orientation, FlipMode.FlipZ, _rightHandOculusRotation, rightHandParentAxes, rightArmInfo.HandUniversalLocalAxes);
 
                 wristRight.position = sensorRightPos;
                 wristRight.rotation = sensorRightRot;
 
-                UpdateFinger(UxrHandSide.Right, Avatar.RightHand.Index,  OVRPlugin.BoneId.Hand_Index1,  3, _rightFingerOculusRotation, Avatar.AvatarRigInfo.RightHandUniversalLocalAxes, Avatar.AvatarRigInfo.RightFingerUniversalLocalAxes);
-                UpdateFinger(UxrHandSide.Right, Avatar.RightHand.Middle, OVRPlugin.BoneId.Hand_Middle1, 3, _rightFingerOculusRotation, Avatar.AvatarRigInfo.RightHandUniversalLocalAxes, Avatar.AvatarRigInfo.RightFingerUniversalLocalAxes);
-                UpdateFinger(UxrHandSide.Right, Avatar.RightHand.Ring,   OVRPlugin.BoneId.Hand_Ring1,   3, _rightFingerOculusRotation, Avatar.AvatarRigInfo.RightHandUniversalLocalAxes, Avatar.AvatarRigInfo.RightFingerUniversalLocalAxes);
-                UpdateFinger(UxrHandSide.Right, Avatar.RightHand.Little, OVRPlugin.BoneId.Hand_Pinky1,  3, _rightFingerOculusRotation, Avatar.AvatarRigInfo.RightHandUniversalLocalAxes, Avatar.AvatarRigInfo.RightFingerUniversalLocalAxes);
-                UpdateFinger(UxrHandSide.Right, Avatar.RightHand.Thumb,  OVRPlugin.BoneId.Hand_Thumb0,  4, _rightFingerOculusRotation, Avatar.AvatarRigInfo.RightHandUniversalLocalAxes, Avatar.AvatarRigInfo.RightFingerUniversalLocalAxes);
+                UpdateFinger(UxrHandSide.Right, Avatar.RightHand.Index,  OVRPlugin.BoneId.Hand_Index1,  3, _rightFingerOculusRotation, rightArmInfo.HandUniversalLocalAxes, rightArmInfo.FingerUniversalLocalAxes);
+                UpdateFinger(UxrHandSide.Right, Avatar.RightHand.Middle, OVRPlugin.BoneId.Hand_Middle1, 3, _rightFingerOculusRotation, rightArmInfo.HandUniversalLocalAxes, rightArmInfo.FingerUniversalLocalAxes);
+                UpdateFinger(UxrHandSide.Right, Avatar.RightHand.Ring,   OVRPlugin.BoneId.Hand_Ring1,   3, _rightFingerOculusRotation, rightArmInfo.HandUniversalLocalAxes, rightArmInfo.FingerUniversalLocalAxes);
+                UpdateFinger(UxrHandSide.Right, Avatar.RightHand.Little, OVRPlugin.BoneId.Hand_Pinky1,  3, _rightFingerOculusRotation, rightArmInfo.HandUniversalLocalAxes, rightArmInfo.FingerUniversalLocalAxes);
+                UpdateFinger(UxrHandSide.Right, Avatar.RightHand.Thumb,  OVRPlugin.BoneId.Hand_Thumb0,  4, _rightFingerOculusRotation, rightArmInfo.HandUniversalLocalAxes, rightArmInfo.FingerUniversalLocalAxes);
             }
 
 #endif

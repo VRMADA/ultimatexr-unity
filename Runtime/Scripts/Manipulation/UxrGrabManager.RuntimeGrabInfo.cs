@@ -77,14 +77,14 @@ namespace UltimateXR.Manipulation
             public UxrGrabbableObjectAnchor AnchorFrom { get; }
 
             /// <summary>
-            ///     Gets <see cref="UxrGrabbableObject" />'s position before being updated by the grab manager.
+            ///     Gets <see cref="UxrGrabbableObject" />'s local position before being updated by the grab manager.
             /// </summary>
-            public Vector3 PositionBeforeUpdate { get; set; }
+            public Vector3 LocalPositionBeforeUpdate { get; set; }
 
             /// <summary>
-            ///     Gets <see cref="UxrGrabbableObject" />'s rotation before being updated by the grab manager.
+            ///     Gets <see cref="UxrGrabbableObject" />'s local rotation before being updated by the grab manager.
             /// </summary>
-            public Quaternion RotationBeforeUpdate { get; set; }
+            public Quaternion LocalRotationBeforeUpdate { get; set; }
 
             /// <summary>
             ///     Gets the timer value that is used to perform smooth "Look At" transitions.
@@ -124,8 +124,8 @@ namespace UltimateXR.Manipulation
                 Grabbers.Add(grabber);
                 GrabbedPoints.Add(grabPoint);
 
-                PositionBeforeUpdate = grabber.GrabbedObject.transform.position;
-                RotationBeforeUpdate = grabber.GrabbedObject.transform.rotation;
+                LocalPositionBeforeUpdate = grabber.GrabbedObject.transform.localPosition;
+                LocalRotationBeforeUpdate = grabber.GrabbedObject.transform.localRotation;
 
                 LookAtTimer = -1.0f;
 

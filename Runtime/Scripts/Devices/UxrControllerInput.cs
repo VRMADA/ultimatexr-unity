@@ -39,8 +39,6 @@ namespace UltimateXR.Devices
 
         #endregion
 
-        public static UxrLogLevel LogLevel { get; set; } = UxrLogLevel.Relevant;
-
         #region Public Types & Data
 
         /// <summary>
@@ -68,6 +66,11 @@ namespace UltimateXR.Devices
                 return EnabledComponentsInLocalAvatar.FirstOrDefault(i => i.GetType() != typeof(UxrDummyControllerInput));
             }
         }
+
+        /// <summary>
+        ///     Gets or sets the current log level. This controls the amount of information sent.
+        /// </summary>
+        public static UxrLogLevel LogLevel { get; set; } = UxrLogLevel.Relevant;
 
         #endregion
 

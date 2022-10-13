@@ -23,7 +23,7 @@ namespace UltimateXR.Manipulation
         RestrictToBox,
 
         /// <summary>
-        ///     The local position is constrained between minimum and maximum offsets.
+        ///     The local position is constrained between minimum and maximum offsets pointed by the initial local axes.
         /// </summary>
         RestrictLocalOffset,
 
@@ -31,6 +31,11 @@ namespace UltimateXR.Manipulation
         ///     The <see cref="UxrGrabbableObject" /> position is constrained to a sphere defined by a
         ///     <see cref="SphereCollider" />.
         /// </summary>
-        RestrictToSphere
+        RestrictToSphere,
+
+        /// <summary>
+        ///     The <see cref="UxrGrabbableObject"/> cannot move. 
+        /// </summary>
+        Locked
     }
 }

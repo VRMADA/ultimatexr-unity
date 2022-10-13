@@ -9,7 +9,6 @@ using UltimateXR.Avatar;
 using UltimateXR.Avatar.Rig;
 using UltimateXR.Core;
 using UltimateXR.Core.Components.Composite;
-using UltimateXR.Core.Math;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Extensions.Unity.Math;
 using UnityEngine;
@@ -43,7 +42,7 @@ namespace UltimateXR.Manipulation
 
         /// <summary>
         ///     Gets from all the positive and negative axes in the grabber's transform, the axis in local-space that is pointing
-        ///     to the fingers.
+        ///     to the fingers, excluding the thumb.
         /// </summary>
         public Vector3 LocalFingerDirection
         {
@@ -54,15 +53,13 @@ namespace UltimateXR.Manipulation
                     return transform.forward;
                 }
 
-                UxrUniversalLocalAxes handUniversalAxes = Side == UxrHandSide.Left ? Avatar.AvatarRigInfo.LeftHandUniversalLocalAxes : Avatar.AvatarRigInfo.RightHandUniversalLocalAxes;
-
-                return transform.GetClosestLocalAxis(handUniversalAxes.WorldForward);
+                return transform.GetClosestLocalAxis(Avatar.AvatarRigInfo.GetArmInfo(Side).HandUniversalLocalAxes.WorldForward);
             }
         }
 
         /// <summary>
         ///     Gets from all the positive and negative axes in the grabber's transform, the axis in world-space that is pointing
-        ///     to the fingers.
+        ///     to the fingers, excluding the thumb.
         /// </summary>
         public Vector3 FingerDirection => transform.TransformDirection(LocalFingerDirection);
 
@@ -76,12 +73,10 @@ namespace UltimateXR.Manipulation
             {
                 if (Avatar == null || Avatar.AvatarRigInfo == null)
                 {
-                    return transform.forward;
+                    return -transform.up;
                 }
 
-                UxrUniversalLocalAxes handUniversalAxes = Side == UxrHandSide.Left ? Avatar.AvatarRigInfo.LeftHandUniversalLocalAxes : Avatar.AvatarRigInfo.RightHandUniversalLocalAxes;
-
-                return transform.GetClosestLocalAxis(-handUniversalAxes.WorldUp);
+                return transform.GetClosestLocalAxis(-Avatar.AvatarRigInfo.GetArmInfo(Side).HandUniversalLocalAxes.WorldUp);
             }
         }
 
@@ -90,6 +85,31 @@ namespace UltimateXR.Manipulation
         ///     outwards from the palm..
         /// </summary>
         public Vector3 PalmOutDirection => transform.TransformDirection(LocalPalmOutDirection);
+
+        /// <summary>
+        ///     Gets from all the positive and negative axes in the grabber's transform, the axis in local-space that is pointing
+        ///     towards the thumb.
+        /// </summary>
+        public Vector3 LocalPalmThumbDirection
+        {
+            get
+            {
+                Vector3 direction = transform.right;
+                
+                if (Avatar != null && Avatar.AvatarRigInfo != null)
+                {
+                    direction = transform.GetClosestLocalAxis(Avatar.AvatarRigInfo.GetArmInfo(Side).HandUniversalLocalAxes.WorldRight);
+                }
+
+                return Side == UxrHandSide.Left ? direction : -direction;
+            }
+        }
+
+        /// <summary>
+        ///     Gets from all the positive and negative axes in the grabber's transform, the axis in world-space that is pointing
+        ///     towards the thumb.
+        /// </summary>
+        public Vector3 PalmThumbDirection => transform.TransformDirection(LocalPalmThumbDirection);
 
         /// <summary>
         ///     <para>

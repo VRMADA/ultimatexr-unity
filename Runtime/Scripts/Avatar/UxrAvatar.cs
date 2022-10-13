@@ -3,6 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +23,6 @@ using UltimateXR.Manipulation;
 using UltimateXR.Manipulation.HandPoses;
 using UltimateXR.UI;
 using UnityEngine;
-
 #if ULTIMATEXR_UNITY_XR_MANAGEMENT
 using UnityEngine.SpatialTracking;
 #endif
@@ -147,7 +147,19 @@ namespace UltimateXR.Avatar
         /// <summary>
         ///     Gets the avatar rig information.
         /// </summary>
-        public UxrAvatarRigInfo AvatarRigInfo => _rigInfo;
+        public UxrAvatarRigInfo AvatarRigInfo
+        {
+            get
+            {
+                if (_rigInfo.SerializedVersion != UxrAvatarRigInfo.CurrentVersion)
+                {
+                    // We have new serialization data from a newer version, so compute it.
+                    CreateRigInfo();
+                }
+
+                return _rigInfo;
+            }
+        }
 
         /// <summary>
         ///     Gets the first enabled controller input belonging to the avatar. If there is no enabled
@@ -322,12 +334,40 @@ namespace UltimateXR.Avatar
         /// <summary>
         ///     Gets the left hand's grabber component. Null if no left <see cref="UxrGrabber" /> component was found.
         /// </summary>
-        public UxrGrabber LeftGrabber => UxrGrabber.GetComponents(this).FirstOrDefault(g => g.Side == UxrHandSide.Left);
+        public UxrGrabber LeftGrabber
+        {
+            get
+            {
+#if UNITY_EDITOR
+                
+                if (Application.isEditor && !Application.isPlaying)
+                {
+                    return GetComponentsInChildren<UxrGrabber>().FirstOrDefault(g => g.Side == UxrHandSide.Left);
+                }
+
+#endif
+                return UxrGrabber.GetComponents(this).FirstOrDefault(g => g.Side == UxrHandSide.Left);
+            }
+        }
 
         /// <summary>
         ///     Gets the right hand's grabber component. Null if no right <see cref="UxrGrabber" /> component was found.
         /// </summary>
-        public UxrGrabber RightGrabber => UxrGrabber.GetComponents(this).FirstOrDefault(g => g.Side == UxrHandSide.Right);
+        public UxrGrabber RightGrabber
+        {
+            get
+            {
+#if UNITY_EDITOR
+
+                if (Application.isEditor && !Application.isPlaying)
+                {
+                    return GetComponentsInChildren<UxrGrabber>().FirstOrDefault(g => g.Side == UxrHandSide.Right);
+                }
+
+#endif
+                return UxrGrabber.GetComponents(this).FirstOrDefault(g => g.Side == UxrHandSide.Right);
+            }
+        }
 
         /// <summary>
         ///     Gets the default hand pose name or null if there isn't any default hand pose set.
@@ -373,10 +413,7 @@ namespace UltimateXR.Avatar
 
                 // Enable or disable avatar renderers
 
-                if (_avatarRenderers != null)
-                {
-                    _avatarRenderers.ForEach(r => r.enabled = value.HasFlag(UxrAvatarRenderModes.Avatar));
-                }
+                _avatarRenderers?.ForEach(r => r.enabled = value.HasFlag(UxrAvatarRenderModes.Avatar));
 
                 // Enable/disable controller 3d models (and controller hands) depending on if their input component is active
 
@@ -597,6 +634,16 @@ namespace UltimateXR.Avatar
         }
 
         /// <summary>
+        ///     Gets the <see cref="UxrAvatarArm" /> rig information for the given arm.
+        /// </summary>
+        /// <param name="handSide">Which arm to get</param>
+        /// <returns><see cref="UxrAvatarArm" /> rig information</returns>
+        public UxrAvatarArm GetArm(UxrHandSide handSide)
+        {
+            return handSide == UxrHandSide.Left ? AvatarRig.LeftArm : AvatarRig.RightArm;
+        }
+
+        /// <summary>
         ///     Gets the <see cref="UxrAvatarHand" /> rig information for the given hand.
         /// </summary>
         /// <param name="handSide">Which hand to get</param>
@@ -660,7 +707,18 @@ namespace UltimateXR.Avatar
         /// </summary>
         public void TryToInferMissingRigElements()
         {
-            UxrAvatarRig.TryToInferMissingRigElements(_rig, GetComponentsInChildren<SkinnedMeshRenderer>(true));
+            UxrAvatarRig.TryToInferMissingRigElements(_rig, GetAllAvatarRendererComponents());
+        }
+
+        /// <summary>
+        ///     Gets all <see cref="Renderer" /> components except those hanging from a <see cref="UxrHandIntegration" /> object,
+        ///     which are renderers that are not part of the avatar itself but part of the supported input controllers / controller
+        ///     hands that can be rendered too.
+        /// </summary>
+        public IEnumerable<SkinnedMeshRenderer> GetAllAvatarRendererComponents()
+        {
+            SkinnedMeshRenderer[] skins = GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            return skins.Where(s => s.SafeGetComponentInParent<UxrHandIntegration>() == null);
         }
 
         /// <summary>
@@ -968,7 +1026,7 @@ namespace UltimateXR.Avatar
             {
                 OnHandPoseChanging(avatarHandPoseChangeArgs);
             }
-            
+
             handState.SetPose(handPose, blendValue);
 
             if (propagateEvents)
@@ -1049,8 +1107,8 @@ namespace UltimateXR.Avatar
         {
             UxrAvatarRig.UpdateHandUsingDescriptor(GetHand(handSide),
                                                    handPoseAsset.GetHandDescriptor(handSide, handPoseAsset.PoseType, blendPoseType),
-                                                   AvatarRigInfo.GetHandUniversalLocalAxes(handSide),
-                                                   AvatarRigInfo.GetFingerUniversalLocalAxes(handSide));
+                                                   AvatarRigInfo.GetArmInfo(handSide).HandUniversalLocalAxes,
+                                                   AvatarRigInfo.GetArmInfo(handSide).FingerUniversalLocalAxes);
         }
 
         #endregion
@@ -1151,7 +1209,13 @@ namespace UltimateXR.Avatar
             }
 
             // Try to infer missing elements
+
             TryToInferMissingRigElements();
+
+            if (AvatarRigInfo.SerializedVersion != UxrAvatarRigInfo.CurrentVersion)
+            {
+                CreateRigInfo();
+            }
 
             // Subscribe to device events
 
@@ -1322,7 +1386,7 @@ namespace UltimateXR.Avatar
         /// </summary>
         private void CreateRigInfo()
         {
-            _rigInfo.ComputeFromAvatar(this, _rig);
+            _rigInfo.Compute(this);
         }
 
         /// <summary>

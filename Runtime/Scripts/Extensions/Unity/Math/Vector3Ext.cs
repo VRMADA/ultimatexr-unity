@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UltimateXR.Extensions.System;
+using UltimateXR.Extensions.System.Math;
 using UnityEngine;
 
 namespace UltimateXR.Extensions.Unity.Math
@@ -24,6 +25,16 @@ namespace UltimateXR.Extensions.Unity.Math
         ///     Represents the NaN vector, an invalid value.
         /// </summary>
         public static ref readonly Vector3 NaN => ref s_nan;
+
+        /// <summary>
+        ///     Represents the Vector3 with minimum float values per component.
+        /// </summary>
+        public static ref readonly Vector3 MinValue => ref s_minValue;
+
+        /// <summary>
+        ///     Represents the Vector3 with maximum float values per component.
+        /// </summary>
+        public static ref readonly Vector3 MaxValue => ref s_maxValue;
 
         #endregion
 
@@ -115,18 +126,7 @@ namespace UltimateXR.Extensions.Unity.Math
 
             for (int i = 0; i < VectorLength; ++i)
             {
-                float angle = self[i] % 360.0f;
-
-                if (angle > 180.0f)
-                {
-                    angle -= 360.0f;
-                }
-                else if (angle < -180.0f)
-                {
-                    angle += 360.0f;
-                }
-
-                result[i] = angle;
+                result[i] = self[i].ToEuler180();
             }
 
             return result.ToVector3();
@@ -218,6 +218,27 @@ namespace UltimateXR.Extensions.Unity.Math
         }
 
         /// <summary>
+        ///     Gets the number of components that are different between two vectors.
+        /// </summary>
+        /// <param name="a">First vector</param>
+        /// <param name="b">Second vector</param>
+        /// <returns>The number of components [0, 3] that are different</returns>
+        public static int DifferentComponentCount(Vector3 a, Vector3 b)
+        {
+            int count = 0;
+
+            for (int axisIndex = 0; axisIndex < 3; ++axisIndex)
+            {
+                if (!Mathf.Approximately(a[axisIndex], b[axisIndex]))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
         ///     Multiplies two <see cref="Vector3" /> component by component.
         /// </summary>
         /// <param name="self">Operand A</param>
@@ -262,7 +283,7 @@ namespace UltimateXR.Extensions.Unity.Math
         ///     Tries to parse a <see cref="Vector3" /> from a string.
         /// </summary>
         /// <param name="s">Source string</param>
-        /// <param name="result">Parsed vector or NaN if there was an error</param>
+        /// <param name="result">Parsed vector or <see cref="NaN"/> if there was an error</param>
         /// <returns>Whether the vector was parsed successfully</returns>
         public static bool TryParse(string s, out Vector3 result)
         {
@@ -360,6 +381,18 @@ namespace UltimateXR.Extensions.Unity.Math
             }
 
             return new Vector3(vector.z, 0.0f, -vector.y);
+        }
+
+        /// <summary>
+        ///     Computes the signed distance from a point to a plane.
+        /// </summary>
+        /// <param name="point">The point to compute the distance from</param>
+        /// <param name="planePoint">Point in a plane</param>
+        /// <param name="planeNormal">Plane normal</param>
+        /// <returns>Signed distance from a point to a plane</returns>
+        public static float DistanceToPlane(this Vector3 point, Vector3 planePoint, Vector3 planeNormal)
+        {
+            return new Plane(planeNormal, planePoint).GetDistanceToPoint(point);
         }
 
         /// <summary>
@@ -632,6 +665,8 @@ namespace UltimateXR.Extensions.Unity.Math
 
         private static readonly char[]  s_cardinalSeparator = CardinalSeparator.ToCharArray();
         private static readonly Vector3 s_nan               = float.NaN * Vector3.one;
+        private static readonly Vector3 s_minValue          = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+        private static readonly Vector3 s_maxValue          = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
 
         #endregion
     }

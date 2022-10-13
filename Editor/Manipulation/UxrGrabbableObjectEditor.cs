@@ -10,8 +10,10 @@ using UltimateXR.Avatar;
 using UltimateXR.Avatar.Controllers;
 using UltimateXR.Avatar.Editor;
 using UltimateXR.Core;
+using UltimateXR.Core.Math;
 using UltimateXR.Editor;
 using UltimateXR.Extensions.Unity;
+using UltimateXR.Extensions.Unity.Math;
 using UltimateXR.Manipulation.HandPoses;
 using UltimateXR.Manipulation.HandPoses.Editor;
 using UnityEditor;
@@ -111,6 +113,43 @@ namespace UltimateXR.Manipulation.Editor
 
         #endregion
 
+        #region Internal Methods
+
+        /// <summary>
+        ///     Gets the disk radius required to draw a given grabbable object axis rotational constraints using its pre-computed
+        ///     local bounds.
+        /// </summary>
+        /// <param name="grabbableObject">Grabbable object</param>
+        /// <param name="axis">Rotation axis</param>
+        /// <param name="defaultDiskRadius">Default disk radius if it could not be computed</param>
+        /// <returns>Disk radius</returns>
+        internal static float GetHandlesDiskRadius(UxrGrabbableObject grabbableObject, UxrAxis axis, float defaultDiskRadius)
+        {
+            foreach (KeyValuePair<SerializedObject, UxrGrabbableObjectEditor> openEditor in s_openEditors)
+            {
+                foreach (Object targetObject in openEditor.Key.targetObjects)
+                {
+                    UxrGrabbableObject grabbableObjectTarget = targetObject as UxrGrabbableObject;
+
+                    if (grabbableObjectTarget == grabbableObject)
+                    {
+                        if (openEditor.Value._grabbableBounds.TryGetValue(grabbableObject, out Bounds localBounds))
+                        {
+                            float halfSize1       = Mathf.Max(Mathf.Abs(localBounds.max[axis.Perpendicular]), Mathf.Abs(localBounds.min[axis.Perpendicular])) * grabbableObject.transform.lossyScale[axis.Perpendicular] * 0.5f;
+                            float halfSize2       = Mathf.Max(Mathf.Abs(localBounds.max[axis.OtherPerpendicular]), Mathf.Abs(localBounds.min[axis.OtherPerpendicular])) * grabbableObject.transform.lossyScale[axis.OtherPerpendicular] * 0.5f;
+                            float halfSizeLargest = Mathf.Max(Mathf.Abs(halfSize1), Mathf.Abs(halfSize2));
+                            float boundsRadius    = halfSizeLargest; //Mathf.Sqrt(halfSizeLargest * halfSizeLargest * 2.0f);
+                            return Mathf.Min(boundsRadius * DiskHandleRadiusExpand, MaxDiskHandleRadius);
+                        }
+                    }
+                }
+            }
+
+            return defaultDiskRadius;
+        }
+
+        #endregion
+
         #region Unity
 
         /// <summary>
@@ -120,46 +159,48 @@ namespace UltimateXR.Manipulation.Editor
         {
             Undo.undoRedoPerformed += OnUndoRedo;
 
-            _propManipulationMode                   = serializedObject.FindProperty("_manipulationMode");
-            _propIgnoreGrabbableParentDependency    = serializedObject.FindProperty("_ignoreGrabbableParentDependency");
-            _propControlParentDirection             = serializedObject.FindProperty("_controlParentDirection");
-            _propPriority                           = serializedObject.FindProperty("_priority");
-            _propRigidBodySource                    = serializedObject.FindProperty("_rigidBodySource");
-            _propRigidBodyDynamicOnRelease          = serializedObject.FindProperty("_rigidBodyDynamicOnRelease");
-            _propVerticalReleaseMultiplier          = serializedObject.FindProperty("_verticalReleaseMultiplier");
-            _propHorizontalReleaseMultiplier        = serializedObject.FindProperty("_horizontalReleaseMultiplier");
-            _propNeedsTwoHandsToRotate              = serializedObject.FindProperty("_needsTwoHandsToRotate");
-            _propAllowMultiGrab                     = serializedObject.FindProperty("_allowMultiGrab");
-            _propPreviewGrabPosesMode               = serializedObject.FindProperty("_previewGrabPosesMode");
-            _propPreviewPosesRegenerationType       = serializedObject.FindProperty("_previewPosesRegenerationType");
-            _propPreviewPosesRegenerationIndex      = serializedObject.FindProperty("_previewPosesRegenerationIndex");
-            _propFirstGrabPointIsMain               = serializedObject.FindProperty("_firstGrabPointIsMain");
-            _propGrabPoint                          = serializedObject.FindProperty(PropertyGrabPoint);
-            _propAdditionalGrabPoints               = serializedObject.FindProperty(PropertyAdditionalGrabPoints);
-            _propUseParenting                       = serializedObject.FindProperty("_useParenting");
-            _propAutoCreateStartAnchor              = serializedObject.FindProperty("_autoCreateStartAnchor");
-            _propStartAnchor                        = serializedObject.FindProperty("_startAnchor");
-            _propTag                                = serializedObject.FindProperty("_tag");
-            _propDropAlignTransformUseSelf          = serializedObject.FindProperty("_dropAlignTransformUseSelf");
-            _propDropAlignTransform                 = serializedObject.FindProperty("_dropAlignTransform");
-            _propDropSnapMode                       = serializedObject.FindProperty("_dropSnapMode");
-            _propDropProximityTransformUseSelf      = serializedObject.FindProperty("_dropProximityTransformUseSelf");
-            _propDropProximityTransform             = serializedObject.FindProperty("_dropProximityTransform");
-            _propTranslationConstraintMode          = serializedObject.FindProperty("_translationConstraintMode");
-            _propRestrictToBox                      = serializedObject.FindProperty("_restrictToBox");
-            _propRestrictToSphere                   = serializedObject.FindProperty("_restrictToSphere");
-            _propTranslationLimitsMin               = serializedObject.FindProperty("_translationLimitsMin");
-            _propTranslationLimitsMax               = serializedObject.FindProperty("_translationLimitsMax");
-            _propTranslationLimitsReferenceIsParent = serializedObject.FindProperty("_translationLimitsReferenceIsParent");
-            _propTranslationLimitsParent            = serializedObject.FindProperty("_translationLimitsParent");
-            _propRotationConstraintMode             = serializedObject.FindProperty("_rotationConstraintMode");
-            _propRotationAngleLimitsMin             = serializedObject.FindProperty("_rotationAngleLimitsMin");
-            _propRotationAngleLimitsMax             = serializedObject.FindProperty("_rotationAngleLimitsMax");
-            _propRotationLimitsReferenceIsParent    = serializedObject.FindProperty("_rotationLimitsReferenceIsParent");
-            _propRotationLimitsParent               = serializedObject.FindProperty("_rotationLimitsParent");
-            _propLockedGrabReleaseDistance          = serializedObject.FindProperty("_lockedGrabReleaseDistance");
-            _propTranslationResistance              = serializedObject.FindProperty("_translationResistance");
-            _propRotationResistance                 = serializedObject.FindProperty("_rotationResistance");
+            _propIgnoreGrabbableParentDependency = serializedObject.FindProperty("_ignoreGrabbableParentDependency");
+            _propControlParentDirection          = serializedObject.FindProperty("_controlParentDirection");
+            
+            _propPriority                        = serializedObject.FindProperty("_priority");
+            _propAllowMultiGrab                  = serializedObject.FindProperty("_allowMultiGrab");
+            
+            _propTranslationConstraintMode = serializedObject.FindProperty("_translationConstraintMode");
+            _propRestrictToBox             = serializedObject.FindProperty("_restrictToBox");
+            _propRestrictToSphere          = serializedObject.FindProperty("_restrictToSphere");
+            _propTranslationLimitsMin      = serializedObject.FindProperty("_translationLimitsMin");
+            _propTranslationLimitsMax      = serializedObject.FindProperty("_translationLimitsMax");
+            _propRotationConstraintMode    = serializedObject.FindProperty("_rotationConstraintMode");
+            _propRotationAngleLimitsMin    = serializedObject.FindProperty("_rotationAngleLimitsMin");
+            _propRotationAngleLimitsMax    = serializedObject.FindProperty("_rotationAngleLimitsMax");
+            _propAutoRotationProvider      = serializedObject.FindProperty("_autoRotationProvider");
+            _propRotationProvider          = serializedObject.FindProperty("_rotationProvider");
+            _propRotationLongitudinalAxis  = serializedObject.FindProperty("_rotationLongitudinalAxis");
+            _propNeedsTwoHandsToRotate     = serializedObject.FindProperty("_needsTwoHandsToRotate");
+            _propLockedGrabReleaseDistance = serializedObject.FindProperty("_lockedGrabReleaseDistance");
+            _propTranslationResistance     = serializedObject.FindProperty("_translationResistance");
+            _propRotationResistance        = serializedObject.FindProperty("_rotationResistance");
+
+            _propRigidBodySource                 = serializedObject.FindProperty("_rigidBodySource");
+            _propRigidBodyDynamicOnRelease       = serializedObject.FindProperty("_rigidBodyDynamicOnRelease");
+            _propVerticalReleaseMultiplier       = serializedObject.FindProperty("_verticalReleaseMultiplier");
+            _propHorizontalReleaseMultiplier     = serializedObject.FindProperty("_horizontalReleaseMultiplier");
+
+            _propPreviewGrabPosesMode            = serializedObject.FindProperty("_previewGrabPosesMode");
+            _propPreviewPosesRegenerationType    = serializedObject.FindProperty("_previewPosesRegenerationType");
+            _propPreviewPosesRegenerationIndex   = serializedObject.FindProperty("_previewPosesRegenerationIndex");
+            _propFirstGrabPointIsMain            = serializedObject.FindProperty("_firstGrabPointIsMain");
+            _propGrabPoint                       = serializedObject.FindProperty(PropertyGrabPoint);
+            _propAdditionalGrabPoints            = serializedObject.FindProperty(PropertyAdditionalGrabPoints);
+            _propUseParenting                    = serializedObject.FindProperty("_useParenting");
+            _propAutoCreateStartAnchor           = serializedObject.FindProperty("_autoCreateStartAnchor");
+            _propStartAnchor                     = serializedObject.FindProperty("_startAnchor");
+            _propTag                             = serializedObject.FindProperty("_tag");
+            _propDropAlignTransformUseSelf       = serializedObject.FindProperty("_dropAlignTransformUseSelf");
+            _propDropAlignTransform              = serializedObject.FindProperty("_dropAlignTransform");
+            _propDropSnapMode                    = serializedObject.FindProperty("_dropSnapMode");
+            _propDropProximityTransformUseSelf   = serializedObject.FindProperty("_dropProximityTransformUseSelf");
+            _propDropProximityTransform          = serializedObject.FindProperty("_dropProximityTransform");
 
             // Try to remember the grip selection we have if possible, considering we may start the inspector in multi-editing mode
 
@@ -205,6 +246,22 @@ namespace UltimateXR.Manipulation.Editor
             }
 
             ComputeGrabPoseMeshes(SelectedAvatarForGrips, _propPreviewGrabPosesMode);
+
+            // Precompute local grabbable bounds
+
+            _grabbableBounds = new Dictionary<UxrGrabbableObject, Bounds>();
+
+            foreach (Object selectedObject in targets)
+            {
+                UxrGrabbableObject grabbableObject = selectedObject as UxrGrabbableObject;
+
+                if (grabbableObject == null)
+                {
+                    continue;
+                }
+
+                _grabbableBounds.Add(grabbableObject, grabbableObject.gameObject.GetLocalBounds(true));
+            }
 
             // Add a static reference so that we can update the grip preview meshes from the Hand Pose Editor
 
@@ -258,11 +315,11 @@ namespace UltimateXR.Manipulation.Editor
                 }
             }
 
-            // General parameters
-
             UxrGrabbableObject grabbableObject           = (UxrGrabbableObject)serializedObject.targetObject;
             UxrGrabPointShape  grabPointShape            = grabbableObject.GetComponent<UxrGrabPointShape>();
             Transform          grabbableParentDependency = grabbableObject.GrabbableParentDependency;
+
+            // Grabbable dependency options
 
             if (grabbableParentDependency != null)
             {
@@ -270,10 +327,8 @@ namespace UltimateXR.Manipulation.Editor
 
                 if (_propTranslationConstraintMode.enumValueIndex != (int)UxrTranslationConstraintMode.Free && _propIgnoreGrabbableParentDependency.boolValue == false)
                 {
-                    EditorGUILayout.HelpBox("Object will be constrained by " + grabbableParentDependency.name + " because this object has translation constraints applied. You may even use it to control its direction with the parameter below",
-                                            MessageType.Info);
-                    EditorGUILayout.PropertyField(_propControlParentDirection,
-                                                  new GUIContent("Control " + grabbableParentDependency.name + " Direction", "Allows to control the direction of the parent grabbable object when this object is grabbed"));
+                    EditorGUILayout.HelpBox($"Object will be constrained by {grabbableParentDependency.name} because this object has translation constraints applied. You may even use it to control its direction with the parameter below", MessageType.Info);
+                    EditorGUILayout.PropertyField(_propControlParentDirection, new GUIContent($"Control {grabbableParentDependency.name} Direction", "Allows to control the direction of the parent grabbable object when this object is grabbed"));
                 }
 
                 if (_propTranslationConstraintMode.enumValueIndex != (int)UxrTranslationConstraintMode.Free)
@@ -282,27 +337,132 @@ namespace UltimateXR.Manipulation.Editor
                 }
             }
 
+            // General parameters
+
             EditorGUILayout.Space();
+            _foldoutGeneralParameters = UxrEditorUtils.FoldoutStylish("General parameters", _foldoutGeneralParameters);
 
-            _foldoutManipulation = UxrEditorUtils.FoldoutStylish("Manipulation", _foldoutManipulation);
-
-            if (_foldoutManipulation)
+            if (_foldoutGeneralParameters)
             {
-                EditorGUILayout.PropertyField(_propManipulationMode, ContentManipulationMode);
+                EditorGUILayout.PropertyField(_propPriority, ContentPriority);
+
+                if (_propAdditionalGrabPoints.arraySize > 0 || grabPointShape != null)
+                {
+                    EditorGUILayout.PropertyField(_propAllowMultiGrab, ContentAllowMultiGrab);
+                }
+            }
+            
+            // Constraints parameters
+
+            EditorGUILayout.Space();
+            _foldoutConstraints = UxrEditorUtils.FoldoutStylish("Constraints", _foldoutConstraints);
+
+            if (_foldoutConstraints)
+            {
+                EditorGUILayout.PropertyField(_propTranslationConstraintMode, ContentTranslationConstraintMode);
+
+                if (_propTranslationConstraintMode.enumValueIndex == (int)UxrTranslationConstraintMode.RestrictLocalOffset)
+                {
+                    EditorGUILayout.PropertyField(_propTranslationLimitsMin, ContentTranslationLimitsMin);
+                    EditorGUILayout.PropertyField(_propTranslationLimitsMax, ContentTranslationLimitsMax);
+                }
+                else if (_propTranslationConstraintMode.enumValueIndex == (int)UxrTranslationConstraintMode.RestrictToBox)
+                {
+                    EditorGUILayout.PropertyField(_propRestrictToBox, ContentRestrictToBox);
+                }
+                else if (_propTranslationConstraintMode.enumValueIndex == (int)UxrTranslationConstraintMode.RestrictToSphere)
+                {
+                    EditorGUILayout.PropertyField(_propRestrictToSphere, ContentRestrictToSphere);
+                }
+
+                EditorGUILayout.PropertyField(_propRotationConstraintMode, ContentRotationConstraintMode);
+
+                if (_propRotationConstraintMode.enumValueIndex == (int)UxrRotationConstraintMode.RestrictLocalRotation)
+                {
+                    EditorGUILayout.PropertyField(_propRotationAngleLimitsMin, ContentRotationAngleLimitsMin);
+                    EditorGUILayout.PropertyField(_propRotationAngleLimitsMax, ContentRotationAngleLimitsMax);
+                }
+
+                if (_propTranslationConstraintMode.enumValueIndex != (int)UxrTranslationConstraintMode.Free &&
+                    _propRotationConstraintMode.enumValueIndex != (int)UxrRotationConstraintMode.Locked &&
+                    _propRotationConstraintMode.enumValueIndex != (int)UxrRotationConstraintMode.Free)
+                {
+                    Vector3 minEuler = _propRotationAngleLimitsMin.vector3Value;
+                    Vector3 maxEuler = _propRotationAngleLimitsMax.vector3Value;
+
+                    int rangeOfMotionAxisCount = Vector3Ext.DifferentComponentCount(minEuler, maxEuler); 
+
+                    if (rangeOfMotionAxisCount > 0)
+                    {
+                        // Longitudinal axis
+                        
+                        if (rangeOfMotionAxisCount > 1)
+                        {
+                            EditorGUILayout.PropertyField(_propRotationLongitudinalAxis, ContentRotationLongitudinalAxis);
+                        }
+                        
+                        // Rotation provider
+
+                        GameObject selectedAvatar          = grabbableObject.Editor_GetSelectedAvatarPrefabForGrips();
+                        UxrAvatar  selectedAvatarComponent = selectedAvatar != null ? selectedAvatar.GetComponent<UxrAvatar>() : null;
+
+                        List<string>        rotationProviderOptions = new List<string>();
+                        string              autoOption              = "Auto";
+                        Transform           rightHandSnapTransform  = selectedAvatarComponent != null ? grabbableObject.Editor_GetGrabPointGrabAlignTransform(selectedAvatarComponent, 0, UxrHandSide.Right) : grabbableObject.GetGrabPoint(0).GetGripPoseInfo(0).GripAlignTransformHandRight;
+                        UxrRotationProvider autoRotationProvider    = grabbableObject.Editor_GetAutoRotationProvider(rightHandSnapTransform != null ? rightHandSnapTransform.position : grabbableObject.transform.position);
+
+                        if (serializedObject.isEditingMultipleObjects)
+                        {
+                            rotationProviderOptions.Add(autoOption);
+                        }
+                        else
+                        {
+                            rotationProviderOptions.Add($"{autoOption} ({autoRotationProvider})");
+                        }
+
+                        foreach (UxrRotationProvider rotationProvider in Enum.GetValues(typeof(UxrRotationProvider)))
+                        {
+                            rotationProviderOptions.Add(rotationProvider.ToString());
+                        }
+
+                        int popupIndex = _propAutoRotationProvider.boolValue ? 0 : _propRotationProvider.enumValueIndex + 1; 
+
+                        EditorGUI.BeginChangeCheck();
+                        popupIndex = EditorGUILayout.Popup(ContentRotationProvider, popupIndex, UxrEditorUtils.ToGUIContentArray(rotationProviderOptions));
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            _propAutoRotationProvider.boolValue = popupIndex == 0;
+                        }
+
+                        _propRotationProvider.enumValueIndex = popupIndex != 0 ? popupIndex - 1 : (int)autoRotationProvider;
+                    }
+                }
+
+                bool rotatesUsingHandPositionAroundPivot = _propTranslationConstraintMode.enumValueIndex != (int)UxrTranslationConstraintMode.Free && _propRotationProvider.enumValueIndex == (int)UxrRotationProvider.HandPositionAroundPivot;
+
+                if (!grabbableObject.UsesGrabbableParentDependency && rotatesUsingHandPositionAroundPivot && _propAdditionalGrabPoints.arraySize > 0)
+                {
+                    EditorGUILayout.PropertyField(_propNeedsTwoHandsToRotate, ContentNeedsTwoHandsToRotate);
+                }
+
+                if ((!rotatesUsingHandPositionAroundPivot && _propAdditionalGrabPoints.arraySize > 0) || !grabbableObject.UsesGrabbableParentDependency)
+                {
+                    EditorGUILayout.PropertyField(_propLockedGrabReleaseDistance, ContentLockedGrabReleaseDistance);
+                }
+
+                EditorGUILayout.Slider(_propTranslationResistance, 0.0f, 1.0f, ContentTranslationResistance);
+                EditorGUILayout.Slider(_propRotationResistance,    0.0f, 1.0f, ContentRotationResistance);
             }
 
-            bool usesGeneralParametersFoldout = false;
+            // Physics parameters
 
-            if (!grabbableObject.UsesGrabbableParentDependency && _propManipulationMode.enumValueIndex == (int)UxrManipulationMode.GrabAndMove)
+            if (!grabbableObject.UsesGrabbableParentDependency && _propTranslationConstraintMode.enumValueIndex == (int)UxrTranslationConstraintMode.Free)
             {
                 EditorGUILayout.Space();
-                _foldoutGeneralParameters = UxrEditorUtils.FoldoutStylish("General parameters", _foldoutGeneralParameters);
+                _foldoutPhysics = UxrEditorUtils.FoldoutStylish("Physics", _foldoutPhysics);
 
-                usesGeneralParametersFoldout = true;
-
-                if (_foldoutGeneralParameters)
+                if (_foldoutPhysics)
                 {
-                    EditorGUILayout.PropertyField(_propPriority,        ContentPriority);
                     EditorGUILayout.PropertyField(_propRigidBodySource, ContentRigidBodySource);
 
                     if (_propRigidBodySource.objectReferenceValue != null)
@@ -315,31 +475,6 @@ namespace UltimateXR.Manipulation.Editor
                             EditorGUILayout.PropertyField(_propHorizontalReleaseMultiplier, ContentHorizontalReleaseMultiplier);
                         }
                     }
-                }
-            }
-            else
-            {
-                if (_foldoutManipulation)
-                {
-                    EditorGUILayout.PropertyField(_propPriority, ContentPriority);
-                }
-            }
-
-            if (!grabbableObject.UsesGrabbableParentDependency && _propManipulationMode.enumValueIndex == (int)UxrManipulationMode.RotateAroundAxis && _propAdditionalGrabPoints.arraySize > 0)
-            {
-                if (_foldoutManipulation)
-                {
-                    EditorGUILayout.PropertyField(_propNeedsTwoHandsToRotate, ContentNeedsTwoHandsToRotate);
-                }
-            }
-
-            if (_propAdditionalGrabPoints.arraySize > 0 || grabPointShape != null)
-            {
-                bool show = usesGeneralParametersFoldout ? _foldoutGeneralParameters : _foldoutManipulation;
-
-                if (show)
-                {
-                    EditorGUILayout.PropertyField(_propAllowMultiGrab, ContentAllowMultiGrab);
                 }
             }
 
@@ -485,7 +620,7 @@ namespace UltimateXR.Manipulation.Editor
 
             // Object placement parameters
 
-            if (!grabbableObject.UsesGrabbableParentDependency && _propManipulationMode.enumValueIndex == (int)UxrManipulationMode.GrabAndMove)
+            if (!grabbableObject.UsesGrabbableParentDependency && _propTranslationConstraintMode.enumValueIndex != (int)UxrTranslationConstraintMode.Locked)
             {
                 EditorGUILayout.Space();
                 _foldoutObjectPlacing = UxrEditorUtils.FoldoutStylish("Object placement", _foldoutObjectPlacing);
@@ -528,66 +663,6 @@ namespace UltimateXR.Manipulation.Editor
                         _propDropProximityTransformUseSelf.boolValue = true;
                     }
                 }
-            }
-
-            // Constraints
-
-            EditorGUILayout.Space();
-            _foldoutConstraints = UxrEditorUtils.FoldoutStylish("Constraints", _foldoutConstraints);
-
-            if (_foldoutConstraints)
-            {
-                if (_propManipulationMode.enumValueIndex == (int)UxrManipulationMode.GrabAndMove)
-                {
-                    EditorGUILayout.PropertyField(_propTranslationConstraintMode, ContentTranslationConstraintMode);
-                }
-
-                if (_propManipulationMode.enumValueIndex == (int)UxrManipulationMode.RotateAroundAxis ||
-                    _propTranslationConstraintMode.enumValueIndex == (int)UxrTranslationConstraintMode.RestrictLocalOffset)
-                {
-                    EditorGUILayout.PropertyField(_propTranslationLimitsMin,               ContentTranslationLimitsMin);
-                    EditorGUILayout.PropertyField(_propTranslationLimitsMax,               ContentTranslationLimitsMax);
-                    EditorGUILayout.PropertyField(_propTranslationLimitsReferenceIsParent, ContentTranslationLimitsReferenceIsParent);
-
-                    if (_propTranslationLimitsReferenceIsParent.boolValue == false)
-                    {
-                        EditorGUILayout.PropertyField(_propTranslationLimitsParent, ContentTranslationLimitsParent);
-                    }
-                }
-                else if (_propTranslationConstraintMode.enumValueIndex == (int)UxrTranslationConstraintMode.RestrictToBox)
-                {
-                    EditorGUILayout.PropertyField(_propRestrictToBox, ContentRestrictToBox);
-                }
-                else if (_propTranslationConstraintMode.enumValueIndex == (int)UxrTranslationConstraintMode.RestrictToSphere)
-                {
-                    EditorGUILayout.PropertyField(_propRestrictToSphere, ContentRestrictToSphere);
-                }
-
-                if (_propManipulationMode.enumValueIndex == (int)UxrManipulationMode.GrabAndMove)
-                {
-                    EditorGUILayout.PropertyField(_propRotationConstraintMode, ContentRotationConstraintMode);
-                }
-
-                if (_propManipulationMode.enumValueIndex == (int)UxrManipulationMode.RotateAroundAxis ||
-                    _propRotationConstraintMode.enumValueIndex == (int)UxrRotationConstraintMode.RestrictLocalRotation)
-                {
-                    EditorGUILayout.PropertyField(_propRotationAngleLimitsMin,          ContentRotationAngleLimitsMin);
-                    EditorGUILayout.PropertyField(_propRotationAngleLimitsMax,          ContentRotationAngleLimitsMax);
-                    EditorGUILayout.PropertyField(_propRotationLimitsReferenceIsParent, ContentRotationLimitsReferenceIsParent);
-
-                    if (_propRotationLimitsReferenceIsParent.boolValue == false)
-                    {
-                        EditorGUILayout.PropertyField(_propRotationLimitsParent, ContentRotationLimitsParent);
-                    }
-                }
-
-                if ((_propManipulationMode.enumValueIndex == (int)UxrManipulationMode.GrabAndMove && _propAdditionalGrabPoints.arraySize > 0) || !grabbableObject.UsesGrabbableParentDependency)
-                {
-                    EditorGUILayout.PropertyField(_propLockedGrabReleaseDistance, ContentLockedGrabReleaseDistance);
-                }
-
-                EditorGUILayout.Slider(_propTranslationResistance, 0.0f, 1.0f, ContentTranslationResistance);
-                EditorGUILayout.Slider(_propRotationResistance,    0.0f, 1.0f, ContentRotationResistance);
             }
 
             // Added new grab points? Set their values from previous grab points to make life easier
@@ -688,6 +763,92 @@ namespace UltimateXR.Manipulation.Editor
 
                 MarkRegenerationRequired(UxrPreviewPoseRegeneration.None);
                 serializedObject.ApplyModifiedProperties();
+            }
+        }
+        
+        /// <summary>
+        ///     Draws the constraints.
+        /// </summary>
+        private void OnSceneGUI()
+        {
+            if (Application.isPlaying)
+            {
+                return;
+            }
+            
+            UxrGrabbableObject grabbableObject = target as UxrGrabbableObject;
+            
+            // Draw rotation range of motion disks
+
+            foreach(UxrAxis axis in grabbableObject.LimitedRangeOfMotionRotationAxes)
+            {
+                Vector3 normal = grabbableObject.transform.TransformDirection(axis);
+                Handles.color = axis.GetColor(UxrEditorUtils.HandlesAlpha);
+
+                float angleMin = grabbableObject.RotationAngleLimitsMin[axis];
+                float angleMax = grabbableObject.RotationAngleLimitsMax[axis];
+
+                Vector3 perpendicular = axis.Perpendicular;
+                
+                // Try to make sure that we orient the min and max the best possible way
+
+                if (axis != grabbableObject.RotationLongitudinalAxis && grabbableObject.RangeOfMotionRotationAxisCount > 1)
+                {
+                    perpendicular = grabbableObject.RotationLongitudinalAxis;
+
+                    if (_grabbableBounds.TryGetValue(grabbableObject, out Bounds localBounds))
+                    {
+                        if (localBounds.center[grabbableObject.RotationLongitudinalAxis] < 0.0f)
+                        {
+                            perpendicular = -perpendicular;
+                        }
+                    }
+                }
+                else
+                {
+                    if (_grabbableBounds.TryGetValue(grabbableObject, out Bounds localBounds))
+                    {
+                        if (Mathf.Abs(localBounds.size[axis.Perpendicular]) > Mathf.Abs(localBounds.size[axis.OtherPerpendicular]))
+                        {
+                            perpendicular = localBounds.center[axis.Perpendicular] > 0.0f ? axis.Perpendicular : -axis.Perpendicular;
+                        }
+                        else
+                        {
+                            perpendicular = localBounds.center[axis.OtherPerpendicular] > 0.0f ? axis.OtherPerpendicular : -axis.OtherPerpendicular;
+                        }
+                    }
+                }
+
+                Handles.DrawSolidArc(grabbableObject.transform.position,
+                                     normal,
+                                     Quaternion.AngleAxis(angleMin, normal) * grabbableObject.transform.TransformDirection(perpendicular),
+                                     angleMax - angleMin,
+                                     GetHandlesDiskRadius(grabbableObject, axis, DefaultDiskRadius));
+            }
+            
+            // Draw translation range of motion lines
+
+            if (grabbableObject.TranslationConstraint == UxrTranslationConstraintMode.RestrictLocalOffset)
+            {
+                for (int i = 0; i < 3; ++i)
+                {
+                    UxrAxis axis = i;
+
+                    float min = grabbableObject.TranslationLimitsMin[axis];
+                    float max = grabbableObject.TranslationLimitsMax[axis];
+
+                    if (!Mathf.Approximately(min, max))
+                    {
+                        Vector3 pos1   = grabbableObject.transform.TransformPoint((Vector3)axis * min);
+                        Vector3 pos2   = grabbableObject.transform.TransformPoint((Vector3)axis * max);
+                        Vector3 normal = grabbableObject.transform.TransformDirection((Vector3)axis);
+
+                        Handles.color = axis.GetColor(1.0f);
+                        Handles.DrawLine(pos1, pos2);
+                        Handles.DrawSolidDisc(pos1, normal, LinearConstraintDiskRadius);
+                        Handles.DrawSolidDisc(pos2, normal, LinearConstraintDiskRadius);
+                    }
+                }
             }
         }
 
@@ -1227,15 +1388,27 @@ namespace UltimateXR.Manipulation.Editor
 
         private GUIContent ContentRegisterAvatar                     { get; } = new GUIContent("Register Avatar For Grips",                    "Registers an avatar to have the possibility to have different grip parameters for each avatar. This allows to fine-tune how different hand shapes and sizes wrap around the same object. Parameters that can be adjusted for each avatar will be colored to help in the process.");
         private GUIContent ContentSelectAvatar                       { get; } = new GUIContent("Selected Avatar Grips:",                       "Switches the avatar currently selected to edit its grip parameters. Being able to register different avatars allows to fine-tune how different hand shapes and sizes wrap around the same object. Parameters that can be adjusted for each avatar will be colored to help in the process.");
-        private GUIContent ContentManipulationMode                   { get; } = new GUIContent("Manipulation Mode",                            "Use Grab And Move to pick up objects and move/throw/place them. Use Rotate Around Axis for wheels, levers and similar objects.");
         private GUIContent ContentIgnoreGrabbableParentDependency    { get; } = new GUIContent("Ignore Parent Dependency",                     "Mark this to ignore the parent constraint and tell this object is independent.");
         private GUIContent ContentPriority                           { get; } = new GUIContent("Priority",                                     "By default, closer objects will be always grabbed over far objects. Using priority, objects with higher priority will always be grabbed if they are in range.");
+        private GUIContent ContentTranslationConstraintMode          { get; } = new GUIContent("Translation Constraint Mode",                  "Allows to constrain the translation of this object while being grabbed.");
+        private GUIContent ContentRestrictToBox                      { get; } = new GUIContent("Restrict To Box",                              "Allowed volume where this object's pivot will be allowed to move while being grabbed.");
+        private GUIContent ContentRestrictToSphere                   { get; } = new GUIContent("Restrict To Sphere",                           "Allowed volume where this object's pivot will be allowed to move while being grabbed.");
+        private GUIContent ContentTranslationLimitsMin               { get; } = new GUIContent("Translation Offset Min",                       "Minimum allowed offset along the local axes.");
+        private GUIContent ContentTranslationLimitsMax               { get; } = new GUIContent("Translation Offset Max",                       "Maximum allowed offset along the local axes.");
+        private GUIContent ContentRotationConstraintMode             { get; } = new GUIContent("Rotation Constraint Mode",                     "Allows to constrain the rotation of this object while being grabbed.");
+        private GUIContent ContentRotationAngleLimitsMin             { get; } = new GUIContent("Rotation Angles Offset Min",                   "Minimum allowed rotation offset degrees around the local axes.");
+        private GUIContent ContentRotationAngleLimitsMax             { get; } = new GUIContent("Rotation Angles Offset Max",                   "Maximum allowed rotation offset degrees around the local axes.");
+        private GUIContent ContentRotationProvider                   { get; } = new GUIContent("Rotation Provider",                            "Controls how an object with constrained position is rotated. Auto will to try to infer the most appropriate rotation provider automatically based on the object shape and the grip. HandOrientation will rotate the object directly by rotating the hand, useful for knobs or small joysticks where the torque is applied mostly by twisting the wrist. HandPositionAroundPivot will rotate the object using the position of the hand around the pivot instead, useful for levers, bigger joysticks, steering wheels and similar objects where the torque is applied using hand leverage around the rotation axis.");
+        private GUIContent ContentRotationLongitudinalAxis           { get; } = new GUIContent("Longitudinal Axis",                            "Specifies which axis, in the object coordinate system, is the longitudinal axis. The longitudinal axis is the axis that goes from head to tail along the object.");
+        private GUIContent ContentNeedsTwoHandsToRotate              { get; } = new GUIContent("Needs 2 Hands To Rotate",                      "When the Rotation Provider is set to HandPositionAroundPivot this will tell if the user will be able to rotate the object using one hand only or the object needs to be grabbed with two hands in order to rotate it.");
+        private GUIContent ContentLockedGrabReleaseDistance          { get; } = new GUIContent("Constrained Grab Release Distance",            "Maximum allowed distance of a constrained grab to drift away from the grab point before the avatar releases it automatically.");
+        private GUIContent ContentTranslationResistance              { get; } = new GUIContent("Translation Resistance",                       "Resistance of the object to being moved. Values higher than zero may be used to simulate heavy objects.");
+        private GUIContent ContentRotationResistance                 { get; } = new GUIContent("Rotation Resistance",                          "Resistance of the object to being rotated. Values higher than zero may be used to simulate heavy objects.");
         private GUIContent ContentRigidBodySource                    { get; } = new GUIContent("Rigidbody",                                    "References the object's rigidbody when physics are required. The object will be made kinematic when grabbed and optionally dynamic when released.");
         private GUIContent ContentRigidBodyDynamicOnRelease          { get; } = new GUIContent("Rigidbody Dynamic On Release",                 "When a rigidbody is specified it controls whether it will be marked as dynamic after being grabbed and released. Otherwise it will continue to be kinematic after being released.");
         private GUIContent ContentVerticalReleaseMultiplier          { get; } = new GUIContent("Vertical Release Multiplier",                  "When throwing a rigidbody this parameter will enable increasing or decreasing the actual release velocity (vertical component).");
         private GUIContent ContentHorizontalReleaseMultiplier        { get; } = new GUIContent("Horizontal Release Multiplier",                "When throwing a rigidbody this parameter will enable increasing or decreasing the actual release velocity (horizontal component).");
-        private GUIContent ContentNeedsTwoHandsToRotate              { get; } = new GUIContent("Needs 2 Hands To Rotate",                      "When manipulation mode is set to Rotate Around Axis this will tell if the user will be able to rotate the object using one hand only or the object needs to be grabbed with two hands in order to rotate it.");
-        private GUIContent ContentAllowMultiGrab                     { get; } = new GUIContent("Allow 2 Hands Grab",                           "When more than one grab point has been specified, this parameter will tell if the object can be grabbed with two hands at the same time.");
+        private GUIContent ContentAllowMultiGrab                     { get; } = new GUIContent("Allow Two Handed Grab",                        "When more than one grab point has been specified, this parameter will tell if the object can be grabbed with two hands at the same time.");
         private GUIContent ContentPreviewGrabPosesMode               { get; } = new GUIContent("Preview Grip Pose Meshes",                     "Will show/hide the preview grip pose meshes in the Scene Window.");
         private GUIContent ContentFirstGrabPointIsMain               { get; } = new GUIContent("First Grab Point Is Main",                     "Whether the first grab point in the list is the main grab in objects with more than one grab point. When an object is grabbed with both hands, the main grab controls the actual position while the secondary grab controls the direction. Set it to true in objects like a rifle, where the trigger hand should be the first grab in order to keep the object in place, and the front grab will control the aiming direction. If false, the grab point order is irrelevant and the hand that grabbed the object first will be considered as the main grab.");
         private GUIContent ContentGrabPoint                          { get; } = new GUIContent("Grab Point",                                   "Parameters of the grabbing point.");
@@ -1247,27 +1420,17 @@ namespace UltimateXR.Manipulation.Editor
         private GUIContent ContentDropAlignTransform                 { get; } = new GUIContent("Anchor Snap",                                  "The transform where objects will be snapped to when being placed.");
         private GUIContent ContentDropSnapMode                       { get; } = new GUIContent("Anchor Snap Mode",                             $"How this object will snap to the {nameof(UxrGrabbableObjectAnchor)} transform after being placing on it.");
         private GUIContent ContentDropProximityTransform             { get; } = new GUIContent("Anchor Proximity Position",                    $"The reference that will be used to know if this object is close enough to an {nameof(UxrGrabbableObjectAnchor)} to place it there.");
-        private GUIContent ContentTranslationConstraintMode          { get; } = new GUIContent("Anchor Proximity Translation Constraint Mode", "Allows to constrain the translation of this object while being grabbed.");
-        private GUIContent ContentRestrictToBox                      { get; } = new GUIContent("Restrict To Box",                              "Allowed volume where this object's pivot will be allowed to move while being grabbed.");
-        private GUIContent ContentRestrictToSphere                   { get; } = new GUIContent("Restrict To Sphere",                           "Allowed volume where this object's pivot will be allowed to move while being grabbed.");
-        private GUIContent ContentTranslationLimitsMin               { get; } = new GUIContent("Translation Offset Min",                       "Minimum allowed offset in local coordinates.");
-        private GUIContent ContentTranslationLimitsMax               { get; } = new GUIContent("Translation Offset Max",                       "Maximum allowed offset in local coordinates.");
-        private GUIContent ContentTranslationLimitsReferenceIsParent { get; } = new GUIContent("Translation Reference Is Parent",              "Tells whether the local translation limits specified are with respect to the parent or another transform.");
-        private GUIContent ContentTranslationLimitsParent            { get; } = new GUIContent("Translation Parent Transform",                 "Allows to specify a different transform as parent reference for the local translation limits.");
-        private GUIContent ContentRotationConstraintMode             { get; } = new GUIContent("Rotation Constraint Mode",                     "Allows to constrain the rotation of this object while being grabbed.");
-        private GUIContent ContentRotationAngleLimitsMin             { get; } = new GUIContent("Rotation Angles Offset Min",                   "Minimum allowed rotation offset degrees in local axes.");
-        private GUIContent ContentRotationAngleLimitsMax             { get; } = new GUIContent("Rotation Angles Offset Max",                   "Maximum allowed rotation offset degrees in local axes.");
-        private GUIContent ContentRotationLimitsReferenceIsParent    { get; } = new GUIContent("Rotation Reference Is Parent",                 "Tells whether the local rotation limits specified are with respect to the parent or another transform.");
-        private GUIContent ContentRotationLimitsParent               { get; } = new GUIContent("Rotation Parent Transform",                    "Allows to specify a different transform as parent reference for the local rotation limits.");
-        private GUIContent ContentLockedGrabReleaseDistance          { get; } = new GUIContent("Locked Grab Release Distance",                 "Maximum allowed distance of a locked grab to move away from the grab point before being released.");
-        private GUIContent ContentTranslationResistance              { get; } = new GUIContent("Translation Resistance",                       "Resistance of the object to being moved. Values higher than zero may be used to simulate heavy objects.");
-        private GUIContent ContentRotationResistance                 { get; } = new GUIContent("Rotation Resistance",                          "Resistance of the object to being rotated. Values higher than zero may be used to simulate heavy objects.");
+
+        private const float DefaultDiskRadius          = 0.05f;
+        private const float MaxDiskHandleRadius        = 1.5f;
+        private const float DiskHandleRadiusExpand     = 1.1f;
+        private const float LinearConstraintDiskRadius = 0.01f;
 
         private const string DefaultHelp = "The grabbable object is ready-to-use before setting up any additional parameter.\n" +
                                            "For advanced manipulation you can get assistance by hovering the mouse over each parameter.\n" +
+                                           "The Constraints section lets you set up manipulation constraints.\n" +
                                            "Use Grab Points to specify different grabbable parts on the object. Register avatars to adjust grab poses and snapping differently for each avatar prefab. Child avatar prefabs will automatically inherit the parent prefab's parameters but can also be registered to override settings.\n" +
-                                           "The Object Placement section lets you control where and how the object can be placed.\n" +
-                                           "The Constraints section lets you set up manipulation constraints.";
+                                           "The Object Placement section lets you control where and how the object can be placed.";
         private static readonly string NeedsUxrAvatar = $"The {nameof(UxrGrabbableObject)} component needs an {nameof(UxrAvatar)} in the scene. Add an avatar to the scene unless you know that you are instancing an avatar at runtime. You can find prefabs in UltimateXR/Prefabs";
         private static readonly string NeedsUxrAvatarWithGrabbing = $"Could not find {nameof(UxrAvatar)}(s) in the scene with {nameof(UxrGrabber)} components. These components are the ones where grabbable objects are attached to when picking them up." +
                                                                     $"\nCreate two child GameObjects -one on each hand of the avatar- and set up an {nameof(UxrGrabber)} component on each.";
@@ -1275,17 +1438,32 @@ namespace UltimateXR.Manipulation.Editor
 
         private static readonly Dictionary<SerializedObject, UxrGrabbableObjectEditor> s_openEditors = new Dictionary<SerializedObject, UxrGrabbableObjectEditor>();
 
-        private SerializedProperty _propManipulationMode;
         private SerializedProperty _propIgnoreGrabbableParentDependency;
         private SerializedProperty _propControlParentDirection;
 
         private SerializedProperty _propPriority;
+        private SerializedProperty _propAllowMultiGrab;
+
+        private SerializedProperty _propTranslationConstraintMode;
+        private SerializedProperty _propRestrictToBox;
+        private SerializedProperty _propRestrictToSphere;
+        private SerializedProperty _propTranslationLimitsMin;
+        private SerializedProperty _propTranslationLimitsMax;
+        private SerializedProperty _propRotationConstraintMode;
+        private SerializedProperty _propRotationAngleLimitsMin;
+        private SerializedProperty _propRotationAngleLimitsMax;
+        private SerializedProperty _propRotationLongitudinalAxis;
+        private SerializedProperty _propAutoRotationProvider;
+        private SerializedProperty _propRotationProvider;
+        private SerializedProperty _propNeedsTwoHandsToRotate;
+        private SerializedProperty _propLockedGrabReleaseDistance;
+        private SerializedProperty _propTranslationResistance;
+        private SerializedProperty _propRotationResistance;
+        
         private SerializedProperty _propRigidBodySource;
         private SerializedProperty _propRigidBodyDynamicOnRelease;
         private SerializedProperty _propVerticalReleaseMultiplier;
         private SerializedProperty _propHorizontalReleaseMultiplier;
-        private SerializedProperty _propNeedsTwoHandsToRotate;
-        private SerializedProperty _propAllowMultiGrab;
 
         private SerializedProperty _propPreviewGrabPosesMode;
         private SerializedProperty _propPreviewPosesRegenerationType;
@@ -1304,30 +1482,16 @@ namespace UltimateXR.Manipulation.Editor
         private SerializedProperty _propDropProximityTransformUseSelf;
         private SerializedProperty _propDropProximityTransform;
 
-        private SerializedProperty _propTranslationConstraintMode;
-        private SerializedProperty _propRestrictToBox;
-        private SerializedProperty _propRestrictToSphere;
-        private SerializedProperty _propTranslationLimitsMin;
-        private SerializedProperty _propTranslationLimitsMax;
-        private SerializedProperty _propTranslationLimitsReferenceIsParent;
-        private SerializedProperty _propTranslationLimitsParent;
-        private SerializedProperty _propRotationConstraintMode;
-        private SerializedProperty _propRotationAngleLimitsMin;
-        private SerializedProperty _propRotationAngleLimitsMax;
-        private SerializedProperty _propRotationLimitsReferenceIsParent;
-        private SerializedProperty _propRotationLimitsParent;
-        private SerializedProperty _propLockedGrabReleaseDistance;
-        private SerializedProperty _propTranslationResistance;
-        private SerializedProperty _propRotationResistance;
-
         private int _selectedAvatarGripPoseIndex;
 
-        private bool _foldoutManipulation      = true;
         private bool _foldoutGeneralParameters = true;
+        private bool _foldoutConstraints       = true;
+        private bool _foldoutPhysics           = true;
         private bool _foldoutAvatarGrips       = true;
         private bool _foldoutGrabPoints        = true;
         private bool _foldoutObjectPlacing     = true;
-        private bool _foldoutConstraints       = true;
+
+        private Dictionary<UxrGrabbableObject, Bounds> _grabbableBounds;
 
         #endregion
     }

@@ -265,7 +265,9 @@ namespace UltimateXR.Rendering.FX
             refractionCamera.projectionMatrix = projection;
             refractionCamera.cullingMatrix    = refractionCamera.projectionMatrix * refractionCamera.worldToCameraMatrix;
 
+#if ULTIMATEXR_UNITY_URP
             UniversalRenderPipeline.RenderSingleCamera(context, refractionCamera);
+#endif
         }
 
         /// <summary>

@@ -64,8 +64,8 @@ namespace UltimateXR.Avatar.Rig
         {
             UxrAvatarHand         avatarHand       = avatar.GetHand(handSide);
             UxrAvatarFinger       avatarFinger     = avatarHand.GetFinger(fingerType);
-            UxrUniversalLocalAxes handLocalAxes    = handSide == UxrHandSide.Left ? avatar.AvatarRigInfo.LeftHandUniversalLocalAxes : avatar.AvatarRigInfo.RightHandUniversalLocalAxes;
-            UxrUniversalLocalAxes fingerLocalAxes  = handSide == UxrHandSide.Left ? avatar.AvatarRigInfo.LeftFingerUniversalLocalAxes : avatar.AvatarRigInfo.RightFingerUniversalLocalAxes;
+            UxrUniversalLocalAxes handLocalAxes    = avatar.AvatarRigInfo.GetArmInfo(handSide).HandUniversalLocalAxes;
+            UxrUniversalLocalAxes fingerLocalAxes  = avatar.AvatarRigInfo.GetArmInfo(handSide).FingerUniversalLocalAxes;
             UxrFingerDescriptor   fingerDescriptor = handDescriptor.GetFinger(fingerType);
 
             HasMetacarpalInfo = fingerDescriptor.HasMetacarpalInfo && avatarFinger.Metacarpal != null;
