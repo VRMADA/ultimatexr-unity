@@ -409,7 +409,7 @@ namespace UltimateXR.Manipulation.Editor
                         List<string>        rotationProviderOptions = new List<string>();
                         string              autoOption              = "Auto";
                         Transform           rightHandSnapTransform  = selectedAvatarComponent != null ? grabbableObject.Editor_GetGrabPointGrabAlignTransform(selectedAvatarComponent, 0, UxrHandSide.Right) : grabbableObject.GetGrabPoint(0).GetGripPoseInfo(0).GripAlignTransformHandRight;
-                        UxrRotationProvider autoRotationProvider    = grabbableObject.Editor_GetAutoRotationProvider(rightHandSnapTransform != null ? rightHandSnapTransform.position : grabbableObject.transform.position);
+                        UxrRotationProvider autoRotationProvider    = grabbableObject.GetAutoRotationProvider(rightHandSnapTransform != null ? rightHandSnapTransform.position : grabbableObject.transform.position);
 
                         if (serializedObject.isEditingMultipleObjects)
                         {
