@@ -31,7 +31,7 @@ namespace UltimateXR.Manipulation
     ///             requirement to enable it in a scene, the grab manager will be available as soon as it is invoked.
     ///         </item>
     ///         <item>
-    ///             Grabbable objects can be grabbed, released and placed. Releasing an object means dropping it mid-air,
+    ///             Grabbable objects can be grabbed, released, placed, and triggered. Releasing an object means dropping it mid-air,
     ///             while placing it is releasing an object close enough to a compatible
     ///             <see cref="UxrGrabbableObjectAnchor" />.
     ///         </item>
@@ -51,7 +51,7 @@ namespace UltimateXR.Manipulation
     ///             how objects are grabbed. The inspector window will preview grab poses and enable editing them.
     ///         </item>
     ///         <item>
-    ///             Events such as <see cref="Grabbed" />, <see cref="Released" /> and <see cref="Placed" /> allow to write
+    ///             Events such as <see cref="Grabbed" />, <see cref="Released" />, <see cref="Placed" />, and <see cref="Triggered" /> allow to write
     ///             logic when a user interacts with the object. Each has pre and post events.
     ///         </item>
     ///         <item>
@@ -669,6 +669,12 @@ namespace UltimateXR.Manipulation
 
         /// <inheritdoc />
         public event EventHandler<UxrManipulationEventArgs> Grabbed;
+
+        /// <inheritdoc />
+        public event EventHandler<UxrManipulationEventArgs> Triggering;
+
+        /// <inheritdoc />
+        public event EventHandler<UxrManipulationEventArgs> Triggered;
 
         /// <inheritdoc />
         public event EventHandler<UxrManipulationEventArgs> Releasing;
@@ -2005,6 +2011,24 @@ namespace UltimateXR.Manipulation
         internal void RaiseGrabbedEvent(UxrManipulationEventArgs e)
         {
             Grabbed?.Invoke(this, e);
+        }
+
+        /// <summary>
+        ///     Event trigger for <see cref="Triggering" />.
+        /// </summary>
+        /// <param name="e">Event parameters</param>
+        internal void RaiseTriggeringEvent(UxrManipulationEventArgs e)
+        {
+            Triggering?.Invoke(this, e);
+        }
+
+        /// <summary>
+        ///     Event trigger for <see cref="Triggered" />.
+        /// </summary>
+        /// <param name="e">Event parameters</param>
+        internal void RaiseTriggeredEvent(UxrManipulationEventArgs e)
+        {
+            Triggered?.Invoke(this, e);
         }
 
         /// <summary>
