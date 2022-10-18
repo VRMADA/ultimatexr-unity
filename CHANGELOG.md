@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2] - 2022-10-18
+
+### Fixed
+
+- Fix UxrGrabbableObject editor methods that caused compiler errors when creating a build.
+- Fix UxrGrabbableObject startup so that component can be added to an object at runtime.
+
 ## [0.9.1] - 2022-10-13
 
 ### Changed
@@ -139,7 +146,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First public release!
 
-[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.2
 [0.9.1]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.1
 [0.9.0]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.0
 [0.8.4]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.8.4

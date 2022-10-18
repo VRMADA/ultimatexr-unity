@@ -110,7 +110,7 @@ namespace UltimateXR.Manipulation
         // Grab points
 
         [SerializeField] private bool                   _firstGrabPointIsMain = true;
-        [SerializeField] private UxrGrabPointInfo       _grabPoint;
+        [SerializeField] private UxrGrabPointInfo       _grabPoint            = new UxrGrabPointInfo();
         [SerializeField] private List<UxrGrabPointInfo> _additionalGrabPoints;
 
         // Placement
@@ -1110,6 +1110,94 @@ namespace UltimateXR.Manipulation
             }
         }
 
+        /// <summary>
+        ///     Tries to get the longitudinal rotation axis of the grabbable object. If it hasn't been defined by the user (on
+        ///     objects where <see cref="RangeOfMotionRotationAxisCount" /> is less than 2.
+        /// </summary>
+        /// <returns>Longitudinal rotation axis</returns>
+        public UxrAxis GetMostProbableLongitudinalRotationAxis()
+        {
+            if (RangeOfMotionRotationAxisCount > 1)
+            {
+                // Longitudinal axis is user defined for constrained rotation with more than one axis
+                return _rotationLongitudinalAxis;
+            }
+
+            // We have an object with a single rotation axis. First compute bounds and see if the rotation pivot is not centered.
+
+            Bounds localBounds            = gameObject.GetLocalBounds(true);
+            int    maxUncenteredComponent = -1;
+            float  maxUncenteredDistance  = 0.0f;
+
+            for (int i = 0; i < 3; ++i)
+            {
+                float centerOffset = Mathf.Abs(localBounds.center[i]);
+
+                if (centerOffset > localBounds.size[i] * 0.25f && centerOffset > maxUncenteredDistance)
+                {
+                    maxUncenteredComponent = i;
+                    maxUncenteredDistance  = centerOffset;
+                }
+            }
+
+            // Found an axis that is significantly larger than others?
+
+            if (maxUncenteredComponent != -1)
+            {
+                return maxUncenteredComponent;
+            }
+
+            // At this point the best bet is the single rotation axis
+
+            int singleRotationAxisIndex = SingleRotationAxisIndex;
+
+            if (singleRotationAxisIndex != -1)
+            {
+                return singleRotationAxisIndex;
+            }
+
+            return UxrAxis.Z;
+        }
+
+        /// <summary>
+        ///     Tries to infer the most appropriate <see cref="UxrRotationProvider" /> to rotate the object based on the shape and
+        ///     size of the object, and the grip.
+        /// </summary>
+        /// <param name="gripPos">The grip snap position</param>
+        /// <returns>Most appropriate <see cref="UxrRotationProvider" /></returns>
+        public UxrRotationProvider GetAutoRotationProvider(Vector3 gripPos)
+        {
+            if (!(HasTranslationConstraint && LimitedRangeOfMotionRotationAxes.Any()))
+            {
+                // No constraint
+                return UxrRotationProvider.HandOrientation;
+            }
+
+            UxrAxis longitudinalAxis        = GetMostProbableLongitudinalRotationAxis();
+            int     singleRotationAxisIndex = SingleRotationAxisIndex;
+            float   leverageDistance        = 0.0f;
+
+            if (singleRotationAxisIndex != -1)
+            {
+                // Object with a single rotation axis
+
+                if (longitudinalAxis != singleRotationAxisIndex)
+                {
+                    // Lever action
+                    return UxrRotationProvider.HandPositionAroundPivot;
+                }
+
+                // Lever action will depend on grabber distance to rotation axis. Smaller than a hand distance will use rotation while larger will use leverage.
+                leverageDistance = Vector3.ProjectOnPlane(gripPos - transform.position, transform.TransformDirection(longitudinalAxis)).magnitude;
+                return leverageDistance > UxrConstants.Hand.HandWidth ? UxrRotationProvider.HandPositionAroundPivot : UxrRotationProvider.HandOrientation;
+            }
+
+            // Object with more than one rotation axis
+
+            leverageDistance = Mathf.Abs(gripPos.DistanceToPlane(transform.position, transform.TransformDirection(longitudinalAxis)));
+            return leverageDistance > UxrConstants.Hand.HandWidth ? UxrRotationProvider.HandPositionAroundPivot : UxrRotationProvider.HandOrientation;
+        }
+
         #endregion
 
         #region Internal Methods
@@ -1621,7 +1709,7 @@ namespace UltimateXR.Manipulation
 
             if (_autoRotationProvider)
             {
-                _rotationProvider = Editor_GetAutoRotationProvider(snapPosition);
+                _rotationProvider = GetAutoRotationProvider(snapPosition);
             }
 
             if (RotationProvider == UxrRotationProvider.HandPositionAroundPivot && GetGrabPointSnapModeAffectsRotation(grabPoint))
@@ -1782,7 +1870,7 @@ namespace UltimateXR.Manipulation
         private void Reset()
         {
             _grabPoint                = new UxrGrabPointInfo();
-            _rotationLongitudinalAxis = Editor_GetMostProbableLongitudinalRotationAxis();
+            _rotationLongitudinalAxis = GetMostProbableLongitudinalRotationAxis();
         }
 
         /// <summary>
@@ -2582,94 +2670,6 @@ namespace UltimateXR.Manipulation
             }
 
             return false;
-        }
-
-        /// <summary>
-        ///     Tries to get the longitudinal rotation axis of the grabbable object. If it hasn't been defined by the user (on
-        ///     objects where <see cref="RangeOfMotionRotationAxisCount" /> is less than 2.
-        /// </summary>
-        /// <returns>Longitudinal rotation axis</returns>
-        public UxrAxis Editor_GetMostProbableLongitudinalRotationAxis()
-        {
-            if (RangeOfMotionRotationAxisCount > 1)
-            {
-                // Longitudinal axis is user defined for constrained rotation with more than one axis
-                return _rotationLongitudinalAxis;
-            }
-
-            // We have an object with a single rotation axis. First compute bounds and see if the rotation pivot is not centered.
-
-            Bounds localBounds            = gameObject.GetLocalBounds(true);
-            int    maxUncenteredComponent = -1;
-            float  maxUncenteredDistance  = 0.0f;
-
-            for (int i = 0; i < 3; ++i)
-            {
-                float centerOffset = Mathf.Abs(localBounds.center[i]);
-
-                if (centerOffset > localBounds.size[i] * 0.25f && centerOffset > maxUncenteredDistance)
-                {
-                    maxUncenteredComponent = i;
-                    maxUncenteredDistance  = centerOffset;
-                }
-            }
-
-            // Found an axis that is significantly larger than others?
-
-            if (maxUncenteredComponent != -1)
-            {
-                return maxUncenteredComponent;
-            }
-
-            // At this point the best bet is the single rotation axis
-
-            int singleRotationAxisIndex = SingleRotationAxisIndex;
-
-            if (singleRotationAxisIndex != -1)
-            {
-                return singleRotationAxisIndex;
-            }
-
-            return UxrAxis.Z;
-        }
-
-        /// <summary>
-        ///     Tries to infer the most appropriate <see cref="UxrRotationProvider" /> to rotate the object based on the shape and
-        ///     size of the object, and the grip.
-        /// </summary>
-        /// <param name="gripPos">The grip snap position</param>
-        /// <returns>Most appropriate <see cref="UxrRotationProvider" /></returns>
-        public UxrRotationProvider Editor_GetAutoRotationProvider(Vector3 gripPos)
-        {
-            if (!(HasTranslationConstraint && LimitedRangeOfMotionRotationAxes.Any()))
-            {
-                // No constraint
-                return UxrRotationProvider.HandOrientation;
-            }
-
-            UxrAxis longitudinalAxis        = Editor_GetMostProbableLongitudinalRotationAxis();
-            int     singleRotationAxisIndex = SingleRotationAxisIndex;
-            float   leverageDistance        = 0.0f;
-
-            if (singleRotationAxisIndex != -1)
-            {
-                // Object with a single rotation axis
-
-                if (longitudinalAxis != singleRotationAxisIndex)
-                {
-                    // Lever action
-                    return UxrRotationProvider.HandPositionAroundPivot;
-                }
-
-                // Lever action will depend on grabber distance to rotation axis. Smaller than a hand distance will use rotation while larger will use leverage.
-                leverageDistance = Vector3.ProjectOnPlane(gripPos - transform.position, transform.TransformDirection(longitudinalAxis)).magnitude;
-                return leverageDistance > UxrConstants.Hand.HandWidth ? UxrRotationProvider.HandPositionAroundPivot : UxrRotationProvider.HandOrientation;
-            }
-
-            // Object with more than one rotation axis
-
-            leverageDistance = Mathf.Abs(gripPos.DistanceToPlane(transform.position, transform.TransformDirection(longitudinalAxis)));
-            return leverageDistance > UxrConstants.Hand.HandWidth ? UxrRotationProvider.HandPositionAroundPivot : UxrRotationProvider.HandOrientation;
         }
 
 #endif
