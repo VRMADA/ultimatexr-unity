@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Change folder structure to adapt to the Unity Package Manager layout:
+  https://docs.unity3d.com/Manual/cus-layout.html
+
 ## [0.9.2] - 2022-10-18
 
 ### Fixed
