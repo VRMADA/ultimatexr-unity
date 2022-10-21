@@ -4,12 +4,12 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
-using UltimateXR.Editor;
+using UltimateXR.Core;
 using UltimateXR.Editor.Sdks;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Core.Editor
+namespace UltimateXR.Editor.Core
 {
     /// <summary>
     ///     Editor class that allows to create/modify/delete hand poses that can be used for interaction or manipulation in
@@ -51,6 +51,7 @@ namespace UltimateXR.Core.Editor
                 return;
             }
 
+            EditorGUILayout.Space();
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Supported SDKs:", EditorStyles.boldLabel);
             EditorGUILayout.Space();

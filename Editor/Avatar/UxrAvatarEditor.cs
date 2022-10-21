@@ -5,22 +5,20 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
 using System.Linq;
+using UltimateXR.Avatar;
 using UltimateXR.Avatar.Controllers;
 using UltimateXR.Avatar.Rig;
-using UltimateXR.Core;
 using UltimateXR.Devices;
-using UltimateXR.Editor;
+using UltimateXR.Editor.Manipulation.HandPoses;
 using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
-using UltimateXR.Extensions.Unity.Render;
 using UltimateXR.Manipulation.HandPoses;
-using UltimateXR.Manipulation.HandPoses.Editor;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace UltimateXR.Avatar.Editor
+namespace UltimateXR.Editor.Avatar
 {
     /// <summary>
     ///     Custom editor for <see cref="UxrAvatar" />.

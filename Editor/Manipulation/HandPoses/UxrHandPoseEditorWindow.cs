@@ -11,20 +11,20 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UltimateXR.Avatar;
-using UltimateXR.Avatar.Editor;
 using UltimateXR.Avatar.Rig;
 using UltimateXR.Core;
 using UltimateXR.Core.Math;
-using UltimateXR.Editor;
+using UltimateXR.Editor.Avatar;
 using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
-using UltimateXR.Manipulation.Editor;
+using UltimateXR.Manipulation;
+using UltimateXR.Manipulation.HandPoses;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-namespace UltimateXR.Manipulation.HandPoses.Editor
+namespace UltimateXR.Editor.Manipulation.HandPoses
 {
     /// <summary>
     ///     Editor class that allows to create/modify/delete hand poses that can be used for interaction or manipulation in
@@ -153,7 +153,7 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
         /// </summary>
         private void OnEnable()
         {
-            EditorApplication.playmodeStateChanged += EditorApplication_PlaymodeStateChanged;
+            EditorApplication.playModeStateChanged += EditorApplication_PlaymodeStateChanged;
             SceneView.duringSceneGui               += SceneView_DuringSceneGUI;
             Undo.undoRedoPerformed                 += Undo_OnUndoRedo;
 
@@ -201,7 +201,7 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
         /// </summary>
         private void OnDisable()
         {
-            EditorApplication.playmodeStateChanged -= EditorApplication_PlaymodeStateChanged;
+            EditorApplication.playModeStateChanged -= EditorApplication_PlaymodeStateChanged;
             SceneView.duringSceneGui               -= SceneView_DuringSceneGUI;
             Undo.undoRedoPerformed                 -= Undo_OnUndoRedo;
 
@@ -474,11 +474,7 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
                     if (!string.IsNullOrEmpty(path))
                     {
                         string sourceFile = path;
-
-                        if (path.StartsWith(Application.dataPath))
-                        {
-                            path = "Assets" + path.Substring(Application.dataPath.Length);
-                        }
+                        path = UxrEditorUtils.ToHandPoseAssetPath(path);
 
                         UxrHandPoseAsset srcHandPoseAsset = AssetDatabase.LoadAssetAtPath<UxrHandPoseAsset>(path);
 
@@ -554,15 +550,13 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
                     else
                     {
                         List<UxrHandPoseAsset> handPosesToAdd = new List<UxrHandPoseAsset>();
-                        string[]               files          = Directory.GetFiles(pathSrc);
+                        string[]               files          = UxrEditorUtils.GetHandPosePresetFiles();
 
-                        for (int i = 0; i < files.Length; ++i)
+                        foreach (string file in files)
                         {
-                            files[i] = "Assets" + files[i].Substring(Application.dataPath.Length);
-
-                            if (AssetDatabase.GetMainAssetTypeAtPath(files[i]) == typeof(UxrHandPoseAsset))
+                            if (AssetDatabase.GetMainAssetTypeAtPath(file) == typeof(UxrHandPoseAsset))
                             {
-                                handPosesToAdd.Add((UxrHandPoseAsset)AssetDatabase.LoadMainAssetAtPath(files[i]));
+                                handPosesToAdd.Add((UxrHandPoseAsset)AssetDatabase.LoadMainAssetAtPath(file));
                             }
                         }
 
@@ -1396,7 +1390,8 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
         /// <summary>
         ///     Called by Unity when the play mode state changed.
         /// </summary>
-        private void EditorApplication_PlaymodeStateChanged()
+        /// <param name="playModeStateChange">State change</param>
+        private void EditorApplication_PlaymodeStateChanged(PlayModeStateChange playModeStateChange)
         {
         }
 
@@ -1442,7 +1437,7 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
         /// <param name="path">Path that doesn't belong to the current project</param>
         private static void DisplayPathNotFromThisProjectError(string path)
         {
-            EditorUtility.DisplayDialog("Error", "Path " + path + " does not belong to this project", "OK");
+            EditorUtility.DisplayDialog("Error", "Path " + path + " cannot be outside the project's Assets folder", "OK");
         }
 
         // Initialization
@@ -2034,10 +2029,7 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
 
             if (!string.IsNullOrEmpty(path))
             {
-                if (path.StartsWith(Application.dataPath))
-                {
-                    path = "Assets" + path.Substring(Application.dataPath.Length);
-                }
+                path = UxrEditorUtils.ToHandPoseAssetPath(path);
 
                 bool load = true;
 
@@ -2286,12 +2278,7 @@ namespace UltimateXR.Manipulation.HandPoses.Editor
             {
                 _handPosePresets = new List<UxrHandPosePreset>();
 
-                string[] files = Directory.GetFiles(Path.Combine(Application.dataPath, UxrConstants.Paths.HandPosePresetsRelativePath));
-
-                for (int i = 0; i < files.Length; ++i)
-                {
-                    files[i] = "Assets" + files[i].Substring(Application.dataPath.Length);
-                }
+                string[] files = UxrEditorUtils.GetHandPosePresetFiles();
 
                 foreach (string file in files)
                 {

@@ -3,6 +3,8 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UnityEngine;
+
 namespace UltimateXR.Core
 {
     public static partial class UxrConstants
@@ -16,11 +18,8 @@ namespace UltimateXR.Core
         {
             #region Public Types & Data
 
-            public const string Base               = "UltimateXR/";
             public const string SingletonResources = "Singletons/";
-			
-            public static readonly string HandPosePresetsRelativePath = $"{Base}HandPosePresets";
-
+          
             #endregion
         }
 

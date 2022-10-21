@@ -3,13 +3,13 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using UltimateXR.Editor;
+using UltimateXR.Locomotion;
 using UnityEditor;
 using UnityEngine;
 
 #pragma warning disable 0414
 
-namespace UltimateXR.Locomotion.Editor
+namespace UltimateXR.Editor.Locomotion
 {
     /// <summary>
     ///     Base class for custom teleport locomotion components.

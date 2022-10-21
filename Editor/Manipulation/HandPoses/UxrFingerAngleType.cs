@@ -3,7 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-namespace UltimateXR.Manipulation.HandPoses.Editor
+namespace UltimateXR.Editor.Manipulation.HandPoses
 {
     /// <summary>
     ///     Enumerates the different rotations supported by finger bones. Not all are supported by every bone.

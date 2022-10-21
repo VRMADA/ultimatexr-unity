@@ -4,11 +4,11 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using UltimateXR.Core;
-using UltimateXR.Editor;
+using UltimateXR.Devices;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Devices.Editor
+namespace UltimateXR.Editor.Devices
 {
     /// <summary>
     ///     Custom Unity editor for hand tracking components.

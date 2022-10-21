@@ -6,16 +6,16 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UltimateXR.Avatar;
 using UltimateXR.Core;
 using UltimateXR.Devices.Visualization;
-using UltimateXR.Editor;
 using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Manipulation;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Avatar.Editor
+namespace UltimateXR.Editor.Avatar
 {
     /// <summary>
     ///     Custom editor for <see cref="UxrHandIntegration" />.

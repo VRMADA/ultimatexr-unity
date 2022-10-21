@@ -3,11 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using UltimateXR.Editor;
+using UltimateXR.Locomotion;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Locomotion.Editor
+namespace UltimateXR.Editor.Locomotion
 {
     /// <summary>
     ///     Custom inspector for <see cref="UxrTeleportLocomotion" />.

@@ -5,9 +5,10 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System.Linq;
 using UltimateXR.Animation.IK;
-using UltimateXR.Animation.IK.Editor;
+using UltimateXR.Avatar;
+using UltimateXR.Avatar.Controllers;
 using UltimateXR.Avatar.Rig;
-using UltimateXR.Editor;
+using UltimateXR.Editor.Animation.IK;
 using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Manipulation.HandPoses;
@@ -15,7 +16,7 @@ using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
-namespace UltimateXR.Avatar.Controllers.Editor
+namespace UltimateXR.Editor.Avatar.Controllers
 {
     /// <summary>
     ///     Custom inspector for the <see cref="UxrStandardAvatarController" /> component.

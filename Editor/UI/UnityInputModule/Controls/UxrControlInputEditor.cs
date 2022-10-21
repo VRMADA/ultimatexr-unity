@@ -3,10 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.UI.UnityInputModule.Controls;
 using UnityEditor;
 using UnityEditor.EventSystems;
 
-namespace UltimateXR.UI.UnityInputModule.Controls.Editor
+namespace UltimateXR.Editor.UI.UnityInputModule.Controls
 {
     /// <summary>
     ///     Custom inspector for <see cref="UxrControlInput" />. Needs to inherit from <see cref="EventTriggerEditor" />

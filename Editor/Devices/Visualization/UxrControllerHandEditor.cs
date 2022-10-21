@@ -6,13 +6,13 @@
 using UltimateXR.Avatar;
 using UltimateXR.Avatar.Rig;
 using UltimateXR.Core;
-using UltimateXR.Editor;
+using UltimateXR.Devices.Visualization;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Manipulation.HandPoses;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Devices.Visualization.Editor
+namespace UltimateXR.Editor.Devices.Visualization
 {
     [CustomEditor(typeof(UxrControllerHand))]
     public class UxrControllerHandEditor : UnityEditor.Editor

@@ -3,12 +3,13 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Animation.IK;
 using UltimateXR.Avatar;
 using UltimateXR.Avatar.Controllers;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Animation.IK.Editor
+namespace UltimateXR.Editor.Animation.IK
 {
     /// <summary>
     ///     Custom inspector for <see cref="UxrBodyIKSettings" />.

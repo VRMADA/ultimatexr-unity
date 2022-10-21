@@ -3,10 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Mechanics.Weapons;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Mechanics.Weapons.Editor
+namespace UltimateXR.Editor.Mechanics.Weapons
 {
     /// <summary>
     ///     Custom inspector for <see cref="UxrGrenadeWeapon" />.

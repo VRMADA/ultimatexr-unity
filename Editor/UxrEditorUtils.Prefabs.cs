@@ -111,7 +111,7 @@ namespace UltimateXR.Editor
                 }
                 else if (!PathIsInCurrentProject(path))
                 {
-                    EditorUtility.DisplayDialog("Error", "The file location needs to be inside the project", "OK");
+                    EditorUtility.DisplayDialog("Error", "The file location can't be outside the project's Assets folder", "OK");
                 }
                 else
                 {

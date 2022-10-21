@@ -3,11 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using UltimateXR.Editor;
+using UltimateXR.Animation.IK;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Animation.IK.Editor
+namespace UltimateXR.Editor.Animation.IK
 {
     /// <summary>
     ///     Custom property drawer for <see cref="UxrCcdLink" />.

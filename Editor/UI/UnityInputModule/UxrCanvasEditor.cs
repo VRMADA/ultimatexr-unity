@@ -3,9 +3,10 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.UI.UnityInputModule;
 using UnityEditor;
 
-namespace UltimateXR.UI.UnityInputModule.Editor
+namespace UltimateXR.Editor.UI.UnityInputModule
 {
     /// <summary>
     ///     Custom inspector for <see cref="UxrCanvas" />.

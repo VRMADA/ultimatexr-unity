@@ -16,6 +16,12 @@ namespace UltimateXR.Core
         public const int MinorVersion = 9;
         public const int PatchVersion = 2;
 
+        public const string UltimateXR = "UltimateXR";
+
+#if ULTIMATEXR_PACKAGE
+        public const string PackageName = "com.vrmada.ultimatexr-unity";
+#endif
+
         public const string CoreModule         = "Core";
         public const string LocomotionModule   = "Locomotion";
         public const string ManipulationModule = "Manipulation";

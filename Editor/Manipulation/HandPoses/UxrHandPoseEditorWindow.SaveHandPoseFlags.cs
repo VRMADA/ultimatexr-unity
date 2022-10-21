@@ -4,8 +4,9 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System;
+using UltimateXR.Manipulation.HandPoses;
 
-namespace UltimateXR.Manipulation.HandPoses.Editor
+namespace UltimateXR.Editor.Manipulation.HandPoses
 {
     public partial class UxrHandPoseEditorWindow
     {

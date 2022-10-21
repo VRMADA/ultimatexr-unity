@@ -21,6 +21,11 @@
     "defineConstraints": [],
     "versionDefines": [
         {
+            "name": "com.vrmada.ultimatexr-unity",
+            "expression": "",
+            "define": "ULTIMATEXR_PACKAGE"
+        },
+        {
             "name": "com.unity.xr.management",
             "expression": "",
             "define": "ULTIMATEXR_UNITY_XR_MANAGEMENT"

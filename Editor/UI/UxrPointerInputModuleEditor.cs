@@ -6,7 +6,7 @@
 using UltimateXR.UI.UnityInputModule;
 using UnityEditor;
 
-namespace UltimateXR.UI.Editor
+namespace UltimateXR.Editor.UI
 {
     /// <summary>
     ///     Custom editor for <see cref="UxrPointerInputModule" />.

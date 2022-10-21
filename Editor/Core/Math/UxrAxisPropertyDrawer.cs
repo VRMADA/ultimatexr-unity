@@ -3,11 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using UltimateXR.Editor;
+using UltimateXR.Core.Math;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Core.Math.Editor
+namespace UltimateXR.Editor.Core.Math
 {
     /// <summary>
     ///     Custom property drawer for <see cref="UxrAxis" />.

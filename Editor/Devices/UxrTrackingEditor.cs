@@ -3,13 +3,13 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using UltimateXR.Core.Editor;
-using UltimateXR.Editor;
+using UltimateXR.Devices;
+using UltimateXR.Editor.Core;
 using UltimateXR.Editor.Sdks;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Devices.Editor
+namespace UltimateXR.Editor.Devices
 {
     /// <summary>
     ///     Custom Unity editor for <see cref="UxrTrackingDevice" /> components. Checks for SDK availability.

@@ -7,7 +7,7 @@ using UltimateXR.Devices.Visualization;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Devices.Editor
+namespace UltimateXR.Editor.Devices
 {
     /// <summary>
     ///     Custom UI property drawer for the <see cref="UxrElement" /> type.

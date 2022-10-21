@@ -3,11 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using UltimateXR.Editor;
+using UltimateXR.Animation.Interpolation;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Animation.Interpolation.Editor
+namespace UltimateXR.Editor.Animation.Interpolation
 {
     /// <summary>
     ///     Custom inspector drawer for <see cref="UxrInterpolationSettings" />.

@@ -139,8 +139,9 @@ namespace UltimateXR.Extensions.System
         /// </summary>
         /// <param name="candidate">Path candidate</param>
         /// <param name="other">Path to check against</param>
+        /// <param name="canBeSame">Whether to also consider the same directory as valid</param>
         /// <returns>Whether the path is child of the parent path</returns>
-        public static bool IsSubDirectoryOf(this string candidate, string other)
+        public static bool IsSubDirectoryOf(this string candidate, string other, bool canBeSame = true)
         {
             var isChild = false;
             try
@@ -149,6 +150,15 @@ namespace UltimateXR.Extensions.System
 
                 var candidateInfo = new DirectoryInfo(candidate.Replace(@"\", @"/").TrimEnd('/'));
                 var otherInfo     = new DirectoryInfo(other.Replace(@"\", @"/").TrimEnd('/'));
+                
+                // Check if same directory
+
+                if (canBeSame && string.Compare(candidateInfo.FullName, otherInfo.FullName, StringComparison.OrdinalIgnoreCase) == 0)
+                {
+                    return true;
+                }
+                
+                // Start traversing upwards
 
                 while (candidateInfo.Parent != null)
                 {

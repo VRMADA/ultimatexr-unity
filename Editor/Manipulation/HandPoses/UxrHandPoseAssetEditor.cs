@@ -3,10 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Manipulation.HandPoses;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Manipulation.HandPoses.Editor
+namespace UltimateXR.Editor.Manipulation.HandPoses
 {
     /// <summary>
     ///     Custom inspector for <see cref="UxrHandPoseAsset" />.

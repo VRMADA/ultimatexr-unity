@@ -8,7 +8,7 @@ using UnityEditor;
 
 #pragma warning disable 0414
 
-namespace UltimateXR.Haptics.Editor
+namespace UltimateXR.Editor.Haptics
 {
     /// <summary>
     ///     Custom inspector editor for <see cref="UxrManipulationHapticFeedback" />

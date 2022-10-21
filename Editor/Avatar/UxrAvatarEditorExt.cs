@@ -4,10 +4,11 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
+using UltimateXR.Avatar;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Avatar.Editor
+namespace UltimateXR.Editor.Avatar
 {
     /// <summary>
     ///     <see cref="UxrAvatar" /> extensions available only for editor scripts.

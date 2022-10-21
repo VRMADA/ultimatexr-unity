@@ -3,9 +3,10 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.UI.UnityInputModule.Controls;
 using UnityEditor;
 
-namespace UltimateXR.UI.UnityInputModule.Controls.Editor
+namespace UltimateXR.Editor.UI.UnityInputModule.Controls
 {
     /// <summary>
     ///     Custom inspector for <see cref="UxrToggleControlInput" />. Needs to inherit from

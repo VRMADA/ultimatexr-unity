@@ -3,10 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Manipulation;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Manipulation.Editor
+namespace UltimateXR.Editor.Manipulation
 {
     /// <summary>
     ///     Custom editor for <see cref="UxrGrabbableObjectAnchor" />.

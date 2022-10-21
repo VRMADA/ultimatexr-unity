@@ -5,9 +5,11 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
 using UltimateXR.Avatar.Rig;
+using UltimateXR.Manipulation;
+using UltimateXR.Manipulation.HandPoses;
 using UnityEngine;
 
-namespace UltimateXR.Manipulation.HandPoses.Editor
+namespace UltimateXR.Editor.Manipulation.HandPoses
 {
     /// <summary>
     ///     Stores bone information for preview meshes.

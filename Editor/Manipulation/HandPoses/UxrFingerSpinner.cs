@@ -10,7 +10,7 @@ using UltimateXR.Core.Math;
 using UltimateXR.Extensions.Unity.Render;
 using UnityEngine;
 
-namespace UltimateXR.Manipulation.HandPoses.Editor
+namespace UltimateXR.Editor.Manipulation.HandPoses
 {
     /// <summary>
     ///     Finger spinner widget that allows to handle the rotation of finger nodes. It is placed inside a hand image together

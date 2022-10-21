@@ -3,10 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.UI;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.UI.Editor
+namespace UltimateXR.Editor.UI
 {
     /// <summary>
     ///     Custom inspector for <see cref="UxrLaserPointer" />.

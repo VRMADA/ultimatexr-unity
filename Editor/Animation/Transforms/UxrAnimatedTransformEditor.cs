@@ -3,10 +3,12 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Animation;
+using UltimateXR.Animation.Transforms;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Animation.Transforms.Editor
+namespace UltimateXR.Editor.Animation.Transforms
 {
     /// <summary>
     ///     Custom inspector for <see cref="UxrAnimatedTransform" />.

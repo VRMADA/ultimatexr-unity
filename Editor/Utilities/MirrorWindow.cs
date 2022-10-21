@@ -4,7 +4,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using UltimateXR.Core.Math;
-using UltimateXR.Core.Math.Editor;
+using UltimateXR.Editor.Core.Math;
 using UltimateXR.Extensions.Unity;
 using UnityEditor;
 using UnityEngine;

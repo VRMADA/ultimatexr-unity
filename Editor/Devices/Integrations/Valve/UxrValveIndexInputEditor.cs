@@ -6,15 +6,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Avatar;
-using UltimateXR.Devices.Editor;
-using UltimateXR.Editor;
+using UltimateXR.Devices.Integrations.Valve;
+using UltimateXR.Editor.Manipulation.HandPoses;
 using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
-using UltimateXR.Manipulation.HandPoses.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Devices.Integrations.Valve.Editor
+namespace UltimateXR.Editor.Devices.Integrations.Valve
 {
     /// <summary>
     ///     Custom Unity editor for the <see cref="UxrValveIndexInput" /> component.

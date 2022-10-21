@@ -9,9 +9,11 @@ using System.Threading;
 using UltimateXR.Avatar;
 using UltimateXR.Core;
 using UltimateXR.Extensions.Unity.Math;
+using UltimateXR.Manipulation;
+using UltimateXR.Manipulation.HandPoses;
 using UnityEngine;
 
-namespace UltimateXR.Manipulation.HandPoses.Editor
+namespace UltimateXR.Editor.Manipulation.HandPoses
 {
     /// <summary>
     ///     Class that computes and stores a hand mesh used to preview a grab hand pose in the editor.

@@ -8,19 +8,19 @@ using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Avatar;
 using UltimateXR.Avatar.Controllers;
-using UltimateXR.Avatar.Editor;
 using UltimateXR.Core;
 using UltimateXR.Core.Math;
-using UltimateXR.Editor;
+using UltimateXR.Editor.Avatar;
+using UltimateXR.Editor.Manipulation.HandPoses;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Extensions.Unity.Math;
+using UltimateXR.Manipulation;
 using UltimateXR.Manipulation.HandPoses;
-using UltimateXR.Manipulation.HandPoses.Editor;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace UltimateXR.Manipulation.Editor
+namespace UltimateXR.Editor.Manipulation
 {
     /// <summary>
     ///     Custom inspector editor for the <see cref="UxrGrabbableObject" /> component.

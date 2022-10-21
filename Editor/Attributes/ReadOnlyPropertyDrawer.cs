@@ -3,10 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Attributes;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Attributes.Editor
+namespace UltimateXR.Editor.Attributes
 {
     /// <summary>
     ///     Custom property drawer for inspector fields that use the ReadOnly attribute.

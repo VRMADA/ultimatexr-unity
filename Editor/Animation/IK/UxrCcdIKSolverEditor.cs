@@ -3,10 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Animation.IK;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Animation.IK.Editor
+namespace UltimateXR.Editor.Animation.IK
 {
     /// <summary>
     ///     Custom inspector for <see cref="UxrCcdIKSolver" />. Also draws handles in the scene window.

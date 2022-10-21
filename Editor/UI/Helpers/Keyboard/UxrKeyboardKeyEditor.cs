@@ -3,9 +3,10 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.UI.Helpers.Keyboard;
 using UnityEditor;
 
-namespace UltimateXR.UI.Helpers.Keyboard.Editor
+namespace UltimateXR.Editor.UI.Helpers.Keyboard
 {
     /// <summary>
     ///     Custom inspector for <see cref="UxrKeyboardKeyEditor" />.

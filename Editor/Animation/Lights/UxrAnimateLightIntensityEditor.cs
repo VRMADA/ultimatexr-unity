@@ -3,10 +3,12 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Animation;
+using UltimateXR.Animation.Lights;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Animation.Lights.Editor
+namespace UltimateXR.Editor.Animation.Lights
 {
     /// <summary>
     ///     Custom inspector for <see cref="UxrAnimatedLightIntensity" />.

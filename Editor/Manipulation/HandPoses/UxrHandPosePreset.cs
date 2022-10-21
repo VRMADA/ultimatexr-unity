@@ -4,10 +4,11 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.IO;
+using UltimateXR.Manipulation.HandPoses;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Manipulation.HandPoses.Editor
+namespace UltimateXR.Editor.Manipulation.HandPoses
 {
     /// <summary>
     ///     Stores a <see cref="UxrHandPoseAsset" /> that can be used as a preset to modify other hands.

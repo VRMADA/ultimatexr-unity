@@ -6,7 +6,7 @@
 using UltimateXR.Devices.Visualization;
 using UnityEditor;
 
-namespace UltimateXR.Devices.Editor
+namespace UltimateXR.Editor.Devices
 {
     /// <summary>
     ///     Custom Unity editor for the <see cref="UxrController3DModel" /> component.

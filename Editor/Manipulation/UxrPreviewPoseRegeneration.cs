@@ -3,7 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-namespace UltimateXR.Manipulation.Editor
+namespace UltimateXR.Editor.Manipulation
 {
     /// <summary>
     ///     Enumerates the possible preview pose regenerations that could be required when grabbable object properties are

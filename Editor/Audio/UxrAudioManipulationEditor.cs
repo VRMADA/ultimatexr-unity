@@ -3,12 +3,13 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Audio;
 using UnityEditor;
 using UnityEngine;
 
 #pragma warning disable 0414
 
-namespace UltimateXR.Audio.Editor
+namespace UltimateXR.Editor.Audio
 {
     /// <summary>
     ///     Custom editor used by the <see cref="UxrAudioManipulation" /> component.

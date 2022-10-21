@@ -7,13 +7,13 @@ using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Avatar;
 using UltimateXR.Core;
-using UltimateXR.Editor;
 using UltimateXR.Extensions.Unity;
+using UltimateXR.Manipulation;
 using UltimateXR.Manipulation.HandPoses;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Manipulation.Editor
+namespace UltimateXR.Editor.Manipulation
 {
     /// <summary>
     ///     Custom property drawer for <see cref="UxrGrabPointInfo" />.

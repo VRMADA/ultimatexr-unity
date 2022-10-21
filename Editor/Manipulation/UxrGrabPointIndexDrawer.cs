@@ -4,11 +4,11 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
-using UltimateXR.Editor;
+using UltimateXR.Manipulation;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Manipulation.Editor
+namespace UltimateXR.Editor.Manipulation
 {
     /// <summary>
     ///     Custom property drawer for the <see cref="UxrGrabPointInfo" /> class.
