@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.3] - 2022-10-24
+
+### Added
+
+- Add support to use UltimateXR through Unity Package Manager using git URL.
+
+### Changed
+
+- Change folder structure to adapt to the Unity Package Manager layout:
+  https://docs.unity3d.com/Manual/cus-layout.html
+
 ## [0.9.2] - 2022-10-18
 
 ### Fixed
@@ -146,7 +157,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First public release!
 
-[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.9.2...HEAD
+[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.9.3...HEAD
+[0.9.3]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.3
 [0.9.2]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.2
 [0.9.1]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.1
 [0.9.0]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.0

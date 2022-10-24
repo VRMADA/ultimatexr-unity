@@ -1,0 +1,36 @@
+{
+    "name": "UltimateXR.Editor",
+    "rootNamespace": "UltimateXR",
+    "references": [
+        "UltimateXR",
+        "SteamVR",
+        "SteamVR_Input_Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.vrmada.ultimatexr-unity",
+            "expression": "",
+            "define": "ULTIMATEXR_PACKAGE"
+        },
+        {
+            "name": "com.htc.upm.wave.xrsdk",
+            "expression": "",
+            "define": "ULTIMATEXR_USE_WAVEXR_SDK"
+        },
+        {
+            "name": "com.unity.xr.picoxr",
+            "expression": "",
+            "define": "ULTIMATEXR_USE_PICOXR_SDK"
+        }
+    ],
+    "noEngineReferences": false
+}
