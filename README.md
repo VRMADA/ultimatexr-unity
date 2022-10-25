@@ -75,5 +75,5 @@ Unlock the full potential using the API.
 
 Join our community and get in touch with other developers.
 
-[Discord](https://discord.gg/GXHdneaFjA)
-[Twitter](https://twitter.com/ultimate_xr)
+- [Discord](https://discord.gg/GXHdneaFjA)
+- [Twitter](https://twitter.com/ultimate_xr)
