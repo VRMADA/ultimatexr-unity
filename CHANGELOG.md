@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Remove Universal Additional Camera Data script from BRP avatar variants.
+- Fix support for PicoXR controller detection on newer versions of the PicoXR Unity SDK.
+- Remove Universal Additional Camera Data scripts added incorrectly to BRP avatar variants.
   Affected avatars are SmallHandsAvatar_BRP, BigHandsAvatar_BRP and CyborgAvatar_BRP.
 
 ## [0.9.3] - 2022-10-24
