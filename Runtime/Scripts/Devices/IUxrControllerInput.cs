@@ -273,13 +273,16 @@ namespace UltimateXR.Devices
         uint GetButtonPressFlagsLastFrame(UxrHandSide handSide, bool getIgnoredInput = false);
 
         /// <summary>
-        ///     Check if a given input event took place for a button or a set of buttons in the current frame.
+        ///     Checks if a given input event took place for a button or all buttons in a set in the current frame.
         /// </summary>
         /// <param name="handSide">
         ///     Which controller to get input from. In <see cref="UxrControllerSetupType.Single" /> devices where
         ///     <see cref="IsHandednessSupported" /> is false, such as in gamepads, both hands will address the single device.
         /// </param>
-        /// <param name="buttons">Button (or buttons by flag composition) to check</param>
+        /// <param name="buttons">
+        ///     Button (or buttons by flag composition) to check. If it's a combination, all buttons require to
+        ///     meet the event criteria
+        /// </param>
         /// <param name="buttonEventType">Input event type to check for</param>
         /// <param name="getIgnoredInput">Whether to return ignored input by <see cref="SetIgnoreControllerInput" /></param>
         /// <returns>
@@ -289,7 +292,26 @@ namespace UltimateXR.Devices
         bool GetButtonsEvent(UxrHandSide handSide, UxrInputButtons buttons, UxrButtonEventType buttonEventType, bool getIgnoredInput = false);
 
         /// <summary>
-        ///     Check if the given button or buttons are being touched in the current frame.
+        ///     Checks if a given input event took place for a button or any button in a set in the current frame.
+        /// </summary>
+        /// <param name="handSide">
+        ///     Which controller to get input from. In <see cref="UxrControllerSetupType.Single" /> devices where
+        ///     <see cref="IsHandednessSupported" /> is false, such as in gamepads, both hands will address the single device.
+        /// </param>
+        /// <param name="buttons">
+        ///     Button (or buttons by flag composition) to check. If it's a combination, any button that meets
+        ///     the event criteria will be enough
+        /// </param>
+        /// <param name="buttonEventType">Input event type to check for</param>
+        /// <param name="getIgnoredInput">Whether to return ignored input by <see cref="SetIgnoreControllerInput" /></param>
+        /// <returns>
+        ///     True if the given event happened during the current frame for the specified button. If more than one button
+        ///     was specified by using flags it will return true as long as any button had the event.
+        /// </returns>
+        bool GetButtonsEventAny(UxrHandSide handSide, UxrInputButtons buttons, UxrButtonEventType buttonEventType, bool getIgnoredInput = false);
+
+        /// <summary>
+        ///     Checks if the given button or all buttons in a set are being touched in the current frame.
         /// </summary>
         /// <param name="handSide">
         ///     Which controller to get input from. In <see cref="UxrControllerSetupType.Single" /> devices where
@@ -304,7 +326,22 @@ namespace UltimateXR.Devices
         bool GetButtonsTouch(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false);
 
         /// <summary>
-        ///     Check if the given button or buttons are being touched in the current frame but weren't the previous frame
+        ///     Checks if the given button or any button in a set is being touched in the current frame.
+        /// </summary>
+        /// <param name="handSide">
+        ///     Which controller to get input from. In <see cref="UxrControllerSetupType.Single" /> devices where
+        ///     <see cref="IsHandednessSupported" /> is false, such as in gamepads, both hands will address the single device.
+        /// </param>
+        /// <param name="buttons">Button (or buttons by flag composition) to check</param>
+        /// <param name="getIgnoredInput">Whether to return ignored input by <see cref="SetIgnoreControllerInput" /></param>
+        /// <returns>
+        ///     True if the given button is being touched in the current frame. If more than one button was specified by using
+        ///     flags it will return true if any button in the set is being touched.
+        /// </returns>
+        bool GetButtonsTouchAny(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false);
+
+        /// <summary>
+        ///     Checks if the given button or buttons are being touched in the current frame but weren't the previous frame
         ///     (touch-down).
         /// </summary>
         /// <param name="handSide">
@@ -320,7 +357,23 @@ namespace UltimateXR.Devices
         bool GetButtonsTouchDown(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false);
 
         /// <summary>
-        ///     Check if the given button or buttons aren't being touched in the current frame but were during the previous frame
+        ///     Checks if the given button or any button in a set is being touched in the current frame but not in the previous
+        ///     frame (touch-down).
+        /// </summary>
+        /// <param name="handSide">
+        ///     Which controller to get input from. In <see cref="UxrControllerSetupType.Single" /> devices where
+        ///     <see cref="IsHandednessSupported" /> is false, such as in gamepads, both hands will address the single device.
+        /// </param>
+        /// <param name="buttons">Button (or buttons by flag composition) to check</param>
+        /// <param name="getIgnoredInput">Whether to return ignored input by <see cref="SetIgnoreControllerInput" /></param>
+        /// <returns>
+        ///     True if the given button is just started being touched in the current frame. If more than one button was specified
+        ///     by using flags it will return true if any meets the condition.
+        /// </returns>
+        bool GetButtonsTouchDownAny(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false);
+
+        /// <summary>
+        ///     Checks if the given button or buttons aren't being touched in the current frame but were during the previous frame
         ///     (release touch).
         /// </summary>
         /// <param name="handSide">
@@ -336,7 +389,23 @@ namespace UltimateXR.Devices
         bool GetButtonsTouchUp(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false);
 
         /// <summary>
-        ///     Check if the given button or buttons are being pressed in the current frame.
+        ///     Checks if the given button or any button in a set isn't being touched in the current frame but was during the
+        ///     previous frame (release touch).
+        /// </summary>
+        /// <param name="handSide">
+        ///     Which controller to get input from. In <see cref="UxrControllerSetupType.Single" /> devices where
+        ///     <see cref="IsHandednessSupported" /> is false, such as in gamepads, both hands will address the single device.
+        /// </param>
+        /// <param name="buttons">Button (or buttons by flag composition) to check</param>
+        /// <param name="getIgnoredInput">Whether to return ignored input by <see cref="SetIgnoreControllerInput" /></param>
+        /// <returns>
+        ///     True if the given button is being released from touching in the current frame. If more than one button was
+        ///     specified by using flags it will return true as long as any meets the condition.
+        /// </returns>
+        bool GetButtonsTouchUpAny(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false);
+
+        /// <summary>
+        ///     Checks if the given button or buttons are being pressed in the current frame.
         /// </summary>
         /// <param name="handSide">
         ///     Which controller to get input from. In <see cref="UxrControllerSetupType.Single" /> devices where
@@ -351,7 +420,22 @@ namespace UltimateXR.Devices
         bool GetButtonsPress(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false);
 
         /// <summary>
-        ///     Check if the given button or buttons are being pressed in the current frame but weren't the previous frame
+        ///     Checks if the given button or any button in a set is being pressed in the current frame.
+        /// </summary>
+        /// <param name="handSide">
+        ///     Which controller to get input from. In <see cref="UxrControllerSetupType.Single" /> devices where
+        ///     <see cref="IsHandednessSupported" /> is false, such as in gamepads, both hands will address the single device.
+        /// </param>
+        /// <param name="buttons">Button (or buttons by flag composition) to check</param>
+        /// <param name="getIgnoredInput">Whether to return ignored input by <see cref="SetIgnoreControllerInput" /></param>
+        /// <returns>
+        ///     True if the given button is being pressed in the current frame. If more than one button was specified by using
+        ///     flags it will return true as long as any is being pressed.
+        /// </returns>
+        bool GetButtonsPressAny(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false);
+
+        /// <summary>
+        ///     Checks if the given button or buttons are being pressed in the current frame but weren't the previous frame
         ///     (press-down).
         /// </summary>
         /// <param name="handSide">
@@ -367,7 +451,23 @@ namespace UltimateXR.Devices
         bool GetButtonsPressDown(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false);
 
         /// <summary>
-        ///     Check if the given button or buttons aren't being pressed in the current frame but were during the previous frame
+        ///     Checks if the given button or any button in a set is being pressed in the current frame but wasn't the previous
+        ///     frame (press-down).
+        /// </summary>
+        /// <param name="handSide">
+        ///     Which controller to get input from. In <see cref="UxrControllerSetupType.Single" /> devices where
+        ///     <see cref="IsHandednessSupported" /> is false, such as in gamepads, both hands will address the single device.
+        /// </param>
+        /// <param name="buttons">Button (or buttons by flag composition) to check</param>
+        /// <param name="getIgnoredInput">Whether to return ignored input by <see cref="SetIgnoreControllerInput" /></param>
+        /// <returns>
+        ///     True if the given button is just started being pressed in the current frame. If more than one button was specified
+        ///     by using flags it will return true only if any meets the condition.
+        /// </returns>
+        bool GetButtonsPressDownAny(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false);
+
+        /// <summary>
+        ///     Checks if the given button or buttons aren't being pressed in the current frame but were during the previous frame
         ///     (release press).
         /// </summary>
         /// <param name="handSide">
@@ -381,6 +481,22 @@ namespace UltimateXR.Devices
         ///     specified by using flags it will return true only if all meet the condition.
         /// </returns>
         bool GetButtonsPressUp(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false);
+
+        /// <summary>
+        ///     Checks if the given button or any button in a set isn't being pressed in the current frame but was during the
+        ///     previous frame (release press).
+        /// </summary>
+        /// <param name="handSide">
+        ///     Which controller to get input from. In <see cref="UxrControllerSetupType.Single" /> devices where
+        ///     <see cref="IsHandednessSupported" /> is false, such as in gamepads, both hands will address the single device.
+        /// </param>
+        /// <param name="buttons">Button (or buttons by flag composition) to check</param>
+        /// <param name="getIgnoredInput">Whether to return ignored input by <see cref="SetIgnoreControllerInput" /></param>
+        /// <returns>
+        ///     True if the given button is being released from pressing in the current frame. If more than one button was
+        ///     specified by using flags it will return true if any meets the condition.
+        /// </returns>
+        bool GetButtonsPressUpAny(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false);
 
         /// <summary>
         ///     Sends haptic feedback to a controller if the controller supports it.

@@ -332,10 +332,26 @@ namespace UltimateXR.Core.Components
         }
 
         /// <summary>
+        ///     Unity <see cref="Reset" /> handling.
+        /// </summary>
+        protected virtual void Reset()
+        {
+
+        }
+
+        /// <summary>
         ///     Unity <see cref="Start" /> handling.
         /// </summary>
         protected virtual void Start()
         {
+        }
+
+        /// <summary>
+        ///     Unity <see cref="OnValidate" /> handling.
+        /// </summary>
+        protected virtual void OnValidate()
+        {
+            
         }
 
         #endregion

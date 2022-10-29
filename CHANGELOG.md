@@ -7,11 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4] - 2022-10-29
+
+### Added
+
+- Add IUxrGrabbableModifier interface to create components that control certain parts
+  of an UxrGrabbableObject. The UxrGrabbableObject inspector automatically disables the
+  controlled UI sections and has also capability to show/hide the controlled parameters.
+  The goal is to provide a scalable way to extend grabbable functionality by adding
+  modifier components to the object.
+- Add Reset() and OnValidate() to the overridable Unity methods in UxrComponent.
+- Add ConstraintsFinished to UxrGrabbableObject to create logic after custom constraints
+  have been applied.
+- Add constants to UxrGrabbableObjectEditor for UxrGrabbableObject field names.
+- Add "Any" variations to GetButtonsPress/GetButtonsTouch when multiple buttons are
+  specified so that any button in the set is enough to meet the criteria instead of all.
+- Add EnumExt for Enum extensions.
+- Add static events to UxrControllerInput to receive events whenever any controller
+  sends input data.
+
+### Changed
+
+- Change UxrApplyConstraintsEventArgs to contain the UxrGrabber instead of UxrGrabbableObject.
+  The UxrGrabbableObject can still be accessed using the GrabbedObject property from
+  the grabber.
+- Use ConstraintsFinished in UxrManipulationHapticFeedback in order to process object
+  after custom constraints have been applied.  
+- Rename UxrLocomotionTeleportBaseEditor to UxrTeleportLocomotionBaseEditor.
+- Update example scene prefabs so that they show the cyborg grab poses by default.
+
 ### Fixed
 
 - Fix support for PicoXR controller detection on newer versions of the PicoXR Unity SDK.
 - Remove Universal Additional Camera Data scripts added incorrectly to BRP avatar variants.
   Affected avatars are SmallHandsAvatar_BRP, BigHandsAvatar_BRP and CyborgAvatar_BRP.
+- Fix joystick directional buttons (left/right/up/down) when getting ignored input.
+- Fix bug in UxrGrabbableObjectEditor that under some circumstances throws exceptions
+  when previewing grab poses.
+- Fix UxrGrabbableObject constrained rotation on a single axis not working correctly when
+  parent has different axes.
+- Fix UxrTeleportSpawnCollider not raising Teleported event.
 
 ## [0.9.3] - 2022-10-24
 
@@ -163,7 +198,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First public release!
 
-[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.9.3...HEAD
+[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.4
 [0.9.3]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.3
 [0.9.2]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.2
 [0.9.1]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.1

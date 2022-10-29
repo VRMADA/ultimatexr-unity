@@ -15,6 +15,12 @@ namespace UltimateXR.Editor.Core.Math
     [CustomPropertyDrawer(typeof(UxrAxis))]
     public class UxrAxisPropertyDrawer : PropertyDrawer
     {
+        #region Public Types & Data
+
+        public const string PropertyAxis = "_axis";
+
+        #endregion
+
         #region Public Overrides PropertyDrawer
 
         /// <inheritdoc />
@@ -47,7 +53,7 @@ namespace UltimateXR.Editor.Core.Math
         {
             EditorGUI.BeginProperty(position, label, property);
 
-            SerializedProperty propertyAxis = property.FindPropertyRelative("_axis");
+            SerializedProperty propertyAxis = property.FindPropertyRelative(PropertyAxis);
 
             if (property.serializedObject.isEditingMultipleObjects)
             {
@@ -57,7 +63,7 @@ namespace UltimateXR.Editor.Core.Math
                 GUI.enabled = false;
                 EditorGUI.PropertyField(UxrEditorUtils.GetRect(position, 0), propertyAxis, label);
                 GUI.enabled = isGuiEnabled;
-            }
+        	}
             else
             {
                 propertyAxis.intValue = EditorGUI.Popup(UxrEditorUtils.GetRect(position, 0), label, propertyAxis.intValue, UxrEditorUtils.ToGUIContentArray(AxesAsStrings));

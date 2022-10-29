@@ -283,7 +283,7 @@ namespace UltimateXR.Extensions.Unity.Math
         ///     Tries to parse a <see cref="Vector3" /> from a string.
         /// </summary>
         /// <param name="s">Source string</param>
-        /// <param name="result">Parsed vector or <see cref="NaN"/> if there was an error</param>
+        /// <param name="result">Parsed vector or <see cref="NaN" /> if there was an error</param>
         /// <returns>Whether the vector was parsed successfully</returns>
         public static bool TryParse(string s, out Vector3 result)
         {

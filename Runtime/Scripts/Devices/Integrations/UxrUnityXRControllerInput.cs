@@ -553,7 +553,7 @@ namespace UltimateXR.Devices.Integrations
             SetButtonFlags(ButtonFlags.TouchFlagsLeft,  UxrInputButtons.ThumbCapSense, buttonTouchThumbCapSenseLeft);
             SetButtonFlags(ButtonFlags.TouchFlagsRight, UxrInputButtons.ThumbCapSense, buttonTouchThumbCapSenseRight);
 
-            Vector2 leftJoystick = GetInput2D(UxrHandSide.Left, UxrInput2D.Joystick);
+            Vector2 leftJoystick = GetInput2D(UxrHandSide.Left, UxrInput2D.Joystick, true);
             Vector2 leftDPad     = leftJoystick; // Mapped to joystick by default
 
             if (leftJoystick != Vector2.zero && leftJoystick.magnitude > AnalogAsDPadThreshold)
@@ -590,7 +590,7 @@ namespace UltimateXR.Devices.Integrations
                 SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.DPadDown,  false);
             }
 
-            Vector2 rightJoystick = GetInput2D(UxrHandSide.Right, UxrInput2D.Joystick);
+            Vector2 rightJoystick = GetInput2D(UxrHandSide.Right, UxrInput2D.Joystick, true);
             Vector2 rightDPad     = rightJoystick; // Mapped to joystick by default
 
             if (rightJoystick != Vector2.zero && rightJoystick.magnitude > AnalogAsDPadThreshold)

@@ -15,7 +15,7 @@ namespace UltimateXR.Extensions.Unity.Render
     public static class RendererExt
     {
         #region Public Methods
-
+        
         /// <summary>
         ///     Calculates the <see cref="Bounds" /> encapsulating a set of renderers.
         /// </summary>

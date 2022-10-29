@@ -13,6 +13,7 @@ using UltimateXR.Core;
 using UltimateXR.Core.Components.Composite;
 using UltimateXR.Devices.Integrations;
 using UltimateXR.Devices.Visualization;
+using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.System.Math;
 using UltimateXR.Extensions.Unity;
@@ -42,9 +43,29 @@ namespace UltimateXR.Devices
         #region Public Types & Data
 
         /// <summary>
-        ///     Event called whenever a controller input device is connected or disconnected
+        ///     Event called whenever any controller input device is connected or disconnected
         /// </summary>
         public static event EventHandler<UxrDeviceConnectEventArgs> GlobalControllerConnected;
+
+        /// <summary>
+        ///     Event called after any controller button state changed.
+        /// </summary>
+        public event EventHandler<UxrInputButtonEventArgs> GlobalButtonStateChanged;
+
+        /// <summary>
+        ///     Event called after any <see cref="UxrInput1D" /> element changed.
+        /// </summary>
+        public event EventHandler<UxrInput1DEventArgs> GlobalInput1DChanged;
+
+        /// <summary>
+        ///     Event called after any <see cref="UxrInput2D" /> element changed.
+        /// </summary>
+        public event EventHandler<UxrInput2DEventArgs> GlobalInput2DChanged;
+
+        /// <summary>
+        ///     Event called right before any haptic feedback was requested.
+        /// </summary>
+        public event EventHandler<UxrControllerHapticEventArgs> GlobalHapticRequesting;
 
         /// <summary>
         ///     Gets the current input component, which is the enabled input component belonging to the local avatar.
@@ -236,6 +257,21 @@ namespace UltimateXR.Devices
         }
 
         /// <inheritdoc />
+        public bool GetButtonsEventAny(UxrHandSide handSide, UxrInputButtons buttons, UxrButtonEventType buttonEventType, bool getIgnoredInput = false)
+        {
+            return buttonEventType switch
+                   {
+                               UxrButtonEventType.Touching  => GetButtonsTouchAny(handSide, buttons, getIgnoredInput),
+                               UxrButtonEventType.TouchDown => GetButtonsTouchDownAny(handSide, buttons, getIgnoredInput),
+                               UxrButtonEventType.TouchUp   => GetButtonsTouchUpAny(handSide, buttons, getIgnoredInput),
+                               UxrButtonEventType.Pressing  => GetButtonsPressAny(handSide, buttons, getIgnoredInput),
+                               UxrButtonEventType.PressDown => GetButtonsPressDownAny(handSide, buttons, getIgnoredInput),
+                               UxrButtonEventType.PressUp   => GetButtonsPressUpAny(handSide, buttons, getIgnoredInput),
+                               _                            => false
+                   };
+        }
+
+        /// <inheritdoc />
         public bool GetButtonsTouch(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false)
         {
             if (buttons == UxrInputButtons.Any)
@@ -244,6 +280,12 @@ namespace UltimateXR.Devices
             }
 
             return GetButtonTouchFlags(handSide, getIgnoredInput).HasFlags((uint)buttons);
+        }
+
+        /// <inheritdoc />
+        public bool GetButtonsTouchAny(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false)
+        {
+            return (GetButtonTouchFlags(handSide, getIgnoredInput) & (uint)buttons) != 0;
         }
 
         /// <inheritdoc />
@@ -258,6 +300,25 @@ namespace UltimateXR.Devices
         }
 
         /// <inheritdoc />
+        public bool GetButtonsTouchDownAny(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false)
+        {
+            uint touchFlagsLastFrame = GetButtonTouchFlagsLastFrame(handSide, getIgnoredInput);
+            uint touchFlags          = GetButtonTouchFlags(handSide, getIgnoredInput);
+            
+            foreach (UxrInputButtons button in buttons.GetFlags())
+            {
+                uint buttonFlag = (uint)button;
+                
+                if ((touchFlagsLastFrame & buttonFlag) == 0 && (touchFlags & buttonFlag) == buttonFlag)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <inheritdoc />
         public bool GetButtonsTouchUp(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false)
         {
             if (buttons == UxrInputButtons.Any)
@@ -266,6 +327,25 @@ namespace UltimateXR.Devices
             }
 
             return (GetButtonTouchFlagsLastFrame(handSide, getIgnoredInput) & (uint)buttons) == (uint)buttons && (GetButtonTouchFlags(handSide, getIgnoredInput) & (uint)buttons) == 0;
+        }
+
+        /// <inheritdoc />
+        public bool GetButtonsTouchUpAny(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false)
+        {
+            uint touchFlagsLastFrame = GetButtonTouchFlagsLastFrame(handSide, getIgnoredInput);
+            uint touchFlags          = GetButtonTouchFlags(handSide, getIgnoredInput);
+
+            foreach (UxrInputButtons button in buttons.GetFlags())
+            {
+                uint buttonFlag = (uint)button;
+
+                if ((touchFlagsLastFrame & buttonFlag) == buttonFlag && (touchFlags & buttonFlag) == 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <inheritdoc />
@@ -280,6 +360,12 @@ namespace UltimateXR.Devices
         }
 
         /// <inheritdoc />
+        public bool GetButtonsPressAny(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false)
+        {
+            return (GetButtonPressFlags(handSide, getIgnoredInput) & (uint)buttons) != 0;
+        }
+
+        /// <inheritdoc />
         public bool GetButtonsPressDown(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false)
         {
             if (buttons == UxrInputButtons.Any)
@@ -291,6 +377,25 @@ namespace UltimateXR.Devices
         }
 
         /// <inheritdoc />
+        public bool GetButtonsPressDownAny(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false)
+        {
+            uint pressFlagsLastFrame = GetButtonPressFlagsLastFrame(handSide, getIgnoredInput);
+            uint pressFlags          = GetButtonPressFlags(handSide, getIgnoredInput);
+
+            foreach (UxrInputButtons button in buttons.GetFlags())
+            {
+                uint buttonFlag = (uint)button;
+                
+                if ((pressFlagsLastFrame & buttonFlag) == 0 && (pressFlags & buttonFlag) == buttonFlag)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <inheritdoc />
         public bool GetButtonsPressUp(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false)
         {
             if (buttons == UxrInputButtons.Any)
@@ -299,6 +404,25 @@ namespace UltimateXR.Devices
             }
 
             return (GetButtonPressFlagsLastFrame(handSide, getIgnoredInput) & (uint)buttons) == (uint)buttons && (GetButtonPressFlags(handSide, getIgnoredInput) & (uint)buttons) == 0;
+        }
+
+        /// <inheritdoc />
+        public bool GetButtonsPressUpAny(UxrHandSide handSide, UxrInputButtons buttons, bool getIgnoredInput = false)
+        {
+            uint pressFlagsLastFrame = GetButtonPressFlagsLastFrame(handSide, getIgnoredInput);
+            uint pressFlags          = GetButtonPressFlags(handSide, getIgnoredInput);
+
+            foreach (UxrInputButtons button in buttons.GetFlags())
+            {
+                uint buttonFlag = (uint)button;
+
+                if ((pressFlagsLastFrame & buttonFlag) == buttonFlag && (pressFlags & buttonFlag) == 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <inheritdoc />
@@ -939,6 +1063,7 @@ namespace UltimateXR.Devices
         protected virtual void OnButtonStateChanged(UxrInputButtonEventArgs e)
         {
             ButtonStateChanged?.Invoke(this, e);
+            GlobalButtonStateChanged?.Invoke(this, e);
         }
 
         /// <summary>
@@ -948,6 +1073,7 @@ namespace UltimateXR.Devices
         protected virtual void OnInput1DChanged(UxrInput1DEventArgs e)
         {
             Input1DChanged?.Invoke(this, e);
+            GlobalInput1DChanged?.Invoke(this, e);
         }
 
         /// <summary>
@@ -957,6 +1083,7 @@ namespace UltimateXR.Devices
         protected virtual void OnInput2DChanged(UxrInput2DEventArgs e)
         {
             Input2DChanged?.Invoke(this, e);
+            GlobalInput2DChanged?.Invoke(this, e);
         }
 
         /// <summary>
@@ -966,6 +1093,7 @@ namespace UltimateXR.Devices
         protected virtual void OnHapticRequesting(UxrControllerHapticEventArgs e)
         {
             HapticRequesting?.Invoke(this, e);
+            GlobalHapticRequesting?.Invoke(this, e);
         }
 
         /// <summary>

@@ -185,6 +185,19 @@ namespace UltimateXR.Extensions.System.Collections
             return result;
         }
 
+        /// <summary>
+        ///     Splits a list of strings using CamelCase.
+        /// </summary>
+        /// <param name="strings">List of strings</param>
+        /// <returns>List of strings with added spacing</returns>
+        public static IEnumerable<string> SplitCamelCase(this IEnumerable<string> strings)
+        {
+            foreach (string element in strings)
+            {
+                yield return element.SplitCamelCase();
+            }
+        }
+
         #endregion
     }
 }

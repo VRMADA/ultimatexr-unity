@@ -350,13 +350,13 @@ namespace UltimateXR.Haptics.Helpers
         ///     It is used to update the speed information.
         /// </summary>
         /// <param name="e">Event parameters</param>
-        protected override void OnObjectConstraintsApplied(UxrApplyConstraintsEventArgs e)
+        protected override void OnObjectConstraintsFinished(UxrApplyConstraintsEventArgs e)
         {
-            _linearSpeed  = Vector3.Distance(_previousLocalPosition, e.GrabbableObject.transform.localPosition) / Time.deltaTime;
-            _angularSpeed = Quaternion.Angle(_previousLocalRotation, e.GrabbableObject.transform.localRotation) / Time.deltaTime;
+            _linearSpeed  = Vector3.Distance(_previousLocalPosition, e.Grabber.GrabbedObject.transform.localPosition) / Time.deltaTime;
+            _angularSpeed = Quaternion.Angle(_previousLocalRotation, e.Grabber.GrabbedObject.transform.localRotation) / Time.deltaTime;
 
-            _previousLocalPosition = e.GrabbableObject.transform.localPosition;
-            _previousLocalRotation = e.GrabbableObject.transform.localRotation;
+            _previousLocalPosition = e.Grabber.GrabbedObject.transform.localPosition;
+            _previousLocalRotation = e.Grabber.GrabbedObject.transform.localRotation;
         }
 
         #endregion

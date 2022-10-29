@@ -164,7 +164,7 @@ namespace UltimateXR.Core.Math
 
         #endregion
 
-        #region Event Handling Methods
+        #region Operators
 
         /// <summary>
         ///     Unary minus operator. Negates the axis value.

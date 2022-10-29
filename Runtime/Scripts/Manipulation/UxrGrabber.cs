@@ -153,7 +153,7 @@ namespace UltimateXR.Manipulation
         {
             get
             {
-                if (!_sideInitialized)
+                if (!_sideInitialized || (Application.isEditor && !Application.isPlaying))
                 {
                     InitializeSide();
                 }

@@ -18,7 +18,7 @@ namespace UltimateXR.Manipulation
         /// <summary>
         ///     Gets the grabbable object.
         /// </summary>
-        public UxrGrabbableObject GrabbableObject { get; }
+        public UxrGrabber Grabber { get; }
 
         #endregion
 
@@ -34,10 +34,10 @@ namespace UltimateXR.Manipulation
         /// <summary>
         ///     Constructor.
         /// </summary>
-        /// <param name="grabbableObject">The grabbable object being processed</param>
-        public UxrApplyConstraintsEventArgs(UxrGrabbableObject grabbableObject)
+        /// <param name="grabber">The grabber being processed</param>
+        public UxrApplyConstraintsEventArgs(UxrGrabber grabber)
         {
-            GrabbableObject = grabbableObject;
+            Grabber = grabber;
         }
 
         #endregion

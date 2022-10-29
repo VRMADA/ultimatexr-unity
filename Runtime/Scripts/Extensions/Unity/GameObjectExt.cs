@@ -169,9 +169,9 @@ namespace UltimateXR.Extensions.Unity
                 }
                 else
                 {
-                    min = Vector3.Min(min, renderer.bounds.min);
-                    max = Vector3.Max(max, renderer.bounds.max);
-                }
+                min = Vector3.Min(min, renderer.bounds.min);
+                max = Vector3.Max(max, renderer.bounds.max);
+            }
             }
 
             return (min + max) * 0.5f;

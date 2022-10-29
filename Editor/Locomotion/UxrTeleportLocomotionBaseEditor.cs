@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="UxrLocomotionTeleportBaseEditor.cs" company="VRMADA">
+// <copyright file="UxrTeleportLocomotionBaseEditor.cs" company="VRMADA">
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------

@@ -55,8 +55,8 @@ namespace UltimateXR.Manipulation
     ///             logic when a user interacts with the object. Each has pre and post events.
     ///         </item>
     ///         <item>
-    ///             <see cref="ConstraintsApplying" /> and <see cref="ConstraintsApplied" /> allow to program more complex
-    ///             logic when grabbing objects.
+    ///             <see cref="ConstraintsApplying" />, <see cref="ConstraintsApplied" /> and
+    ///             <see cref="ConstraintsFinished" /> allow to program more complex logic when grabbing objects.
     ///         </item>
     ///     </list>
     /// </summary>
@@ -175,8 +175,14 @@ namespace UltimateXR.Manipulation
 
         /// <summary>
         ///     Event called right after applying the position/rotation constraints to the object.
+        ///     This can be used to apply custom constraints to the object.
         /// </summary>
         public event EventHandler<UxrApplyConstraintsEventArgs> ConstraintsApplied;
+
+        /// <summary>
+        ///     Event called right after all <see cref="ConstraintsApplied" /> finished.
+        /// </summary>
+        public event EventHandler<UxrApplyConstraintsEventArgs> ConstraintsFinished;
 
         /// <summary>
         ///     Gets if the object has constraints and at the same time has a grabbable parent. This means that the object can
@@ -1484,14 +1490,14 @@ namespace UltimateXR.Manipulation
         /// <param name="localPositionBeforeUpdate">Object local position before being updated</param>
         /// <param name="localRotationBeforeUpdate">Object local rotation before being updated</param>
         /// <param name="propagateEvents">
-        ///     Whether to propagate <see cref="ConstraintsApplying" /> and
-        ///     <see cref="ConstraintsApplied" /> events
+        ///     Whether to propagate <see cref="ConstraintsApplying" />, <see cref="ConstraintsApplied" />
+        ///     and <see cref="ConstraintsFinished" /> events
         /// </param>
         internal void CheckAndApplyConstraints(UxrGrabber grabber, int grabPoint, Vector3 localPositionBeforeUpdate, Quaternion localRotationBeforeUpdate, bool propagateEvents)
         {
             if (propagateEvents)
             {
-                OnConstraintsApplying(new UxrApplyConstraintsEventArgs(this));
+                OnConstraintsApplying(new UxrApplyConstraintsEventArgs(grabber));
             }
 
             if (IsLockedInPlace)
@@ -1501,7 +1507,7 @@ namespace UltimateXR.Manipulation
 
                 if (propagateEvents)
                 {
-                    OnConstraintsApplied(new UxrApplyConstraintsEventArgs(this));
+                    OnConstraintsApplied(new UxrApplyConstraintsEventArgs(grabber));
                 }
 
                 return;
@@ -1513,7 +1519,7 @@ namespace UltimateXR.Manipulation
             {
                 if (propagateEvents)
                 {
-                    OnConstraintsApplied(new UxrApplyConstraintsEventArgs(this));
+                    OnConstraintsApplied(new UxrApplyConstraintsEventArgs(grabber));
                 }
 
                 return;
@@ -1540,12 +1546,16 @@ namespace UltimateXR.Manipulation
 
                 if (rangeOfMotionAxisCount == 1)
                 {
+                    // Compute in local coordinates
+
+                    grabDirection        = Quaternion.Inverse(transform.GetParentRotation()) * grabDirection;
+                    initialGrabDirection = Quaternion.Inverse(transform.GetParentRotation()) * initialGrabDirection;
+                    
                     // When there's a single axis with range of motion, we use additional computations to be able to specify ranges below/above -180/180 degrees
 
-                    Quaternion initialLocalRotation          = Quaternion.Euler(InitialLocalEulerAngles);
-                    UxrAxis    rotationAxis                  = SingleRotationAxisIndex;
-                    Vector3    projectedGrabDirection        = Vector3.ProjectOnPlane(grabDirection,        localRotationBeforeUpdate * rotationAxis);
-                    Vector3    projectedInitialGrabDirection = Vector3.ProjectOnPlane(initialGrabDirection, localRotationBeforeUpdate * rotationAxis);
+                    UxrAxis rotationAxis                  = SingleRotationAxisIndex;
+                    Vector3 projectedGrabDirection        = Vector3.ProjectOnPlane(grabDirection,        localRotationBeforeUpdate * rotationAxis);
+                    Vector3 projectedInitialGrabDirection = Vector3.ProjectOnPlane(initialGrabDirection, localRotationBeforeUpdate * rotationAxis);
 
                     float angle      = Vector3.SignedAngle(projectedInitialGrabDirection, projectedGrabDirection, localRotationBeforeUpdate * rotationAxis);
                     float angleDelta = angle - _singleRotationAngleGrab.ToEuler180();
@@ -1572,7 +1582,7 @@ namespace UltimateXR.Manipulation
 
                     // Rotate using absolute current rotation to preserve precision
 
-                    transform.localRotation = initialLocalRotation * Quaternion.AngleAxis(rotationAngle, rotationAxis);
+                    transform.localRotation = InitialLocalRotation * Quaternion.AngleAxis(rotationAngle, rotationAxis);
                 }
                 else
                 {
@@ -1596,7 +1606,7 @@ namespace UltimateXR.Manipulation
                     }
                     else
                     {
-                        transform.localRotation = ClampRotation(localRotation, localRotationBeforeUpdate, InitialLocalEulerAngles, _rotationAngleLimitsMin, _rotationAngleLimitsMax, false, ref _singleRotationAngleCumulative);
+                        transform.localRotation = ClampRotation(localRotation, localRotationBeforeUpdate, InitialLocalRotation, _rotationAngleLimitsMin, _rotationAngleLimitsMax, false, ref _singleRotationAngleCumulative);
                     }
                 }
             }
@@ -1662,7 +1672,12 @@ namespace UltimateXR.Manipulation
 
             if (propagateEvents)
             {
-                OnConstraintsApplied(new UxrApplyConstraintsEventArgs(this));
+                OnConstraintsApplied(new UxrApplyConstraintsEventArgs(grabber));
+            }
+
+            if (propagateEvents)
+            {
+                OnConstraintsFinished(new UxrApplyConstraintsEventArgs(grabber));
             }
         }
 
@@ -1990,6 +2005,15 @@ namespace UltimateXR.Manipulation
         }
 
         /// <summary>
+        ///     Event trigger for <see cref="ConstraintsFinished" />.
+        /// </summary>
+        /// <param name="e">Event parameters</param>
+        private void OnConstraintsFinished(UxrApplyConstraintsEventArgs e)
+        {
+            ConstraintsFinished?.Invoke(this, e);
+        }
+
+        /// <summary>
         ///     Event trigger for <see cref="Grabbing" />.
         /// </summary>
         /// <param name="e">Event parameters</param>
@@ -2129,7 +2153,7 @@ namespace UltimateXR.Manipulation
 
                 if (_rotationConstraintMode == UxrRotationConstraintMode.RestrictLocalRotation)
                 {
-                    targetLocalRotation = ClampRotation(transform.localRotation, unprocessedLocalRotation, InitialLocalEulerAngles, _rotationAngleLimitsMin, _rotationAngleLimitsMax, false, ref _singleRotationAngleCumulative);
+                    targetLocalRotation = ClampRotation(transform.localRotation, unprocessedLocalRotation, InitialLocalRotation, _rotationAngleLimitsMin, _rotationAngleLimitsMax, false, ref _singleRotationAngleCumulative);
                 }
 
                 transform.localRotation = _constraintTimer < 0.0f ? targetLocalRotation : Quaternion.Slerp(unprocessedLocalRotation, targetLocalRotation, 1.0f - _constraintTimer / ConstrainSeconds);
@@ -2175,7 +2199,7 @@ namespace UltimateXR.Manipulation
         /// </summary>
         /// <param name="rot">Rotation to clamp</param>
         /// <param name="rotBeforeUpdate">Rotation before the manipulation update this frame</param>
-        /// <param name="initialEuler">Initial euler angles</param>
+        /// <param name="initialRot">Initial rotation</param>
         /// <param name="eulerMin">Minimum euler values</param>
         /// <param name="eulerMax">Maximum euler values</param>
         /// <param name="invertRotation">Whether to invert the rotation angles</param>
@@ -2184,10 +2208,9 @@ namespace UltimateXR.Manipulation
         ///     constraining by allowing ranges over +-360 degrees.
         /// </param>
         /// <returns>Clamped rotation</returns>
-        private Quaternion ClampRotation(Quaternion rot, Quaternion rotBeforeUpdate, Vector3 initialEuler, Vector3 eulerMin, Vector3 eulerMax, bool invertRotation, ref float singleRotationAngle)
+        private Quaternion ClampRotation(Quaternion rot, Quaternion rotBeforeUpdate, Quaternion initialRot, Vector3 eulerMin, Vector3 eulerMax, bool invertRotation, ref float singleRotationAngle)
         {
-            int        rangeOfMotionAxisCount = RangeOfMotionRotationAxisCount;
-            Quaternion initialRot             = Quaternion.Euler(initialEuler);
+            int rangeOfMotionAxisCount = RangeOfMotionRotationAxisCount;
 
             if (RangeOfMotionRotationAxisCount == 0)
             {

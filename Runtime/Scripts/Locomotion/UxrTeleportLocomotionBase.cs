@@ -728,6 +728,8 @@ namespace UltimateXR.Locomotion
                     parentToDestination = parentAvatarDestination.ParentAvatar;
                 }
 
+                UxrTeleportSpawnCollider spawnCollider = _lastSpawnCollider;
+
                 UxrManager.Instance.TeleportLocalAvatarRelative(TeleportReference,
                                                                 parentToDestination,
                                                                 TransformExt.GetWorldPosition(TeleportReference, TeleportLocalPosition),
@@ -736,9 +738,9 @@ namespace UltimateXR.Locomotion
                                                                 TranslationSeconds,
                                                                 () =>
                                                                 {
-                                                                    if (_lastSpawnCollider != null)
+                                                                    if (spawnCollider != null)
                                                                     {
-                                                                        _lastSpawnCollider.RaiseTeleported(new UxrAvatarMoveEventArgs(Avatar, avatarPos, avatarRot, Avatar.CameraFloorPosition, Quaternion.LookRotation(Avatar.ProjectedCameraForward, avatarUp)));
+                                                                        spawnCollider.RaiseTeleported(new UxrAvatarMoveEventArgs(Avatar, avatarPos, avatarRot, Avatar.CameraFloorPosition, Quaternion.LookRotation(Avatar.ProjectedCameraForward, avatarUp)));
                                                                     }
                                                                 },
                                                                 finished =>
@@ -868,10 +870,7 @@ namespace UltimateXR.Locomotion
             {
                 IsTeleporting = true;
 
-                Transform  avatarTransform = Avatar.transform;
-                Vector3    avatarPos       = avatarTransform.position;
-                Vector3    avatarUp        = avatarTransform.up;
-                Quaternion avatarRot       = avatarTransform.rotation;
+                Transform avatarTransform = Avatar.transform;
 
                 if (RotationType == UxrRotationType.Fade)
                 {
@@ -881,13 +880,7 @@ namespace UltimateXR.Locomotion
                 UxrManager.Instance.RotateLocalAvatar(degrees,
                                                       RotationType,
                                                       RotationSeconds,
-                                                      () =>
-                                                      {
-                                                          if (_lastSpawnCollider != null)
-                                                          {
-                                                              _lastSpawnCollider.RaiseTeleported(new UxrAvatarMoveEventArgs(Avatar, avatarPos, avatarRot, Avatar.CameraFloorPosition, Quaternion.LookRotation(Avatar.ProjectedCameraForward, avatarUp)));
-                                                          }
-                                                      },
+                                                      null,
                                                       finished =>
                                                       {
                                                           IsTeleporting     = false;

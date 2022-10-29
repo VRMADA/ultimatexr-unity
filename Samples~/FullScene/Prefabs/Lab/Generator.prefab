@@ -1692,6 +1692,7 @@ MonoBehaviour:
   _rotationConstraintMode: 1
   _rotationAngleLimitsMin: {x: 0, y: 0, z: 0}
   _rotationAngleLimitsMax: {x: 0, y: 45, z: 0}
+  _autoRotationProvider: 1
   _rotationProvider: 1
   _rotationLongitudinalAxis:
     _axis: 2
@@ -1706,7 +1707,7 @@ MonoBehaviour:
   _previewGrabPosesMode: 3
   _previewPosesRegenerationType: 0
   _previewPosesRegenerationIndex: -1
-  _selectedAvatarForGrips: {fileID: 6999715261389110437, guid: 7195d091dac462e4db9ba0793d9a6727,
+  _selectedAvatarForGrips: {fileID: 9064259894265353843, guid: e7468ec6b7af89c4d94d451ec3c1807b,
     type: 3}
   _firstGrabPointIsMain: 1
   _grabPoint:
@@ -1868,6 +1869,7 @@ MonoBehaviour:
   _rotationConstraintMode: 1
   _rotationAngleLimitsMin: {x: 0, y: 0, z: 0}
   _rotationAngleLimitsMax: {x: 0, y: 0, z: 45}
+  _autoRotationProvider: 1
   _rotationProvider: 1
   _rotationLongitudinalAxis:
     _axis: 2
@@ -1882,7 +1884,7 @@ MonoBehaviour:
   _previewGrabPosesMode: 3
   _previewPosesRegenerationType: 0
   _previewPosesRegenerationIndex: -1
-  _selectedAvatarForGrips: {fileID: 6999715261389110437, guid: 7195d091dac462e4db9ba0793d9a6727,
+  _selectedAvatarForGrips: {fileID: 9064259894265353843, guid: e7468ec6b7af89c4d94d451ec3c1807b,
     type: 3}
   _firstGrabPointIsMain: 1
   _grabPoint:

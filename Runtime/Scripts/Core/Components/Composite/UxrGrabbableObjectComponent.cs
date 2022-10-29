@@ -4,6 +4,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using UltimateXR.Manipulation;
+using UltimateXR.Extensions.Unity;
 using UnityEngine;
 
 namespace UltimateXR.Core.Components.Composite
@@ -19,6 +20,7 @@ namespace UltimateXR.Core.Components.Composite
     ///     </para>
     /// </summary>
     /// <typeparam name="T">Component type</typeparam>
+    [RequireComponent(typeof(UxrGrabbableObject))]
     public abstract class UxrGrabbableObjectComponent<T> : UxrComponent<T> where T : UxrGrabbableObjectComponent<T>
     {
         #region Public Types & Data
@@ -37,7 +39,7 @@ namespace UltimateXR.Core.Components.Composite
             {
                 if (_grabbableObject == null)
                 {
-                    _grabbableObject = GetComponentInParent<UxrGrabbableObject>();
+                    _grabbableObject = this.SafeGetComponentInParent<UxrGrabbableObject>();
                 }
 
                 return _grabbableObject;
@@ -81,6 +83,7 @@ namespace UltimateXR.Core.Components.Composite
                 GrabbableObject.Placed              += GrabbableObject_Placed;
                 GrabbableObject.ConstraintsApplying += GrabbableObject_ConstraintsApplying;
                 GrabbableObject.ConstraintsApplied  += GrabbableObject_ConstraintsApplied;
+                GrabbableObject.ConstraintsFinished += GrabbableObject_ConstraintsFinished;
             }
         }
 
@@ -101,6 +104,7 @@ namespace UltimateXR.Core.Components.Composite
                 GrabbableObject.Placed              -= GrabbableObject_Placed;
                 GrabbableObject.ConstraintsApplying -= GrabbableObject_ConstraintsApplying;
                 GrabbableObject.ConstraintsApplied  -= GrabbableObject_ConstraintsApplied;
+                GrabbableObject.ConstraintsFinished -= GrabbableObject_ConstraintsFinished;
             }
         }
 
@@ -176,8 +180,7 @@ namespace UltimateXR.Core.Components.Composite
 
         /// <summary>
         ///     Event handling method for the <see cref="UxrGrabbableObject.ConstraintsApplying" /> event. It will call the
-        ///     overridable event
-        ///     trigger so that child classes don't need to subscribe to the event and can override the method instead.
+        ///     overridable event trigger so that child classes don't need to subscribe to the event and can override the method instead.
         /// </summary>
         /// <param name="sender">The event sender</param>
         /// <param name="e">The event parameters</param>
@@ -188,14 +191,24 @@ namespace UltimateXR.Core.Components.Composite
 
         /// <summary>
         ///     Event handling method for the <see cref="UxrGrabbableObject.ConstraintsApplied" /> event. It will call the
-        ///     overridable event
-        ///     trigger so that child classes don't need to subscribe to the event and can override the method instead.
+        ///     overridable event trigger so that child classes don't need to subscribe to the event and can override the method instead.
         /// </summary>
         /// <param name="sender">The event sender</param>
         /// <param name="e">The event parameters</param>
         private void GrabbableObject_ConstraintsApplied(object sender, UxrApplyConstraintsEventArgs e)
         {
             OnObjectConstraintsApplied(e);
+        }
+
+        /// <summary>
+        ///     Event handling method for the <see cref="UxrGrabbableObject.ConstraintsFinished" /> event. It will call the
+        ///     overridable event trigger so that child classes don't need to subscribe to the event and can override the method instead.
+        /// </summary>
+        /// <param name="sender">The event sender</param>
+        /// <param name="e">The event parameters</param>
+        private void GrabbableObject_ConstraintsFinished(object sender, UxrApplyConstraintsEventArgs e)
+        {
+            OnObjectConstraintsFinished(e);
         }
 
         #endregion
@@ -258,8 +271,7 @@ namespace UltimateXR.Core.Components.Composite
 
         /// <summary>
         ///     Overridable event trigger method for the <see cref="UxrGrabbableObject.ConstraintsApplying" /> event that can be
-        ///     used to
-        ///     handle it without requiring to subscribe/unsubscribe.
+        ///     used to handle it without requiring to subscribe/unsubscribe.
         /// </summary>
         /// <param name="e">Event parameters</param>
         protected virtual void OnObjectConstraintsApplying(UxrApplyConstraintsEventArgs e)
@@ -268,11 +280,19 @@ namespace UltimateXR.Core.Components.Composite
 
         /// <summary>
         ///     Overridable event trigger method for the <see cref="UxrGrabbableObject.ConstraintsApplied" /> event that can be
-        ///     used to
-        ///     handle it without requiring to subscribe/unsubscribe.
+        ///     used to handle it without requiring to subscribe/unsubscribe.
         /// </summary>
         /// <param name="e">Event parameters</param>
         protected virtual void OnObjectConstraintsApplied(UxrApplyConstraintsEventArgs e)
+        {
+        }
+
+        /// <summary>
+        ///     Overridable event trigger method for the <see cref="UxrGrabbableObject.ConstraintsFinished" /> event that can be
+        ///     used to handle it without requiring to subscribe/unsubscribe.
+        /// </summary>
+        /// <param name="e">Event parameters</param>
+        protected virtual void OnObjectConstraintsFinished(UxrApplyConstraintsEventArgs e)
         {
         }
 

@@ -389,7 +389,7 @@ namespace UltimateXR.Editor.Avatar
 
             if (_foldoutRendering)
             {
-                _propertyRenderMode.intValue = EditorGUILayout.MaskField(ContentRenderMode, _propertyRenderMode.intValue, UxrEditorUtils.GetAvatarRenderModeNames().ToArray());
+                _propertyRenderMode.intValue = EditorGUILayout.MaskField(ContentRenderMode, _propertyRenderMode.intValue, UxrEditorUtils.GetAvatarRenderModeNames().SplitCamelCase().ToArray());
                 EditorGUILayout.PropertyField(_propertyShowControllerHands, ContentShowControllerHands);
                 EditorGUILayout.PropertyField(_propertyAvatarRenderers,     ContentAvatarRenderers, true);
             }

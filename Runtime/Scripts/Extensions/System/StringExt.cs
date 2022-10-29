@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -150,7 +151,7 @@ namespace UltimateXR.Extensions.System
 
                 var candidateInfo = new DirectoryInfo(candidate.Replace(@"\", @"/").TrimEnd('/'));
                 var otherInfo     = new DirectoryInfo(other.Replace(@"\", @"/").TrimEnd('/'));
-                
+
                 // Check if same directory
 
                 if (canBeSame && string.Compare(candidateInfo.FullName, otherInfo.FullName, StringComparison.OrdinalIgnoreCase) == 0)
@@ -207,6 +208,16 @@ namespace UltimateXR.Extensions.System
             }
 
             return string.Empty;
+        }
+
+        /// <summary>
+        ///     Splits a string using CamelCase.
+        /// </summary>
+        /// <param name="self">Input string</param>
+        /// <returns>Output string with added spaces</returns>
+        public static string SplitCamelCase(this string self)
+        {
+            return Regex.Replace(self, "([A-Z])", " $1", RegexOptions.Compiled).Trim();
         }
 
         /// <summary>
