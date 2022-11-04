@@ -111,11 +111,14 @@ namespace UltimateXR.Animation.IK
             if (_avatarNeck == null)
             {
                 _avatarNeck          = new GameObject("Dummy Neck").transform;
-                _avatarNeck.parent   = _avatarTransform;
                 _avatarNeck.position = _avatarTransform.position + _avatarTransform.up * _settings.NeckBaseHeight + _avatarTransform.forward * _settings.NeckForwardOffset;
                 _avatarNeck.rotation = _avatarTransform.rotation;
+                _avatarNeck.parent   = _avatarBodyRoot;
 
-                _avatarNeck.parent = _avatarBodyRoot;
+                if (avatar.AvatarRig.Head.Head != null)
+                {
+                    avatar.AvatarRig.Head.Head.SetParent(_avatarNeck);
+                }
             }
 
             _neckUniversalLocalAxes = new UxrUniversalLocalAxes(_avatarNeck, _avatarTransform);

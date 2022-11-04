@@ -11,10 +11,11 @@ using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.Unity.Math;
 using UltimateXR.Extensions.Unity.Render;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace UltimateXR.Extensions.Unity
 {
-    using UnityObject = UnityEngine.Object;
+    using UnityObject = Object;
 
     /// <summary>
     ///     <see cref="Transform" /> extensions.
@@ -295,7 +296,7 @@ namespace UltimateXR.Extensions.Unity
         /// <param name="padding">Pivot separation between the different children</param>
         /// <param name="axis">Axis where the children will be aligned</param>
         /// <param name="space">Space to use for the alignment axis</param>
-        /// <exception cref="ArgumentNullException">Transform is null</exception>
+        /// <exception cref="System.ArgumentNullException">Transform is null</exception>
         public static void AlignChildrenOnAxis(this Transform transform, float padding, Vector3 axis, Space space = Space.World)
         {
             if (transform == null)
@@ -329,7 +330,7 @@ namespace UltimateXR.Extensions.Unity
         /// <param name="padding">Pivot separation between the different children</param>
         /// <param name="axis">Axis where the children will be aligned</param>
         /// <param name="space">Space to use for the alignment axis</param>
-        /// <exception cref="ArgumentNullException">Transform is null</exception>
+        /// <exception cref="System.ArgumentNullException">Transform is null</exception>
         public static void AlignOnAxis(this IEnumerable<Transform> transforms, float padding, Vector3 axis, Space space = Space.World)
         {
             if (transforms == null)
@@ -564,6 +565,11 @@ namespace UltimateXR.Extensions.Unity
         /// <returns>True if present, false if not</returns>
         public static bool HasParent(this Transform self, Transform parent)
         {
+            if (self == null)
+            {
+                return false;
+            }
+            
             if (self == parent)
             {
                 return true;
@@ -585,6 +591,11 @@ namespace UltimateXR.Extensions.Unity
         /// <returns>True if present, false if not</returns>
         public static bool HasChild(this Transform current, Transform child)
         {
+            if (current == null)
+            {
+                return false;
+            }
+            
             if (current == child)
             {
                 return true;
@@ -604,6 +615,22 @@ namespace UltimateXR.Extensions.Unity
             }
 
             return false;
+        }
+
+        /// <summary>
+        ///     Gets all the children recursively under a given <see cref="Transform" />.
+        ///     The list will not contain the source <see cref="transform" /> itself.
+        /// </summary>
+        /// <param name="transform">Transform to get all children of</param>
+        /// <param name="transforms">A list with all the transforms found below the hierarchy</param>
+        public static void GetAllChildren(this Transform transform, ref List<Transform> transforms)
+        {
+            for (int i = 0; i < transform.childCount; ++i)
+            {
+                Transform child = transform.GetChild(i);
+                transforms.Add(child);
+                child.GetAllChildren(ref transforms);
+            }
         }
 
         /// <summary>
@@ -654,7 +681,7 @@ namespace UltimateXR.Extensions.Unity
         ///     Transform where to start looking for. This method will only traverse the transform itself and its sub-hierarchy
         /// </param>
         /// <param name="transforms">A list where all the found transforms without children will be appended</param>
-        public static void GetTransformsWithoutChildren(Transform transform, ref List<Transform> transforms)
+        public static void GetTransformsWithoutChildren(this Transform transform, ref List<Transform> transforms)
         {
             if (transform.childCount == 0)
             {
@@ -714,26 +741,27 @@ namespace UltimateXR.Extensions.Unity
         }
 
         /// <summary>
-        ///     Recursively tries to find a given transform by its name.
+        ///     Tries to find an object by its name in the given <see cref="Transform" /> or any of its children recursively
         /// </summary>
         /// <param name="self">Transform whose hierarchy to search</param>
         /// <param name="name">Name of the transform to find</param>
-        /// <returns>First transform found with the given name, or null</returns>
-        public static Transform FindRecursive(this Transform self, string name)
+        /// <param name="stringComparison">Comparison rules to use</param>
+        /// <returns>First transform found with the given name, or null if not found</returns>
+        public static Transform FindRecursive(this Transform self, string name, StringComparison stringComparison = StringComparison.Ordinal)
         {
             if (self == null)
             {
                 return null;
             }
 
-            if (self.name == name)
+            if (string.Compare(self.name, name, stringComparison) == 0)
             {
                 return self;
             }
 
             for (int i = 0; i < self.childCount; ++i)
             {
-                Transform transform = self.GetChild(i).FindRecursive(name);
+                Transform transform = self.GetChild(i).FindRecursive(name, stringComparison);
 
                 if (transform != null)
                 {

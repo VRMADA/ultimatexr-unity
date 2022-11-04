@@ -121,7 +121,7 @@ namespace UltimateXR.Editor.Animation.IK
                 {
                     Vector3 eyeLeft  = avatar.transform.InverseTransformPoint(avatar.AvatarRig.Head.LeftEye.position);
                     Vector3 eyeRight = avatar.transform.InverseTransformPoint(avatar.AvatarRig.Head.RightEye.position);
-                    property.FindPropertyRelative(PropertyEyesForwardOffset).floatValue = (eyeLeft.z + eyeRight.z) * 0.5f + 0.01f;
+                    property.FindPropertyRelative(PropertyEyesForwardOffset).floatValue = (eyeLeft.z + eyeRight.z) * 0.5f + 0.02f;
                 }
             }
             EditorGUILayout.EndHorizontal();

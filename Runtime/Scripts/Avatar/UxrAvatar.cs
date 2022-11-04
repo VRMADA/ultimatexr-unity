@@ -339,7 +339,7 @@ namespace UltimateXR.Avatar
             get
             {
 #if UNITY_EDITOR
-                
+
                 if (Application.isEditor && !Application.isPlaying)
                 {
                     return GetComponentsInChildren<UxrGrabber>().FirstOrDefault(g => g.Side == UxrHandSide.Left);
@@ -1006,6 +1006,11 @@ namespace UltimateXR.Avatar
         /// <returns>Whether the pose was found</returns>
         public bool SetCurrentHandPose(UxrHandSide handSide, string poseName, float blendValue = 0.0f, bool propagateEvents = true)
         {
+            if (string.IsNullOrEmpty(poseName))
+            {
+                return false;
+            }
+
             UxrRuntimeHandPose handPose = GetRuntimeHandPose(poseName);
 
             if (handPose == null)
@@ -1088,6 +1093,11 @@ namespace UltimateXR.Avatar
         /// <param name="blendPoseType">Blend pose to use if the hand pose is <see cref="UxrHandPoseType.Blend" /></param>
         public void SetCurrentHandPoseImmediately(UxrHandSide handSide, string poseName, UxrBlendPoseType blendPoseType = UxrBlendPoseType.None)
         {
+            if (string.IsNullOrEmpty(poseName))
+            {
+                return;
+            }
+
             UxrHandPoseAsset handPoseAsset = GetHandPose(poseName);
 
             if (handPoseAsset != null)
@@ -1286,9 +1296,16 @@ namespace UltimateXR.Avatar
         /// <summary>
         ///     Called when inspector fields are changed. It is used to regenerate the rig information.
         /// </summary>
-        private void OnValidate()
+        protected override void OnValidate()
         {
+            base.OnValidate();
+
             CreateRigInfo();
+
+            if (_avatarRenderers == null || _avatarRenderers.Count == 0)
+            {
+                _avatarRenderers = GetAllAvatarRendererComponents().Cast<Renderer>().ToList();
+            }
         }
 
         #endregion

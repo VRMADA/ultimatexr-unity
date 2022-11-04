@@ -5,10 +5,13 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
 using System.Linq;
+using UltimateXR.Animation.IK;
 using UltimateXR.Avatar;
 using UltimateXR.Avatar.Controllers;
 using UltimateXR.Avatar.Rig;
 using UltimateXR.Devices;
+using UltimateXR.Editor.Animation.IK;
+using UltimateXR.Editor.Avatar.Controllers;
 using UltimateXR.Editor.Manipulation.HandPoses;
 using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
@@ -28,10 +31,10 @@ namespace UltimateXR.Editor.Avatar
     {
         #region Public Types & Data
 
-        public const string VarNameParentPrefab    = "_parentPrefab";
-        public const string VarNamePrefabGuid      = "_prefabGuid";
-        public const string VarNameHandPoses       = "_handPoses";
-        public const string VarNameDefaultHandPose = "_defaultHandPose";
+        public const string PropertyParentPrefab    = "_parentPrefab";
+        public const string PropertyPrefabGuid      = "_prefabGuid";
+        public const string PropertyHandPoses       = "_handPoses";
+        public const string PropertyDefaultHandPose = "_defaultHandPose";
 
         #endregion
 
@@ -42,8 +45,8 @@ namespace UltimateXR.Editor.Avatar
         /// </summary>
         private void OnEnable()
         {
-            _propertyPrefabGuid             = serializedObject.FindProperty(VarNamePrefabGuid);
-            _propertyParentPrefab           = serializedObject.FindProperty(VarNameParentPrefab);
+            _propertyPrefabGuid             = serializedObject.FindProperty(PropertyPrefabGuid);
+            _propertyParentPrefab           = serializedObject.FindProperty(PropertyParentPrefab);
             _propertyAvatarMode             = serializedObject.FindProperty("_avatarMode");
             _propertyRenderMode             = serializedObject.FindProperty("_renderMode");
             _propertyShowControllerHands    = serializedObject.FindProperty("_showControllerHands");
@@ -53,7 +56,7 @@ namespace UltimateXR.Editor.Avatar
             _propertyRigFoldout             = serializedObject.FindProperty("_rigFoldout");
             _propertyRig                    = serializedObject.FindProperty("_rig");
             _propertyHandPosesFoldout       = serializedObject.FindProperty("_handPosesFoldout");
-            _propertyHandPoses              = serializedObject.FindProperty(VarNameHandPoses);
+            _propertyHandPoses              = serializedObject.FindProperty(PropertyHandPoses);
 
             // Expand rig when created, only once.
 
@@ -116,8 +119,8 @@ namespace UltimateXR.Editor.Avatar
                 // Check if we need to get and store the prefab information:
 
                 SerializedObject   targetAvatarPrefabObject = avatarPrefab != null ? new SerializedObject(avatarPrefab) : null;
-                SerializedProperty propertyPrefabGuid       = targetAvatarPrefabObject?.FindProperty(VarNamePrefabGuid);
-                SerializedProperty propertyParentPrefab     = targetAvatarPrefabObject?.FindProperty(VarNameParentPrefab);
+                SerializedProperty propertyPrefabGuid       = targetAvatarPrefabObject?.FindProperty(PropertyPrefabGuid);
+                SerializedProperty propertyParentPrefab     = targetAvatarPrefabObject?.FindProperty(PropertyParentPrefab);
 
                 if (propertyPrefabGuid != null && !string.IsNullOrEmpty(avatarPrefabGuid) && propertyPrefabGuid.stringValue != avatarPrefabGuid)
                 {
@@ -142,7 +145,7 @@ namespace UltimateXR.Editor.Avatar
                     _propertyParentPrefab.objectReferenceValue = null;
                 }
 
-                SerializedProperty propertyHandPoses = targetAvatarPrefabObject?.FindProperty(VarNameHandPoses);
+                SerializedProperty propertyHandPoses = targetAvatarPrefabObject?.FindProperty(PropertyHandPoses);
 
                 if (propertyHandPoses != null)
                 {
@@ -307,6 +310,13 @@ namespace UltimateXR.Editor.Avatar
                             if (GUILayout.Button(ContentFix, GUILayout.Width(FixButtonWidth)))
                             {
                                 avatar.TryToInferMissingRigElements();
+                                
+                                if (avatar.AvatarRig.HasAnyUpperBodyIKReference())
+                                {
+                                    // Make avatar full-body if it has any upper body reference
+                                    _propertyRigType.enumValueIndex = (int)UxrAvatarRigType.HalfOrFullBody;
+                                }
+                                
                                 RefreshRigSerializedProperty(avatar);
 
                                 if (!avatar.AvatarRig.HasFullHandData())
@@ -706,6 +716,51 @@ namespace UltimateXR.Editor.Avatar
             serializedObject.FindProperty("_rig._rightLeg._lowerLeg").objectReferenceValue = avatar.AvatarRig.RightLeg.LowerLeg;
             serializedObject.FindProperty("_rig._rightLeg._foot").objectReferenceValue     = avatar.AvatarRig.RightLeg.Foot;
             serializedObject.FindProperty("_rig._rightLeg._toes").objectReferenceValue     = avatar.AvatarRig.RightLeg.Toes;
+            
+            // Clear torsion nodes if they exist
+            
+            if (avatar.AvatarRig.LeftArm.Forearm == null && avatar.AvatarRig.RightArm.Forearm == null)
+            {
+                avatar.GetComponentsInChildren<UxrWristTorsionIKSolver>().ForEach(Undo.DestroyObjectImmediate);
+            }
+            
+            // Update standard avatar controller info
+
+            UxrAvatarController avatarController = avatar.GetComponent<UxrAvatarController>();
+
+            if (avatarController is UxrStandardAvatarController standardAvatarController)
+            {
+                SerializedObject   serializedAvatarController = new SerializedObject(standardAvatarController);
+                SerializedProperty propIKSettings             = serializedAvatarController.FindProperty(UxrStandardAvatarControllerEditor.PropBodyIKSettings);
+
+                serializedAvatarController.Update();
+                
+                // Try to set eye base height and forward offset
+
+                if (avatar.AvatarRig.Head.LeftEye && avatar.AvatarRig.Head.RightEye)
+                {
+                    Vector3 eyeLeft  = avatar.transform.InverseTransformPoint(avatar.AvatarRig.Head.LeftEye.position);
+                    Vector3 eyeRight = avatar.transform.InverseTransformPoint(avatar.AvatarRig.Head.RightEye.position);
+
+                    propIKSettings.FindPropertyRelative(UxrIKBodySettingsDrawer.PropertyEyesBaseHeight).floatValue    = (avatar.AvatarRig.Head.LeftEye.position.y + avatar.AvatarRig.Head.RightEye.position.y) * 0.5f - avatar.transform.position.y;
+                    propIKSettings.FindPropertyRelative(UxrIKBodySettingsDrawer.PropertyEyesForwardOffset).floatValue = (eyeLeft.z + eyeRight.z) * 0.5f + 0.02f;
+                }
+                else if (avatar.AvatarRig.Head.Head != null)
+                {
+                    propIKSettings.FindPropertyRelative(UxrIKBodySettingsDrawer.PropertyEyesBaseHeight).floatValue    = (avatar.AvatarRig.Head.Head.position.y - avatar.transform.position.y) + 0.1f;
+                    propIKSettings.FindPropertyRelative(UxrIKBodySettingsDrawer.PropertyEyesForwardOffset).floatValue = 0.15f;
+                }
+                
+                // If a neck wasn't found, try to set neck base height and forward setting using the head node 
+
+                if (avatar.AvatarRig.Head.Neck == null && avatar.AvatarRig.Head.Head != null)
+                {
+                    propIKSettings.FindPropertyRelative(UxrIKBodySettingsDrawer.PropertyNeckBaseHeight).floatValue    = (avatar.AvatarRig.Head.Head.position.y - avatar.transform.position.y) - 0.1f;
+                    propIKSettings.FindPropertyRelative(UxrIKBodySettingsDrawer.PropertyNeckForwardOffset).floatValue = 0.0f;
+                }
+
+                serializedAvatarController.ApplyModifiedProperties();
+            }
         }
 
         #endregion

@@ -205,8 +205,10 @@ namespace UltimateXR.Devices.Visualization
         /// <summary>
         ///     Make sure the hand rig is allocated when the component is reset.
         /// </summary>
-        private void Reset()
+        protected override void Reset()
         {
+            base.Reset();
+            
             _hand = new UxrAvatarHand();
         }
 

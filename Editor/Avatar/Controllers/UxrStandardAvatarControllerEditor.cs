@@ -24,6 +24,19 @@ namespace UltimateXR.Editor.Avatar.Controllers
     [CustomEditor(typeof(UxrStandardAvatarController))]
     public sealed class UxrStandardAvatarControllerEditor : UnityEditor.Editor
     {
+        #region Public Types & Data
+
+        public const string PropAllowHandTracking    = "_allowHandTracking";
+        public const string PropUseArmIK             = "_useArmIK";
+        public const string PropArmIKElbowAperture   = "_armIKElbowAperture";
+        public const string PropArmIKOverExtendMode  = "_armIKOverExtendMode";
+        public const string PropUseBodyIK            = "_useBodyIK";
+        public const string PropBodyIKSettings       = "_bodyIKSettings";
+        //public const string PropUseLegIK             = "_useLegIK";
+        public const string PropListControllerEvents = "_listControllerEvents";
+
+        #endregion
+
         #region Unity
 
         /// <summary>
@@ -34,14 +47,14 @@ namespace UltimateXR.Editor.Avatar.Controllers
             UxrStandardAvatarController selectedController = (UxrStandardAvatarController)serializedObject.targetObject;
             UxrAvatar                   avatar             = selectedController.Avatar;
 
-            _propAllowHandTracking   = serializedObject.FindProperty("_allowHandTracking");
-            _propUseArmIK            = serializedObject.FindProperty("_useArmIK");
-            _propArmIKElbowAperture  = serializedObject.FindProperty("_armIKElbowAperture");
-            _propArmIKOverExtendMode = serializedObject.FindProperty("_armIKOverExtendMode");
-            _propUseBodyIK           = serializedObject.FindProperty("_useBodyIK");
-            _propBodyIKSettings      = serializedObject.FindProperty("_bodyIKSettings");
-            //_propUseLegIK             = serializedObject.FindProperty("_useLegIK");
-            _propListControllerEvents = serializedObject.FindProperty("_listControllerEvents");
+            _propAllowHandTracking   = serializedObject.FindProperty(PropAllowHandTracking);
+            _propUseArmIK            = serializedObject.FindProperty(PropUseArmIK);
+            _propArmIKElbowAperture  = serializedObject.FindProperty(PropArmIKElbowAperture);
+            _propArmIKOverExtendMode = serializedObject.FindProperty(PropArmIKOverExtendMode);
+            _propUseBodyIK           = serializedObject.FindProperty(PropUseBodyIK);
+            _propBodyIKSettings      = serializedObject.FindProperty(PropBodyIKSettings);
+            //_propUseLegIK             = serializedObject.FindProperty(PropUseLegIK);
+            _propListControllerEvents = serializedObject.FindProperty(PropListControllerEvents);
 
             if (_propListControllerEvents != null)
             {
@@ -89,15 +102,14 @@ namespace UltimateXR.Editor.Avatar.Controllers
 
                 if (_foldoutIK)
                 {
+                    EditorGUILayout.PropertyField(_propUseArmIK, ContentUseArmIK);
+                    
                     if (!avatar.AvatarRig.HasArmData())
                     {
-                        _propUseArmIK.boolValue = false;
-                        EditorGUILayout.HelpBox($"To use arm IK, the {nameof(UxrAvatar)} component needs arm references in the Avatar Rig section", MessageType.Info);
+                        EditorGUILayout.HelpBox($"To use arm IK, the {nameof(UxrAvatar)} component needs arm references in the Avatar Rig section", MessageType.Warning);
                     }
                     else
                     {
-                        EditorGUILayout.PropertyField(_propUseArmIK, ContentUseArmIK);
-
                         if (_propUseArmIK.boolValue)
                         {
                             EditorGUI.indentLevel++;
@@ -120,27 +132,28 @@ namespace UltimateXR.Editor.Avatar.Controllers
                         }
                     }
 
-                    if (!avatar.AvatarRig.HasAnyUpperBodyIKReference())
-                    {
-                        _propUseBodyIK.boolValue = false;
-                        EditorGUILayout.HelpBox($"To use body IK, the {nameof(UxrAvatar)} component needs upper body references in the Avatar Rig section", MessageType.Info);
-                    }
-                    else
-                    {
-                        EditorGUILayout.PropertyField(_propUseBodyIK, ContentUseBodyIK);
+                    bool hasUpperBodyReferences = avatar.AvatarRig.HasAnyUpperBodyIKReference();
 
-                        if (_propUseBodyIK.boolValue)
-                        {
-                            EditorGUI.indentLevel++;
-                            EditorGUILayout.PropertyField(_propBodyIKSettings, ContentBodyIKSettings);
-                            EditorGUI.indentLevel--;
-                        }
+                    EditorGUILayout.PropertyField(_propUseBodyIK, ContentUseBodyIK);
 
-                        GUI.enabled = false;
-                        //EditorGUILayout.PropertyField(_propUseLegIK);
-                        EditorGUILayout.Toggle(ContentUseLegIK, false);
-                        GUI.enabled = true;
+                    if (!hasUpperBodyReferences)
+                    {
+                        EditorGUILayout.HelpBox($"To use body IK, the {nameof(UxrAvatar)} component needs upper body references in the Avatar Rig section", MessageType.Warning);
                     }
+
+                    GUI.enabled = hasUpperBodyReferences;
+
+                    if (_propUseBodyIK.boolValue && hasUpperBodyReferences)
+                    {
+                        EditorGUI.indentLevel++;
+                        EditorGUILayout.PropertyField(_propBodyIKSettings, ContentBodyIKSettings);
+                        EditorGUI.indentLevel--;
+                    }
+
+                    GUI.enabled = false;
+                    //EditorGUILayout.PropertyField(_propUseLegIK);
+                    EditorGUILayout.Toggle(ContentUseLegIK, false);
+                    GUI.enabled = true;
                 }
             }
 

@@ -1882,8 +1882,10 @@ namespace UltimateXR.Manipulation
         /// <summary>
         ///     Resets the component.
         /// </summary>
-        private void Reset()
+        protected override void Reset()
         {
+            base.Reset();
+            
             _grabPoint                = new UxrGrabPointInfo();
             _rotationLongitudinalAxis = GetMostProbableLongitudinalRotationAxis();
         }

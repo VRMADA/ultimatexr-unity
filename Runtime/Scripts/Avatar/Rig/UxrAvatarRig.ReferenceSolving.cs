@@ -5,9 +5,9 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
 using System.Linq;
+using UltimateXR.Animation.IK;
 using UltimateXR.Core;
 using UltimateXR.Extensions.System;
-using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Extensions.Unity.Render;
 using UnityEngine;
@@ -198,33 +198,33 @@ namespace UltimateXR.Avatar.Rig
                     // Now resolve which finger is which. We use the closest finger root bone to the hand bone as the thumb.
                     // From there, we compute the distances from the thumb distal bone to the other finger roots to know index, middle, ring and little.
 
-                    List<Transform> fingerRoots     = new List<Transform>();
-                    List<Transform> fingerProximals = new List<Transform>();
+                    List<Transform> fingerRoots   = new List<Transform>();
+                    List<Transform> fingerDistals = new List<Transform>();
 
                     for (int i = 0; i < fingersFound; ++i)
                     {
                         fingerRoots.Add(handFingerBones[i][0]);
-                        fingerProximals.Add(handFingerBones[i].Count == 4 ? handFingerBones[i][1] : handFingerBones[i][0]);
+                        fingerDistals.Add(handFingerBones[i].Count == 4 ? handFingerBones[i][3] : handFingerBones[i][2]);
                     }
 
-                    int thumbFinger = ClosestTransformIndex(current, fingerProximals.ToArray());
+                    int thumbFinger = ClosestTransformIndex(current, fingerDistals.ToArray());
                     SetupFinger(hand, UxrFingerType.Thumb, handFingerBones, fingerRoots[thumbFinger]);
-                    fingerProximals.RemoveAt(thumbFinger);
+                    fingerDistals.RemoveAt(thumbFinger);
                     fingerRoots.RemoveAt(thumbFinger);
 
-                    int indexFinger = ClosestTransformIndex(handFingerBones[thumbFinger][2], fingerProximals.ToArray());
+                    int indexFinger = ClosestTransformIndex(handFingerBones[thumbFinger][2], fingerDistals.ToArray());
                     SetupFinger(hand, UxrFingerType.Index, handFingerBones, fingerRoots[indexFinger]);
-                    fingerProximals.RemoveAt(indexFinger);
+                    fingerDistals.RemoveAt(indexFinger);
                     fingerRoots.RemoveAt(indexFinger);
 
-                    int middleFinger = ClosestTransformIndex(handFingerBones[thumbFinger][2], fingerProximals.ToArray());
+                    int middleFinger = ClosestTransformIndex(handFingerBones[thumbFinger][2], fingerDistals.ToArray());
                     SetupFinger(hand, UxrFingerType.Middle, handFingerBones, fingerRoots[middleFinger]);
-                    fingerProximals.RemoveAt(middleFinger);
+                    fingerDistals.RemoveAt(middleFinger);
                     fingerRoots.RemoveAt(middleFinger);
 
-                    int ringFinger = ClosestTransformIndex(handFingerBones[thumbFinger][2], fingerProximals.ToArray());
+                    int ringFinger = ClosestTransformIndex(handFingerBones[thumbFinger][2], fingerDistals.ToArray());
                     SetupFinger(hand, UxrFingerType.Ring, handFingerBones, fingerRoots[ringFinger]);
-                    fingerProximals.RemoveAt(ringFinger);
+                    fingerDistals.RemoveAt(ringFinger);
                     fingerRoots.RemoveAt(ringFinger);
 
                     SetupFinger(hand, UxrFingerType.Little, handFingerBones, fingerRoots[0]);
@@ -255,294 +255,363 @@ namespace UltimateXR.Avatar.Rig
         /// </summary>
         public static void TryToInferMissingRigElements(UxrAvatarRig rig, IEnumerable<SkinnedMeshRenderer> skins)
         {
-            if (rig != null)
+            if (rig == null)
             {
-                // Head
+                return;
+            }
+            
+            // Head
 
-                if (rig.Head.Neck == null)
+            if (rig.Head.Neck == null)
+            {
+                rig.Head.Neck = TryToResolveBoneUniqueOr(skins, "neck");
+            }
+            if (rig.Head.Head == null)
+            {
+                rig.Head.Head = TryToResolveBoneUniqueOr(skins, "head");
+            }
+            if (rig.Head.Jaw == null)
+            {
+                rig.Head.Jaw = TryToResolveBoneUniqueOr(skins, "jaw");
+            }
+            if (rig.Head.LeftEye == null)
+            {
+                rig.Head.LeftEye = TryToResolveBoneUniqueAnd(skins, "eye", "left");
+            }
+            if (rig.Head.LeftEye == null)
+            {
+                rig.Head.LeftEye = TryToResolveBoneUniqueAnd(skins, "eye", "l");
+            }
+            if (rig.Head.RightEye == null)
+            {
+                rig.Head.RightEye = TryToResolveBoneUniqueAnd(skins, "eye", "right");
+            }
+            if (rig.Head.RightEye == null)
+            {
+                rig.Head.RightEye = TryToResolveBoneUniqueAnd(skins, "eye", "r");
+            }
+
+            // Arms
+
+            if (rig.LeftArm.Clavicle == null)
+            {
+                rig.LeftArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "clavicle", "left");
+            }
+            if (rig.LeftArm.Clavicle == null)
+            {
+                rig.LeftArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "collarbone", "left");
+            }
+            if (rig.LeftArm.Clavicle == null)
+            {
+                rig.LeftArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "clavicle", "l");
+            }
+            if (rig.LeftArm.Clavicle == null)
+            {
+                rig.LeftArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "collarbone", "l");
+            }
+            if (rig.LeftArm.UpperArm == null)
+            {
+                rig.LeftArm.UpperArm = TryToResolveBoneUniqueAnd(skins, "upper", "left", "arm");
+            }
+            if (rig.LeftArm.UpperArm == null)
+            {
+                rig.LeftArm.UpperArm = TryToResolveBoneUniqueAnd(skins, "upper", "l", "arm");
+            }
+            if (rig.LeftArm.Forearm == null)
+            {
+                rig.LeftArm.Forearm = TryToResolveBoneUniqueAnd(skins, "forearm", "left");
+            }
+            if (rig.LeftArm.Forearm == null)
+            {
+                rig.LeftArm.Forearm = TryToResolveBoneUniqueAnd(skins, "forearm", "l");
+            }
+            if (rig.LeftArm.Hand.Wrist == null)
+            {
+                rig.LeftArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "hand", "left");
+            }
+            if (rig.LeftArm.Hand.Wrist == null)
+            {
+                rig.LeftArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "wrist", "left");
+            }
+            if (rig.LeftArm.Hand.Wrist == null)
+            {
+                rig.LeftArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "hand", "l");
+            }
+            if (rig.LeftArm.Hand.Wrist == null)
+            {
+                rig.LeftArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "wrist", "l");
+            }
+
+            if (rig.RightArm.Clavicle == null)
+            {
+                rig.RightArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "clavicle", "right");
+            }
+            if (rig.RightArm.Clavicle == null)
+            {
+                rig.RightArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "collarbone", "right");
+            }
+            if (rig.RightArm.Clavicle == null)
+            {
+                rig.RightArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "clavicle", "r");
+            }
+            if (rig.RightArm.Clavicle == null)
+            {
+                rig.RightArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "collarbone", "r");
+            }
+            if (rig.RightArm.UpperArm == null)
+            {
+                rig.RightArm.UpperArm = TryToResolveBoneUniqueAnd(skins, "upper", "right", "arm");
+            }
+            if (rig.RightArm.UpperArm == null)
+            {
+                rig.RightArm.UpperArm = TryToResolveBoneUniqueAnd(skins, "upper", "r", "arm");
+            }
+            if (rig.RightArm.Forearm == null)
+            {
+                rig.RightArm.Forearm = TryToResolveBoneUniqueAnd(skins, "forearm", "right");
+            }
+            if (rig.RightArm.Forearm == null)
+            {
+                rig.RightArm.Forearm = TryToResolveBoneUniqueAnd(skins, "forearm", "r");
+            }
+            if (rig.RightArm.Hand.Wrist == null)
+            {
+                rig.RightArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "hand", "right");
+            }
+            if (rig.RightArm.Hand.Wrist == null)
+            {
+                rig.RightArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "wrist", "right");
+            }
+            if (rig.RightArm.Hand.Wrist == null)
+            {
+                rig.RightArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "hand", "r");
+            }
+            if (rig.RightArm.Hand.Wrist == null)
+            {
+                rig.RightArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "wrist", "r");
+            }
+                
+            // Try to resolve arms using topology
+
+            foreach (SkinnedMeshRenderer skin in skins)
+            {
+                TryToResolveArm(rig._leftArm,  skin);
+                TryToResolveArm(rig._rightArm, skin);
+            }
+
+            // Legs
+
+            if (rig.LeftLeg.UpperLeg == null)
+            {
+                rig.LeftLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "upper", "left", "leg");
+            }
+            if (rig.LeftLeg.UpperLeg == null)
+            {
+                rig.LeftLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "leg", "left");
+            }
+            if (rig.LeftLeg.UpperLeg == null)
+            {
+                rig.LeftLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "thigh", "left");
+            }
+            if (rig.LeftLeg.UpperLeg == null)
+            {
+                rig.LeftLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "upper", "l", "leg");
+            }
+            if (rig.LeftLeg.UpperLeg == null)
+            {
+                rig.LeftLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "leg", "l");
+            }
+            if (rig.LeftLeg.UpperLeg == null)
+            {
+                rig.LeftLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "thigh", "l");
+            }
+            if (rig.LeftLeg.LowerLeg == null)
+            {
+                rig.LeftLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "lower", "left", "leg");
+            }
+            if (rig.LeftLeg.LowerLeg == null)
+            {
+                rig.LeftLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "calf", "left");
+            }
+            if (rig.LeftLeg.LowerLeg == null)
+            {
+                rig.LeftLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "lower", "l", "leg");
+            }
+            if (rig.LeftLeg.LowerLeg == null)
+            {
+                rig.LeftLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "calf", "l");
+            }
+            if (rig.LeftLeg.Foot == null)
+            {
+                rig.LeftLeg.Foot = TryToResolveBoneUniqueAnd(skins, "foot", "left");
+            }
+            if (rig.LeftLeg.Foot == null)
+            {
+                rig.LeftLeg.Foot = TryToResolveBoneUniqueAnd(skins, "ankle", "left");
+            }
+            if (rig.LeftLeg.Foot == null)
+            {
+                rig.LeftLeg.Foot = TryToResolveBoneUniqueAnd(skins, "foot", "l");
+            }
+            if (rig.LeftLeg.Foot == null)
+            {
+                rig.LeftLeg.Foot = TryToResolveBoneUniqueAnd(skins, "ankle", "l");
+            }
+            if (rig.LeftLeg.Toes == null)
+            {
+                rig.LeftLeg.Toes = TryToResolveBoneUniqueAnd(skins, "toe", "left");
+            }
+            if (rig.LeftLeg.Toes == null)
+            {
+                rig.LeftLeg.Toes = TryToResolveBoneUniqueAnd(skins, "toe", "l");
+            }
+
+            if (rig.RightLeg.UpperLeg == null)
+            {
+                rig.RightLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "upper", "right", "leg");
+            }
+            if (rig.RightLeg.UpperLeg == null)
+            {
+                rig.RightLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "leg", "right");
+            }
+            if (rig.RightLeg.UpperLeg == null)
+            {
+                rig.RightLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "thigh", "right");
+            }
+            if (rig.RightLeg.UpperLeg == null)
+            {
+                rig.RightLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "upper", "r", "leg");
+            }
+            if (rig.RightLeg.UpperLeg == null)
+            {
+                rig.RightLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "leg", "r");
+            }
+            if (rig.RightLeg.UpperLeg == null)
+            {
+                rig.RightLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "thigh", "r");
+            }
+            if (rig.RightLeg.LowerLeg == null)
+            {
+                rig.RightLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "lower", "right", "leg");
+            }
+            if (rig.RightLeg.LowerLeg == null)
+            {
+                rig.RightLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "calf", "right");
+            }
+            if (rig.RightLeg.LowerLeg == null)
+            {
+                rig.RightLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "lower", "r", "leg");
+            }
+            if (rig.RightLeg.LowerLeg == null)
+            {
+                rig.RightLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "calf", "r");
+            }
+            if (rig.RightLeg.Foot == null)
+            {
+                rig.RightLeg.Foot = TryToResolveBoneUniqueAnd(skins, "foot", "right");
+            }
+            if (rig.RightLeg.Foot == null)
+            {
+                rig.RightLeg.Foot = TryToResolveBoneUniqueAnd(skins, "ankle", "right");
+            }
+            if (rig.RightLeg.Foot == null)
+            {
+                rig.RightLeg.Foot = TryToResolveBoneUniqueAnd(skins, "foot", "r");
+            }
+            if (rig.RightLeg.Foot == null)
+            {
+                rig.RightLeg.Foot = TryToResolveBoneUniqueAnd(skins, "ankle", "r");
+            }
+            if (rig.RightLeg.Toes == null)
+            {
+                rig.RightLeg.Toes = TryToResolveBoneUniqueAnd(skins, "toe", "right");
+            }
+            if (rig.RightLeg.Toes == null)
+            {
+                rig.RightLeg.Toes = TryToResolveBoneUniqueAnd(skins, "toe", "r");
+            }
+            
+            // Hips/pelvis
+
+            if (rig.Hips == null)
+            {
+                rig._hips = TryToResolveBoneUniqueOr(skins, "hips", "pelvis");
+            }
+
+            // Try to resolve spine-chest using topology
+
+            Transform spineTop    = rig.Head.Neck != null ? rig.Head.Neck : rig.Head.Head;
+            Transform spineBottom = rig.Hips;
+
+            if (spineTop != null)
+            {
+                if (rig.UpperChest == null && spineTop.parent != spineBottom)
                 {
-                    rig.Head.Neck = TryToResolveBoneUniqueOr(skins, "neck");
-                }
-                if (rig.Head.Head == null)
-                {
-                    rig.Head.Head = TryToResolveBoneUniqueOr(skins, "head");
-                }
-                if (rig.Head.Jaw == null)
-                {
-                    rig.Head.Jaw = TryToResolveBoneUniqueOr(skins, "jaw");
-                }
-                if (rig.Head.LeftEye == null)
-                {
-                    rig.Head.LeftEye = TryToResolveBoneUniqueAnd(skins, "eye", "left");
-                }
-                if (rig.Head.LeftEye == null)
-                {
-                    rig.Head.LeftEye = TryToResolveBoneUniqueAnd(skins, "eye", "l");
-                }
-                if (rig.Head.RightEye == null)
-                {
-                    rig.Head.RightEye = TryToResolveBoneUniqueAnd(skins, "eye", "right");
-                }
-                if (rig.Head.RightEye == null)
-                {
-                    rig.Head.RightEye = TryToResolveBoneUniqueAnd(skins, "eye", "r");
+                    rig._upperChest = spineTop.parent;
                 }
 
-                // Hips-Spine-Chest
-
-                if (rig.UpperChest == null)
+                if (rig.Chest == null && rig.UpperChest != null && rig.UpperChest.parent != null && rig.UpperChest.parent != spineBottom)
                 {
-                    rig._upperChest = TryToResolveBoneUniqueOr(skins, "upperchest");
-                }
-                if (rig.Chest == null)
-                {
-                    rig._chest = TryToResolveBoneUniqueOr(skins, "chest");
-                }
-                if (rig.Spine == null)
-                {
-                    rig._spine = TryToResolveBoneUniqueOr(skins, "spine");
-                }
-                if (rig.Hips == null)
-                {
-                    rig._hips = TryToResolveBoneUniqueOr(skins, "hips", "pelvis");
+                    rig._chest = rig.UpperChest.parent;
                 }
 
-                // Arms
+                if (rig.Spine == null && rig.Chest != null && rig.Chest.parent != null && rig.Chest.parent != spineBottom)
+                {
+                    rig._spine = rig.Chest.parent;
+                }
+            }
 
-                if (rig.LeftArm.Clavicle == null)
-                {
-                    rig.LeftArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "clavicle", "left");
-                }
-                if (rig.LeftArm.Clavicle == null)
-                {
-                    rig.LeftArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "collarbone", "left");
-                }
-                if (rig.LeftArm.Clavicle == null)
-                {
-                    rig.LeftArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "clavicle", "l");
-                }
-                if (rig.LeftArm.Clavicle == null)
-                {
-                    rig.LeftArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "collarbone", "l");
-                }
-                if (rig.LeftArm.UpperArm == null)
-                {
-                    rig.LeftArm.UpperArm = TryToResolveBoneUniqueAnd(skins, "upper", "left", "arm");
-                }
-                if (rig.LeftArm.UpperArm == null)
-                {
-                    rig.LeftArm.UpperArm = TryToResolveBoneUniqueAnd(skins, "upper", "l", "arm");
-                }
-                if (rig.LeftArm.Forearm == null)
-                {
-                    rig.LeftArm.Forearm = TryToResolveBoneUniqueAnd(skins, "forearm", "left");
-                }
-                if (rig.LeftArm.Forearm == null)
-                {
-                    rig.LeftArm.Forearm = TryToResolveBoneUniqueAnd(skins, "forearm", "l");
-                }
-                if (rig.LeftArm.Hand.Wrist == null)
-                {
-                    rig.LeftArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "hand", "left");
-                }
-                if (rig.LeftArm.Hand.Wrist == null)
-                {
-                    rig.LeftArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "wrist", "left");
-                }
-                if (rig.LeftArm.Hand.Wrist == null)
-                {
-                    rig.LeftArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "hand", "l");
-                }
-                if (rig.LeftArm.Hand.Wrist == null)
-                {
-                    rig.LeftArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "wrist", "l");
-                }
+            // Try to resolve hips-spine-chest using name
 
-                if (rig.RightArm.Clavicle == null)
-                {
-                    rig.RightArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "clavicle", "right");
-                }
-                if (rig.RightArm.Clavicle == null)
-                {
-                    rig.RightArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "collarbone", "right");
-                }
-                if (rig.RightArm.Clavicle == null)
-                {
-                    rig.RightArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "clavicle", "r");
-                }
-                if (rig.RightArm.Clavicle == null)
-                {
-                    rig.RightArm.Clavicle = TryToResolveBoneUniqueAnd(skins, "collarbone", "r");
-                }
-                if (rig.RightArm.UpperArm == null)
-                {
-                    rig.RightArm.UpperArm = TryToResolveBoneUniqueAnd(skins, "upper", "right", "arm");
-                }
-                if (rig.RightArm.UpperArm == null)
-                {
-                    rig.RightArm.UpperArm = TryToResolveBoneUniqueAnd(skins, "upper", "r", "arm");
-                }
-                if (rig.RightArm.Forearm == null)
-                {
-                    rig.RightArm.Forearm = TryToResolveBoneUniqueAnd(skins, "forearm", "right");
-                }
-                if (rig.RightArm.Forearm == null)
-                {
-                    rig.RightArm.Forearm = TryToResolveBoneUniqueAnd(skins, "forearm", "r");
-                }
-                if (rig.RightArm.Hand.Wrist == null)
-                {
-                    rig.RightArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "hand", "right");
-                }
-                if (rig.RightArm.Hand.Wrist == null)
-                {
-                    rig.RightArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "wrist", "right");
-                }
-                if (rig.RightArm.Hand.Wrist == null)
-                {
-                    rig.RightArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "hand", "r");
-                }
-                if (rig.RightArm.Hand.Wrist == null)
-                {
-                    rig.RightArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "wrist", "r");
-                }
+            if (rig.UpperChest == null)
+            {
+                rig._upperChest = TryToResolveBoneUniqueOr(skins, "upperchest");
+            }
+            if (rig.Chest == null)
+            {
+                rig._chest = TryToResolveBoneUniqueOr(skins, "chest");
+            }
+            if (rig.Spine == null)
+            {
+                rig._spine = TryToResolveBoneUniqueOr(skins, "spine");
+            }
+            
+            // Try to find wrist torsion elements
 
-                foreach (SkinnedMeshRenderer skin in skins)
+            foreach (UxrAvatarArm arm in rig.GetArms())
+            {
+                if (arm.Forearm != null && arm.Hand != null)
                 {
-                    TryToResolveArm(rig._leftArm,  skin);
-                    TryToResolveArm(rig._rightArm, skin);
-                }
+                    UxrWristTorsionIKSolver[] wristTorsionSolvers = arm.Forearm.GetComponentsInChildren<UxrWristTorsionIKSolver>();
 
-                // Legs
+                    if (wristTorsionSolvers.Length == 0)
+                    {
+                        List<Transform> forearmChildren = new List<Transform>();
+                        arm.Forearm.GetAllChildren(ref forearmChildren);
+                        
+                        // Find nodes that can potentially be for progressive forearm twist 
 
-                if (rig.LeftLeg.UpperLeg == null)
-                {
-                    rig.LeftLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "upper", "left", "leg");
-                }
-                if (rig.LeftLeg.UpperLeg == null)
-                {
-                    rig.LeftLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "leg", "left");
-                }
-                if (rig.LeftLeg.UpperLeg == null)
-                {
-                    rig.LeftLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "thigh", "left");
-                }
-                if (rig.LeftLeg.UpperLeg == null)
-                {
-                    rig.LeftLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "upper", "l", "leg");
-                }
-                if (rig.LeftLeg.UpperLeg == null)
-                {
-                    rig.LeftLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "leg", "l");
-                }
-                if (rig.LeftLeg.UpperLeg == null)
-                {
-                    rig.LeftLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "thigh", "l");
-                }
-                if (rig.LeftLeg.LowerLeg == null)
-                {
-                    rig.LeftLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "lower", "left", "leg");
-                }
-                if (rig.LeftLeg.LowerLeg == null)
-                {
-                    rig.LeftLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "calf", "left");
-                }
-                if (rig.LeftLeg.LowerLeg == null)
-                {
-                    rig.LeftLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "lower", "l", "leg");
-                }
-                if (rig.LeftLeg.LowerLeg == null)
-                {
-                    rig.LeftLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "calf", "l");
-                }
-                if (rig.LeftLeg.Foot == null)
-                {
-                    rig.LeftLeg.Foot = TryToResolveBoneUniqueAnd(skins, "foot", "left");
-                }
-                if (rig.LeftLeg.Foot == null)
-                {
-                    rig.LeftLeg.Foot = TryToResolveBoneUniqueAnd(skins, "ankle", "left");
-                }
-                if (rig.LeftLeg.Foot == null)
-                {
-                    rig.LeftLeg.Foot = TryToResolveBoneUniqueAnd(skins, "foot", "l");
-                }
-                if (rig.LeftLeg.Foot == null)
-                {
-                    rig.LeftLeg.Foot = TryToResolveBoneUniqueAnd(skins, "ankle", "l");
-                }
-                if (rig.LeftLeg.Toes == null)
-                {
-                    rig.LeftLeg.Toes = TryToResolveBoneUniqueAnd(skins, "toe", "left");
-                }
-                if (rig.LeftLeg.Toes == null)
-                {
-                    rig.LeftLeg.Toes = TryToResolveBoneUniqueAnd(skins, "toe", "l");
-                }
+                        IEnumerable<Transform> torsionNodes = forearmChildren.Where(t => !t.HasParent(arm.Hand.Wrist) && t.name.ToLower().Contains("torsion"));
 
-                if (rig.RightLeg.UpperLeg == null)
-                {
-                    rig.RightLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "upper", "right", "leg");
-                }
-                if (rig.RightLeg.UpperLeg == null)
-                {
-                    rig.RightLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "leg", "right");
-                }
-                if (rig.RightLeg.UpperLeg == null)
-                {
-                    rig.RightLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "thigh", "right");
-                }
-                if (rig.RightLeg.UpperLeg == null)
-                {
-                    rig.RightLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "upper", "r", "leg");
-                }
-                if (rig.RightLeg.UpperLeg == null)
-                {
-                    rig.RightLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "leg", "r");
-                }
-                if (rig.RightLeg.UpperLeg == null)
-                {
-                    rig.RightLeg.UpperLeg = TryToResolveBoneUniqueAnd(skins, "thigh", "r");
-                }
-                if (rig.RightLeg.LowerLeg == null)
-                {
-                    rig.RightLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "lower", "right", "leg");
-                }
-                if (rig.RightLeg.LowerLeg == null)
-                {
-                    rig.RightLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "calf", "right");
-                }
-                if (rig.RightLeg.LowerLeg == null)
-                {
-                    rig.RightLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "lower", "r", "leg");
-                }
-                if (rig.RightLeg.LowerLeg == null)
-                {
-                    rig.RightLeg.LowerLeg = TryToResolveBoneUniqueAnd(skins, "calf", "r");
-                }
-                if (rig.RightLeg.Foot == null)
-                {
-                    rig.RightLeg.Foot = TryToResolveBoneUniqueAnd(skins, "foot", "right");
-                }
-                if (rig.RightLeg.Foot == null)
-                {
-                    rig.RightLeg.Foot = TryToResolveBoneUniqueAnd(skins, "ankle", "right");
-                }
-                if (rig.RightLeg.Foot == null)
-                {
-                    rig.RightLeg.Foot = TryToResolveBoneUniqueAnd(skins, "foot", "r");
-                }
-                if (rig.RightLeg.Foot == null)
-                {
-                    rig.RightLeg.Foot = TryToResolveBoneUniqueAnd(skins, "ankle", "r");
-                }
-                if (rig.RightLeg.Toes == null)
-                {
-                    rig.RightLeg.Toes = TryToResolveBoneUniqueAnd(skins, "toe", "right");
-                }
-                if (rig.RightLeg.Toes == null)
-                {
-                    rig.RightLeg.Toes = TryToResolveBoneUniqueAnd(skins, "toe", "r");
+                        if (!torsionNodes.Any())
+                        {
+                            torsionNodes = forearmChildren.Where(t => !t.HasParent(arm.Hand.Wrist) && t.name.ToLower().Contains("twist"));
+                        }
+                        
+                        // Create components and assign torsion amount to found nodes. Be careful to distinguish between nodes hanging from the same
+                        // parent and nodes in a hierarchy because the torsion amount will be inherited.
+
+                        foreach (Transform torsionNode in torsionNodes)
+                        {
+                            UxrWristTorsionIKSolver              newTorsionSolver = torsionNode.gameObject.AddComponent<UxrWristTorsionIKSolver>();
+                            IEnumerable<UxrWristTorsionIKSolver> parentSolvers    = torsionNodes.Where(t => t != torsionNode && t.HasChild(torsionNode)).Select(t => t.GetComponent<UxrWristTorsionIKSolver>()).Where(s => s != null);
+
+                            float totalAmount = Vector3.Distance(torsionNode.position, arm.Forearm.position) / Vector3.Distance(arm.Hand.Wrist.position, arm.Forearm.position);
+                            float netAmount   = Mathf.Max(0.0f, totalAmount - parentSolvers.Sum(s => s.Amount));
+
+                            newTorsionSolver.Amount = netAmount;
+                        }
+                    }
                 }
             }
         }
@@ -684,13 +753,70 @@ namespace UltimateXR.Avatar.Rig
             candidate      = null;
             candidateCount = 0;
 
-            int candidateCountClean = 0; // Number of times it ends exactly with <name>. We will treat this differently than if it's somewhere in between
+            void UpdateCandidate(bool isFullMatch, Transform bone, ref Transform currentCandidate, ref int currentCount, ref int currentFullMatchCount)
+            {
+                if (bone == currentCandidate)
+                {
+                    return;
+                }
 
-            Dictionary<Transform, int> dictionaryProcessed = new Dictionary<Transform, int>();
+                if (isFullMatch)
+                {
+                    // Full match
+
+                    if (currentFullMatchCount > 0 && currentCandidate.HasParent(bone))
+                    {
+                        // Favor parent: use candidate and reset counter
+                        currentFullMatchCount = 1;
+                        currentCount          = 1;
+                        currentCandidate      = bone;
+                    }
+                    else if (!(currentCandidate != null && currentCandidate.HasChild(bone)))
+                    {
+                        // No parent candidate present: use candidate but increment counter
+                        currentFullMatchCount++;
+                        currentCount     = currentFullMatchCount;
+                        currentCandidate = bone;
+                    }
+                }
+                else if (currentFullMatchCount == 0)
+                {
+                    // Semi match
+
+                    if (currentCandidate != null && currentCandidate.HasParent(bone))
+                    {
+                        // Favor parent: use candidate and reset counter
+                        currentFullMatchCount = 0;
+                        currentCount          = 1;
+                        currentCandidate      = bone;
+                    }
+                    else if (!(currentCandidate != null && currentCandidate.HasChild(bone)))
+                    {
+                        // No parent candidate present: use candidate but increment counter
+                        currentCount++;
+                        currentCandidate = bone;
+                    }
+                }
+            }
+
+            Dictionary<Transform, int> dictionaryProcessed     = new Dictionary<Transform, int>();
+            int                        candidateFullMatchCount = 0; // Number of times it ends exactly with <name>. We will treat this differently than if it's somewhere in between
 
             foreach (SkinnedMeshRenderer skin in skins)
             {
-                foreach (Transform bone in skin.bones)
+                // We append also all the children to the bones. This is necessary because sometimes a node is not in the bone list
+                // but still will drive the child bone due to being the parent.
+                // A dictionary will make sure that we don't process the same node twice.
+
+                List<Transform> allChildren = new List<Transform>();
+
+                if (skin.rootBone != null)
+                {
+                    allChildren.Add(skin.rootBone);
+                    skin.rootBone.GetAllChildren(ref allChildren);
+                }
+
+                foreach (Transform bone in allChildren)
                 {
                     if (dictionaryProcessed.ContainsKey(bone))
                     {
@@ -705,38 +831,25 @@ namespace UltimateXR.Avatar.Rig
 
                     if (IsWordEnd(nameToLower, name.ToLower()))
                     {
-                        candidateCountClean++;
-                        candidateCount = candidateCountClean;
-                        candidate      = bone;
-                        continue;
-                    }
-                    if (nameToLower.Contains(name.ToLower()) && candidateCountClean == 0)
-                    {
-                        candidate = bone;
-                        candidateCount++;
+                        UpdateCandidate(true, bone, ref candidate, ref candidateCount, ref candidateFullMatchCount);
                         continue;
                     }
 
-                    for (int j = 0; j < alternatives.Length; ++j)
+                    if (nameToLower.Contains(name.ToLower()))
                     {
-                        if (IsWordEnd(nameToLower, alternatives[j].ToLower()))
+                        UpdateCandidate(false, bone, ref candidate, ref candidateCount, ref candidateFullMatchCount);
+                        continue;
+                    }
+
+                    foreach (string altName in alternatives)
+                    {
+                        if (IsWordEnd(nameToLower, altName.ToLower()))
                         {
-                            if (candidate != bone)
-                            {
-                                candidateCountClean++;
-                                candidateCount = candidateCountClean;
-                                candidate      = bone;
-                                break;
-                            }
+                            UpdateCandidate(true, bone, ref candidate, ref candidateCount, ref candidateFullMatchCount);
                         }
-                        else if (nameToLower.Contains(alternatives[j].ToLower()) && candidateCountClean == 0)
+                        else if (nameToLower.Contains(altName.ToLower()))
                         {
-                            if (candidate != bone)
-                            {
-                                candidateCount++;
-                                candidate = bone;
-                                break;
-                            }
+                            UpdateCandidate(false, bone, ref candidate, ref candidateCount, ref candidateFullMatchCount);
                         }
                     }
                 }
@@ -767,7 +880,7 @@ namespace UltimateXR.Avatar.Rig
 
                 int pos = name.IndexOf(part);
 
-                return pos != -1 && char.IsLetterOrDigit(name[pos + part.Length]);
+                return pos != -1 && !char.IsLetterOrDigit(name[pos + part.Length]);
             }
 
             return false;
@@ -817,9 +930,47 @@ namespace UltimateXR.Avatar.Rig
 
             Dictionary<Transform, int> dictionaryProcessed = new Dictionary<Transform, int>();
 
+            bool CheckIfNameMeetsRequirements(string nodeName, out int foundOccurrences)
+            {
+                foundOccurrences = nodeName.GetOccurrenceCount(name, false);
+
+                if (foundOccurrences == 0)
+                {
+                    return false;
+                }
+
+                // Look for additional strings that we need to look for and are mandatory
+
+                foreach (string additionalString in additionalStrings)
+                {
+                    int additionalOccurrences = nodeName.GetOccurrenceCount(additionalString, false);
+
+                    if (additionalOccurrences == 0)
+                    {
+                        return false;
+                    }
+
+                    foundOccurrences += additionalOccurrences;
+                }
+
+                return true;
+            }
+
             foreach (SkinnedMeshRenderer skin in skins)
             {
-                foreach (Transform bone in skin.bones)
+                // We append also all the children to the bones. This is necessary because sometimes a node is not in the bone list
+                // but still will drive the child bone due to being the parent.
+                // A dictionary will make sure that we don't process the same node twice.
+
+                List<Transform> allChildren = new List<Transform>();
+
+                if (skin.rootBone != null)
+                {
+                    allChildren.Add(skin.rootBone);
+                    skin.rootBone.GetAllChildren(ref allChildren);
+                }
+
+                foreach (Transform bone in allChildren)
                 {
                     if (dictionaryProcessed.ContainsKey(bone))
                     {
@@ -830,61 +981,40 @@ namespace UltimateXR.Avatar.Rig
 
                     // Find occurrences of the given name
 
-                    int occurrences = bone.name.GetOccurrenceCount(name, false);
-
-                    if (occurrences == 0)
+                    if (!CheckIfNameMeetsRequirements(bone.name, out int occurrences))
                     {
                         continue;
                     }
 
-                    // Look for additional strings that we need to look for and are mandatory
+                    // Update the candidate
 
-                    bool allFound = true;
-
-                    foreach (string additionalString in additionalStrings)
+                    if (candidate == null)
                     {
-                        int additionalOccurrences = bone.name.GetOccurrenceCount(additionalString, false);
-
-                        if (additionalOccurrences == 0)
-                        {
-                            allFound = false;
-                            break;
-                        }
-
-                        occurrences += additionalOccurrences;
+                        candidate      = bone;
+                        candidateCount = 1;
+                        maxOccurrences = occurrences;
                     }
-
-                    // If all additional strings were found look if we have to update the candidate
-
-                    if (allFound)
+                    else if (candidate.HasParent(bone))
                     {
-                        if (candidate == null)
+                        candidate      = bone;
+                        candidateCount = 1;
+                        maxOccurrences = occurrences;
+                    }
+                    else if (bone.HasParent(candidate))
+                    {
+                        // Do nothing, we keep the parent.
+                    }
+                    else
+                    {
+                        if (occurrences > maxOccurrences)
                         {
                             candidate      = bone;
                             candidateCount = 1;
                             maxOccurrences = occurrences;
                         }
-                        else if (candidate.HasParent(bone))
+                        else if (occurrences == maxOccurrences)
                         {
-                            candidate      = bone;
-                            candidateCount = 1;
-                            maxOccurrences = occurrences;
-                        }
-                        else if (bone.HasParent(candidate))
-                        {
-                        }
-                        else
-                        {
-                            if (occurrences > maxOccurrences)
-                            {
-                                candidate      = bone;
-                                candidateCount = 1;
-                                maxOccurrences = occurrences;
-                            }
-                            else if (occurrences == maxOccurrences)
-                            {
-                                candidateCount++;
-                            }
+                            candidateCount++;
                         }
                     }
                 }
@@ -951,17 +1081,17 @@ namespace UltimateXR.Avatar.Rig
                 // If found, we will consider this a finger. It may or may not end up having fingerRootCandidate as proximalBone.
 
                 List<Transform> potentialFingerDistalBones = new List<Transform>();
-                TransformExt.GetTransformsWithoutChildren(fingerRootCandidate, ref potentialFingerDistalBones);
+                fingerRootCandidate.GetTransformsWithoutChildren(ref potentialFingerDistalBones);
 
                 for (int candidate = 0; candidate < potentialFingerDistalBones.Count; ++candidate)
                 {
                     Transform distalCandidate = potentialFingerDistalBones[candidate];
 
-                    while (!IsBoneInList(skin, distalCandidate) && distalCandidate != fingerRootCandidate)
+                    while ((!IsBoneInList(skin, distalCandidate) || MeshExt.GetBoneInfluenceVertexCount(skin, distalCandidate, 0.01f) == 0) && distalCandidate != fingerRootCandidate)
                     {
                         distalCandidate = distalCandidate.parent;
                     }
-
+                    
                     if (distalCandidate != fingerRootCandidate)
                     {
                         if (distalCandidate.parent != fingerRootCandidate && distalCandidate.parent != null)
@@ -1042,6 +1172,21 @@ namespace UltimateXR.Avatar.Rig
                 if (childBones == 1)
                 {
                     return bone.GetChild(childBoneIndex);
+                }
+                
+                // Try another approach. Look for non-skinned bones.
+
+                if (bone.childCount == 1)
+                {
+                    if (lastInChain && bone.GetChild(0).childCount == 0)
+                    {
+                        return bone.GetChild(0);
+                    }
+
+                    if (!lastInChain && bone.GetChild(0).childCount > 0)
+                    {
+                        return bone.GetChild(0);
+                    }
                 }
             }
 

@@ -22,6 +22,20 @@ namespace UltimateXR.Animation.IK
 
         #endregion
 
+        #region Public Types & Data
+
+        /// <summary>
+        ///     Gets or sets the amount of torsion to apply on this Transform from the source. 0 = no torsion, 1 = full torsion,
+        ///     etc.
+        /// </summary>
+        public float Amount
+        {
+            get => _amount;
+            set => _amount = value;
+        }
+
+        #endregion
+
         #region Unity
 
         /// <summary>
@@ -48,7 +62,7 @@ namespace UltimateXR.Animation.IK
         protected override void InternalSolveIK()
         {
             float angle = Avatar.AvatarRigInfo.GetArmInfo(_handSide).WristTorsionInfo.WristTorsionAngle;
-            transform.localRotation = Quaternion.AngleAxis(-angle * _amount, _torsionLocalAxis) * _startLocalRotation;
+            transform.localRotation = _startLocalRotation * Quaternion.AngleAxis(angle * Amount, _torsionLocalAxis);
         }
 
         #endregion

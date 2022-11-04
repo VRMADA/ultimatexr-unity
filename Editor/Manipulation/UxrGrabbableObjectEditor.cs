@@ -1145,7 +1145,7 @@ namespace UltimateXR.Editor.Manipulation
                         }
 
                         SerializedObject   serializedAvatar   = new SerializedObject(avatar);
-                        SerializedProperty propertyPrefabGuid = serializedAvatar.FindProperty(UxrAvatarEditor.VarNamePrefabGuid);
+                        SerializedProperty propertyPrefabGuid = serializedAvatar.FindProperty(UxrAvatarEditor.PropertyPrefabGuid);
 
                         if (propertyPrefabGuid != null)
                         {

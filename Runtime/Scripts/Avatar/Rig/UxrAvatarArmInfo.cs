@@ -188,7 +188,7 @@ namespace UltimateXR.Avatar.Rig
             float   elbowAngle = Vector3.Angle(armForward, forearmForward);
             Vector3 elbowAxis  = Vector3.Cross(forearmForward, armForward).normalized;
 
-            if (elbowAngle > ElbowMinAngleThreshold)
+            if (elbowAngle < ElbowMinAngleThreshold)
             {
                 elbowAxis = Vector3.up; // Assume T-pose if elbow angle is too small
             }

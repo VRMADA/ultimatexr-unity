@@ -102,7 +102,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                     Transform handTransform = avatar.GetHandBone(handSide);
                     previewMesh.UnityMesh = new Mesh();
                     skinnedMeshRenderer.BakeMesh(previewMesh.UnityMesh);
-                    previewMesh.CreateMesh(skinnedMeshRenderer);
+                    previewMesh.CreateMesh(avatar, skinnedMeshRenderer, handSide);
                     previewMesh.CreateBoneList(avatar, skinnedMeshRenderer, avatarHandPose, handSide);
                     previewMesh.UnityMesh.name = UxrGrabPointIndex.GetIndexDisplayName(grabbableObject, grabPoint) + (handSide == UxrHandSide.Left ? UxrGrabbableObject.LeftGrabPoseMeshSuffix : UxrGrabbableObject.RightGrabPoseMeshSuffix);
 
@@ -329,9 +329,13 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
         /// <summary>
         ///     Creates preview mesh data for a given skinned mesh renderer.
         /// </summary>
+        /// <param name="avatar">Avatar to generate the data for</param>
         /// <param name="skinnedMeshRenderer">Skin component</param>
-        private void CreateMesh(SkinnedMeshRenderer skinnedMeshRenderer)
+        /// <param name="handSide">Which hand to generate the bone list for</param>
+        private void CreateMesh(UxrAvatar avatar, SkinnedMeshRenderer skinnedMeshRenderer, UxrHandSide handSide)
         {
+            // TODO: Filter only hand vertices
+            
             _initialVertices = skinnedMeshRenderer.sharedMesh.vertices;
             _initialNormals  = skinnedMeshRenderer.sharedMesh.normals;
             _vertices        = new Vector3[_initialVertices.Length];

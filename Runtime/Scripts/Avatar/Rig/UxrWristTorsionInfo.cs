@@ -93,7 +93,7 @@ namespace UltimateXR.Avatar.Rig
 
                 // Rotation
 
-                WristTorsionAngle = angleRight;
+                WristTorsionAngle = finalAngle;
             }
         }
 

@@ -1620,7 +1620,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
             {
                 SerializedObject serializedObject = new SerializedObject(avatar.GetAvatarPrefab());
                 serializedObject.Update();
-                SerializedProperty defaultHandPose = serializedObject.FindProperty(UxrAvatarEditor.VarNameDefaultHandPose);
+                SerializedProperty defaultHandPose = serializedObject.FindProperty(UxrAvatarEditor.PropertyDefaultHandPose);
                 defaultHandPose.objectReferenceValue = avatar.GetHandPose(poseName);
                 serializedObject.ApplyModifiedProperties();
                 EditorUtility.SetDirty(avatar.GetAvatarPrefab());
@@ -1888,7 +1888,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
             if (handPoseAsset != null)
             {
                 SerializedObject   serializedObject  = new SerializedObject(avatar.GetAvatarPrefab());
-                SerializedProperty propertyHandPoses = serializedObject.FindProperty(UxrAvatarEditor.VarNameHandPoses);
+                SerializedProperty propertyHandPoses = serializedObject.FindProperty(UxrAvatarEditor.PropertyHandPoses);
 
                 for (int i = 0; i < propertyHandPoses.arraySize; ++i)
                 {
@@ -1977,7 +1977,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
 
                 SerializedObject serializedObject = new SerializedObject(avatar.GetAvatarPrefab());
                 serializedObject.Update();
-                SerializedProperty handPoses = serializedObject.FindProperty(UxrAvatarEditor.VarNameHandPoses);
+                SerializedProperty handPoses = serializedObject.FindProperty(UxrAvatarEditor.PropertyHandPoses);
                 handPoses.InsertArrayElementAtIndex(0);
                 handPoses.GetArrayElementAtIndex(0).objectReferenceValue = handPose;
                 serializedObject.ApplyModifiedProperties();

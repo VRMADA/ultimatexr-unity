@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Improve automatic avatar rig bone reference solving.
+- Improve automatic generation of body IK setup in avatar automatic setup.
+- Add UxrWristTorsionIKSolver component when torsion bones are found in avatar.
+- Improve UxrStandardAvatarController inspector when IK is selected but rig has no nodes.
+
+### Changed
+
+- Set avatar rig type to full/half body when body bones are found in the avatar rig.
+
+### Fixed
+
+- Fix UxrWristTorsionInfo, UxrWristTorsionIKSolver and UxrAvatarArmInfo to generate
+  correct data on all avatar rig coordinate systems.
+- Fix components that don't override Reset() or OnValidate().
+- Fix body IK when no neck bone is present.
+
 ## [0.9.4] - 2022-10-29
 
 ### Added

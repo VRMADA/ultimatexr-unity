@@ -210,6 +210,23 @@ namespace UltimateXR.Avatar.Rig
         }
 
         /// <summary>
+        ///     Gets the avatar arms.
+        /// </summary>
+        /// <returns>Avatar arms</returns>
+        public IEnumerable<UxrAvatarArm> GetArms()
+        {
+            if (_leftArm != null)
+            {
+                yield return _leftArm;
+            }
+
+            if (_rightArm != null)
+            {
+                yield return _rightArm;
+            }
+        }
+
+        /// <summary>
         ///     Gets whether the given rig has any of the references used in upper body IK (head, neck, upper chest, chest or
         ///     spine).
         /// </summary>
