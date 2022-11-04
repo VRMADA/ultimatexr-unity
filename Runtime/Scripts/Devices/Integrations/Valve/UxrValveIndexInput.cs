@@ -39,7 +39,7 @@ namespace UltimateXR.Devices.Integrations.Valve
         /// <inheritdoc />
         public override UxrControllerInputCapabilities GetControllerCapabilities(UxrHandSide handSide)
         {
-            return UxrControllerInputCapabilities.HapticImpulses;
+            return UxrControllerInputCapabilities.HapticImpulses | UxrControllerInputCapabilities.TrackedHandPose;
         }
 
         #endregion

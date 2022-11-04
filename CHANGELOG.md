@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improve automatic generation of body IK setup in avatar automatic setup.
 - Add UxrWristTorsionIKSolver component when torsion bones are found in avatar.
 - Improve UxrStandardAvatarController inspector when IK is selected but rig has no nodes.
+- Add TrackedHandPose to UxrControllerInputCapabilities enum and applied to Valve Index.
 
 ### Changed
 
@@ -24,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   correct data on all avatar rig coordinate systems.
 - Fix components that don't override Reset() or OnValidate().
 - Fix body IK when no neck bone is present.
+- Fix Valve Index controllers not sending UI input events when adopting a hand pose
+  with the middle finger curled.
 
 ## [0.9.4] - 2022-10-29
 

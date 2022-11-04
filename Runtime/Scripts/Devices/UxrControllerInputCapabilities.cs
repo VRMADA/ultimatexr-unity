@@ -21,6 +21,11 @@ namespace UltimateXR.Devices
         /// <summary>
         ///     It supports haptic feedback using pre-recorded clips.
         /// </summary>
-        HapticClips = 1 << 1
+        HapticClips = 1 << 1,
+
+        /// <summary>
+        ///     It supports finger tracking.
+        /// </summary>
+        TrackedHandPose = 1 << 2
     }
 }

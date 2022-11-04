@@ -253,6 +253,27 @@ namespace UltimateXR.Avatar.Controllers
         /// <inheritdoc />
         public override bool CanHandInteractWithUI(UxrHandSide handSide)
         {
+            if (Avatar.ControllerInput.GetControllerCapabilities(handSide).HasFlag(UxrControllerInputCapabilities.TrackedHandPose))
+            {
+                // With tracked hand pose controllers (for example Valve Index) we cannot use the IsGrabbing property. The pointing
+                // gesture reports grabbing due to the middle finger pressure. We will rely on the index finger direction with
+                // respect to the wrist instead, to check if it is curled.
+
+                Transform     forearm      = Avatar.GetArm(handSide).Forearm;
+                UxrAvatarHand hand         = Avatar.GetHand(handSide);
+                Transform     wrist        = hand.Wrist;
+                Transform     intermediate = hand.GetFinger(UxrFingerType.Index).Intermediate;
+                Transform     distal       = hand.GetFinger(UxrFingerType.Index).Distal;
+                
+                if (forearm != null && wrist != null && intermediate != null && distal != null)
+                {
+                    Vector3 wristDir  = wrist.position - forearm.position;
+                    Vector3 fingerDir = distal.position - intermediate.position;
+
+                    return Vector3.Angle(wristDir, fingerDir) < 90.0f;
+                }
+            }
+            
             return handSide == UxrHandSide.Left ? !_leftHandInfo.IsGrabbing : !_rightHandInfo.IsGrabbing;
         }
 
