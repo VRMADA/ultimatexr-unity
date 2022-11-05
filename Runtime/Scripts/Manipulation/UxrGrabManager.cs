@@ -1545,10 +1545,10 @@ namespace UltimateXR.Manipulation
         ///     Gets the grabbers that are grabbing the object using a specific grab point.
         /// </summary>
         /// <param name="grabbableObject">The grabbable object</param>
-        /// <param name="point">The grab point</param>
+        /// <param name="point">The grab point or -1 to get all grabbed points</param>
         /// <param name="grabbers">
         ///     Returns the list of grabbers. If the list is null a new list is created, otherwise the grabbers
-        ///     are added to the list
+        ///     are added to the list.
         /// </param>
         /// <returns>Whether one or more grabbers were found</returns>
         public bool GetGrabbingHands(UxrGrabbableObject grabbableObject, int point, out List<UxrGrabber> grabbers)
@@ -1561,7 +1561,7 @@ namespace UltimateXR.Manipulation
                 {
                     for (int grabEntry = 0; grabEntry < grabInfo.Grabbers.Count; ++grabEntry)
                     {
-                        if (grabInfo.GrabbedPoints[grabEntry] == point)
+                        if (grabInfo.GrabbedPoints[grabEntry] == point || point == -1)
                         {
                             grabbers ??= new List<UxrGrabber>();
                             grabbers.Add(grabInfo.Grabbers[grabEntry]);
