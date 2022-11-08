@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add UxrWristTorsionIKSolver component when torsion bones are found in avatar.
 - Improve UxrStandardAvatarController inspector when IK is selected but rig has no nodes.
 - Add TrackedHandPose to UxrControllerInputCapabilities enum and applied to Valve Index.
+- Add public method SolveBodyIK() to still use body IK when AvatarMode is UpdateExternally.
 
 ### Changed
 

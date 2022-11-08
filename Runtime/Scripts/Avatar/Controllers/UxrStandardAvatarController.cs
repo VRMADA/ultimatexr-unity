@@ -264,7 +264,7 @@ namespace UltimateXR.Avatar.Controllers
                 Transform     wrist        = hand.Wrist;
                 Transform     intermediate = hand.GetFinger(UxrFingerType.Index).Intermediate;
                 Transform     distal       = hand.GetFinger(UxrFingerType.Index).Distal;
-                
+
                 if (forearm != null && wrist != null && intermediate != null && distal != null)
                 {
                     Vector3 wristDir  = wrist.position - forearm.position;
@@ -273,8 +273,44 @@ namespace UltimateXR.Avatar.Controllers
                     return Vector3.Angle(wristDir, fingerDir) < 90.0f;
                 }
             }
-            
+
             return handSide == UxrHandSide.Left ? !_leftHandInfo.IsGrabbing : !_rightHandInfo.IsGrabbing;
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        ///     Solves the body IK using the current headset and controller positions.
+        /// </summary>
+        public void SolveBodyIK()
+        {
+            if (_bodyIK != null && _useBodyIK)
+            {
+                _bodyIK.PreSolveAvatarIK();
+            }
+
+            // Update arms without clavicles to check how much tension is applied on the shoulders
+
+            IEnumerable<UxrArmIKSolver> autoUpdateArmSolvers = UxrIKSolver.GetComponents(Avatar).OfType<UxrArmIKSolver>().Where(s => s.NeedsAutoUpdate);
+
+            autoUpdateArmSolvers.ForEach(s => s.SolveIKPass(UxrArmSolveOptions.None, UxrArmOverExtendMode.ExtendForearm));
+
+            // Update torso rotation
+
+            if (_bodyIK != null && _useBodyIK)
+            {
+                _bodyIK.PostSolveAvatarIK();
+            }
+
+            // Update arms normally
+
+            autoUpdateArmSolvers.ForEach(s => s.SolveIK());
+
+            // Update non-arm IKs
+
+            UxrIKSolver.GetComponents(Avatar).Where(s => s.GetType() != typeof(UxrArmIKSolver) && s.NeedsAutoUpdate).ForEach(s => s.SolveIK());
         }
 
         #endregion
@@ -408,7 +444,7 @@ namespace UltimateXR.Avatar.Controllers
             _rightHandInfo.IsGrabbing = false;
             _leftHandInfo.IsPointing  = false;
             _rightHandInfo.IsPointing = false;
-            
+
             // Check with the help of the grab manager if we need to override the grab buttons based on proximity to a grabbable object that used non-default grab buttons.
 
             if (!UxrGrabManager.Instance.IsHandGrabbing(Avatar, UxrHandSide.Left))
@@ -478,31 +514,7 @@ namespace UltimateXR.Avatar.Controllers
 
             // Needs to be done after managers since the grab manager may force hands to be in certain positions
 
-            if (_bodyIK != null && _useBodyIK)
-            {
-                _bodyIK.PreSolveAvatarIK();
-            }
-
-            // Update arms without clavicles to check how much tension is applied on the shoulders
-
-            IEnumerable<UxrArmIKSolver> autoUpdateArmSolvers = UxrIKSolver.GetComponents(Avatar).OfType<UxrArmIKSolver>().Where(s => s.NeedsAutoUpdate);
-
-            autoUpdateArmSolvers.ForEach(s => s.SolveIKPass(UxrArmSolveOptions.None, UxrArmOverExtendMode.ExtendForearm));
-
-            // Update torso rotation
-
-            if (_bodyIK != null && _useBodyIK)
-            {
-                _bodyIK.PostSolveAvatarIK();
-            }
-
-            // Update arms normally
-
-            autoUpdateArmSolvers.ForEach(s => s.SolveIK());
-
-            // Update non-arm IKs
-
-            UxrIKSolver.GetComponents(Avatar).Where(s => s.GetType() != typeof(UxrArmIKSolver) && s.NeedsAutoUpdate).ForEach(s => s.SolveIK());
+            SolveBodyIK();
         }
 
         #endregion
@@ -788,9 +800,9 @@ namespace UltimateXR.Avatar.Controllers
             bool       resetLeftGrab  = false;
             bool       resetRightGrab = false;
             UxrGrabber grabber        = Avatar.GetGrabber(handSide);
-            
+
             // First 
-            
+
             if (!handInfo.WasGrabbingLastFrame && handInfo.IsGrabbing && handInfo.LetGrabAgain)
             {
                 // We get the grabber instead of the return value of TryGrab() because we may already be grabbing an object with a special UxrGrabMode.
@@ -848,7 +860,7 @@ namespace UltimateXR.Avatar.Controllers
                             {
                                 LeftHandGrabPoseNameOverride = null;
                             }
-                            
+
                             _leftHandInfo.GrabBlendValue = -1.0f;
                         }
                         else
@@ -857,7 +869,7 @@ namespace UltimateXR.Avatar.Controllers
                             {
                                 RightHandGrabPoseNameOverride = null;
                             }
-                            
+
                             _rightHandInfo.GrabBlendValue = -1.0f;
                         }
                     }
@@ -926,7 +938,7 @@ namespace UltimateXR.Avatar.Controllers
                 LeftHandGrabPoseNameOverride = null;
                 _leftHandInfo.GrabBlendValue = -1.0f;
             }
-            
+
             if (resetRightGrab)
             {
                 RightHandGrabButtonsOverride  = UxrInputButtons.Everything;
@@ -1080,10 +1092,11 @@ namespace UltimateXR.Avatar.Controllers
         }
 
         /// <summary>
-        /// Returns the current override button that requires to be pressed to execute the grab action. It will return <see cref="UxrInputButtons.Everything"/> if no override is active.
+        ///     Returns the current override button that requires to be pressed to execute the grab action. It will return
+        ///     <see cref="UxrInputButtons.Everything" /> if no override is active.
         /// </summary>
         /// <param name="handSide">Which side to check</param>
-        /// <returns>The override grab button or <see cref="UxrInputButtons.Everything"/> if the default grab button is required</returns>
+        /// <returns>The override grab button or <see cref="UxrInputButtons.Everything" /> if the default grab button is required</returns>
         private UxrInputButtons GetGrabButtonsOverride(UxrHandSide handSide)
         {
             return handSide == UxrHandSide.Left ? LeftHandGrabButtonsOverride : RightHandGrabButtonsOverride;
