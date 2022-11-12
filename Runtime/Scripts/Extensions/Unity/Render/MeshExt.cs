@@ -3,6 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Animation.Splines;
 using UltimateXR.Core;
@@ -15,7 +16,7 @@ namespace UltimateXR.Extensions.Unity.Render
     /// <summary>
     ///     <see cref="Mesh" /> extensions.
     /// </summary>
-    public static class MeshExt
+    public static partial class MeshExt
     {
         #region Public Methods
 
@@ -98,6 +99,130 @@ namespace UltimateXR.Extensions.Unity.Render
             splineMesh.triangles = indices;
 
             return splineMesh;
+        }
+
+        /// <summary>
+        ///     Creates a new mesh from a skinned mesh renderer based on a reference bone and an extract operation.
+        /// </summary>
+        /// <param name="skin">Skin to process</param>
+        /// <param name="bone">Reference bone</param>
+        /// <param name="extractOperation">Which part of the skinned mesh to extract</param>
+        /// <param name="weightThreshold">Bone weight threshold above which the vertices will be extracted</param>
+        /// <returns>New mesh</returns>
+        public static Mesh ExtractSubMesh(SkinnedMeshRenderer skin, Transform bone, ExtractSubMeshOperation extractOperation, float weightThreshold = UxrConstants.Geometry.SignificantBoneWeight)
+        {
+            Mesh newMesh = new Mesh();
+
+            // Create dictionary to check which bones belong to the hierarchy
+
+            Dictionary<int, bool> areHierarchyBones = new Dictionary<int, bool>();
+
+            Vector3[]    vertices    = skin.sharedMesh.vertices;
+            Vector3[]    normals     = skin.sharedMesh.normals;
+            Vector2[]    uv          = skin.sharedMesh.uv;
+            BoneWeight[] boneWeights = skin.sharedMesh.boneWeights;
+            Transform[]  bones       = skin.bones;
+
+            for (int i = 0; i < bones.Length; ++i)
+            {
+                areHierarchyBones.Add(i, bones[i].HasParent(bone));
+            }
+
+            // Create filtered mesh
+
+            List<List<int>>      newTriangles   = new List<List<int>>();
+            Dictionary<int, int> old2New        = new Dictionary<int, int>();
+            List<Vector3>        newVertices    = new List<Vector3>();
+            List<Vector3>        newNormals     = new List<Vector3>();
+            List<Vector2>        newUV          = new List<Vector2>();
+            List<BoneWeight>     newBoneWeights = new List<BoneWeight>();
+
+            bool VertexMeetsRequirement(bool isFromHierarchy)
+            {
+                switch (extractOperation)
+                {
+                    case ExtractSubMeshOperation.BoneAndChildren:       return isFromHierarchy;
+                    case ExtractSubMeshOperation.NotFromBoneOrChildren: return !isFromHierarchy;
+                }
+
+                return false;
+            }
+
+            for (int submesh = 0; submesh < skin.sharedMesh.subMeshCount; ++submesh)
+            {
+                int[]     submeshIndices    = skin.sharedMesh.GetTriangles(submesh);
+                List<int> newSubmeshIndices = new List<int>();
+
+                for (int t = 0; t < submeshIndices.Length / 3; t++)
+                {
+                    float totalWeight = 0.0f;
+
+                    for (int v = 0; v < 3; v++)
+                    {
+                        BoneWeight boneWeight = boneWeights[submeshIndices[t * 3 + v]];
+
+                        if (areHierarchyBones.TryGetValue(boneWeight.boneIndex0, out bool isFromHierarchy) && VertexMeetsRequirement(isFromHierarchy))
+                        {
+                            totalWeight += boneWeight.weight0;
+                        }
+
+                        if (areHierarchyBones.TryGetValue(boneWeight.boneIndex1, out isFromHierarchy) && VertexMeetsRequirement(isFromHierarchy))
+                        {
+                            totalWeight += boneWeight.weight1;
+                        }
+
+                        if (areHierarchyBones.TryGetValue(boneWeight.boneIndex2, out isFromHierarchy) && VertexMeetsRequirement(isFromHierarchy))
+                        {
+                            totalWeight += boneWeight.weight2;
+                        }
+
+                        if (areHierarchyBones.TryGetValue(boneWeight.boneIndex3, out isFromHierarchy) && VertexMeetsRequirement(isFromHierarchy))
+                        {
+                            totalWeight += boneWeight.weight3;
+                        }
+                    }
+
+                    if (totalWeight > weightThreshold)
+                    {
+                        for (int v = 0; v < 3; v++)
+                        {
+                            int oldIndex = submeshIndices[t * 3 + v];
+
+                            if (!old2New.ContainsKey(oldIndex))
+                            {
+                                old2New.Add(oldIndex, old2New.Count);
+
+                                newVertices.Add(vertices[oldIndex]);
+                                newNormals.Add(normals[oldIndex]);
+                                newUV.Add(uv[oldIndex]);
+                                newBoneWeights.Add(boneWeights[oldIndex]);
+                            }
+
+                            newSubmeshIndices.Add(old2New[oldIndex]);
+                        }
+                    }
+                }
+
+                newTriangles.Add(newSubmeshIndices);
+            }
+
+            // Create new mesh
+
+            newMesh.vertices    = newVertices.ToArray();
+            newMesh.normals     = newNormals.ToArray();
+            newMesh.uv          = newUV.ToArray();
+            newMesh.boneWeights = newBoneWeights.ToArray();
+
+            // Create and assign new triangle list
+
+            newMesh.subMeshCount = newTriangles.Count;
+
+            for (int submesh = 0; submesh < newTriangles.Count; ++submesh)
+            {
+                newMesh.SetTriangles(newTriangles[submesh].ToArray(), submesh);
+            }
+
+            return newMesh;
         }
 
         /// <summary>
@@ -190,7 +315,7 @@ namespace UltimateXR.Extensions.Unity.Render
         /// <param name="bone">Bone to check</param>
         /// <param name="weightThreshold">Weight above which to consider significant influence</param>
         /// <returns>
-        ///     Bounding box in local <paramref name="bone"/> coordinates.
+        ///     Bounding box in local <paramref name="bone" /> coordinates.
         /// </returns>
         public static Bounds GetBoneInfluenceBounds(SkinnedMeshRenderer skin, Transform bone, float weightThreshold = UxrConstants.Geometry.SignificantBoneWeight)
         {

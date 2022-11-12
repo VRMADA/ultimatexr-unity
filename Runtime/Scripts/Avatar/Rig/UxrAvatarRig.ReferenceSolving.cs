@@ -168,6 +168,11 @@ namespace UltimateXR.Avatar.Rig
                 return false;
             }
 
+            if (hand.HasFingerData())
+            {
+                return true;
+            }
+
             if (IsBoneInList(skin, root) && IsBoneInList(skin, current))
             {
                 List<List<Transform>> handFingerBones = new List<List<Transform>>();

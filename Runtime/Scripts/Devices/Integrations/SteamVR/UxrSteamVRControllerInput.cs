@@ -540,7 +540,7 @@ namespace UltimateXR.Devices.Integrations.SteamVR
             {
                 if (LogLevel >= UxrLogLevel.Relevant)
                 {
-                    Debug.Log($"{nameof(UxrSteamVRControllerInput)}::{nameof(OnDeviceConnected)}: Device is not recognized as input");
+                    Debug.Log($"{nameof(UxrSteamVRControllerInput)}::{nameof(OnDeviceConnected)}: Device is not recognized as input by any of {inputsSteamVR.Count()} components");
                 }
             }
         }

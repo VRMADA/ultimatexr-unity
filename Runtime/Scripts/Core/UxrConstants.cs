@@ -14,7 +14,7 @@ namespace UltimateXR.Core
 
         public const int MajorVersion = 0;
         public const int MinorVersion = 9;
-        public const int PatchVersion = 4;
+        public const int PatchVersion = 5;
 
         public const string UltimateXR = "UltimateXR";
 

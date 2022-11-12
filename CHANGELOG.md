@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.5] - 2022-11-12
+
 ### Added
 
 - Improve automatic avatar rig bone reference solving.
@@ -15,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improve UxrStandardAvatarController inspector when IK is selected but rig has no nodes.
 - Add TrackedHandPose to UxrControllerInputCapabilities enum and applied to Valve Index.
 - Add public method SolveBodyIK() to still use body IK when AvatarMode is UpdateExternally.
+- Add support to isolate the hand part of the mesh in the hand preview poses if the hands
+  are in the same mesh as the body.
 
 ### Changed
 
@@ -28,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix body IK when no neck bone is present.
 - Fix Valve Index controllers not sending UI input events when adopting a hand pose
   with the middle finger curled.
+- Fix bug in avatar finger bone reference solving if the finger has already data.
 
 ## [0.9.4] - 2022-10-29
 
