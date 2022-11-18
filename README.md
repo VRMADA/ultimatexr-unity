@@ -47,9 +47,10 @@ We provide the following ways to install **UltimateXR**:
 
 ### Method 3: Through the official Unity Asset Store
 
-- Completely remove the current version of UltimateXR if there is one installed.
-- Go to the [Asset Store](https://assetstore.unity.com/packages/slug/236782) and click Open in Unity to proceed with the installation.
-- Remember to rate and review our asset if you liked it!
+1. Delete the previous version from /Assets/UltimateXR first.
+**Important!** Not removing the folder before updating may result in incorrect files remaining after installation.
+2. Go to the [Asset Store](https://assetstore.unity.com/packages/slug/236782) and click Open in Unity to proceed with the installation.
+3. Remember to rate and review our asset if you liked it!
 
 ## Learn UltimateXR
 
