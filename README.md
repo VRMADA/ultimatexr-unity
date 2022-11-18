@@ -19,6 +19,8 @@ Main features:
 
 ## Installation
 
+We provide the following ways to install **UltimateXR**:
+
 ### Method 1: Using Package Manager for git users
 
 1. If UltimateXR was previously installed in /Assets using a .unitypackage, remove the /Assets/UltimateXR folder first
@@ -42,6 +44,12 @@ Main features:
 **Important!** Not removing the folder before updating may result in incorrect files remaining after installation.
 2. Download the latest package (.unitypackage file) found in https://github.com/VRMADA/ultimatexr-unity/releases
 3. Double click the file to import the package to your project.
+
+### Method 3: Through the official Unity Asset Store
+
+- Completely remove the current version of UltimateXR if there is one installed.
+- Go to the [Asset Store](https://assetstore.unity.com/packages/slug/236782) and click Open in Unity to proceed with the installation.
+- Remember to rate and review our asset if you liked it!
 
 ## Learn UltimateXR
 
