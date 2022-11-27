@@ -261,11 +261,11 @@ namespace UltimateXR.Devices.Visualization
             {
                 // We recompute the link data because after the finger is initialized it has changed its animation pose
                 finger.FingerIKSolver.ComputeLinkData();
-                finger.FingerIKSolver.enabled       = finger.ComponentEnabled;
-                finger.LocalEffectorInitialPos      = finger.FingerIKSolver.Links[0].Bone.parent.InverseTransformPoint(finger.FingerIKSolver.EndEffector.position);
+                finger.FingerIKSolver.enabled  = finger.ComponentEnabled;
+                finger.LocalEffectorInitialPos = finger.FingerIKSolver.Links[0].Bone.parent.InverseTransformPoint(finger.FingerIKSolver.EndEffector.position);
                 finger.FingerIKSolver.Goal.SetPositionAndRotation(finger.FingerIKSolver.EndEffector.position, finger.FingerIKSolver.EndEffector.rotation);
-                finger.CurrentFingerGoal            = null;
-                finger.TimerToGoal                  = -1.0f;
+                finger.CurrentFingerGoal = null;
+                finger.TimerToGoal       = -1.0f;
             }
         }
 

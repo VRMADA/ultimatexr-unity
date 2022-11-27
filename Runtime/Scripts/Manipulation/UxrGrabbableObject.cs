@@ -1658,7 +1658,7 @@ namespace UltimateXR.Manipulation
                 {
                     float constraintExitT = 1.0f - _constraintExitTimer / ConstrainSeconds;
 
-                    transform.SetLocalPositionAndRotation(Vector3.Lerp(Vector3.Lerp(_constraintLocalExitPos, transform.localPosition, constraintExitT), transform.position, constraintExitT),
+                    transform.SetLocalPositionAndRotation(Vector3.Lerp(_constraintLocalExitPos, transform.localPosition, constraintExitT),
                                                           Quaternion.Lerp(_constraintLocalExitRot, transform.localRotation, constraintExitT));
                 }
             }

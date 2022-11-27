@@ -49,9 +49,9 @@ namespace UltimateXR.Locomotion
 
             // Create arc GameObject
 
-            _arcGameObject                    = new GameObject("Arc");
+            _arcGameObject = new GameObject("Arc");
             _arcGameObject.transform.SetPositionAndRotation(transform.position, transform.rotation);
-            _arcGameObject.transform.parent   = Avatar.transform;
+            _arcGameObject.transform.parent = Avatar.transform;
 
             _arcMeshFilter = _arcGameObject.AddComponent<MeshFilter>();
             _arcRenderer   = _arcGameObject.AddComponent<MeshRenderer>();

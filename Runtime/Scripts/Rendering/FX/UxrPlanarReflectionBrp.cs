@@ -241,12 +241,12 @@ namespace UltimateXR.Rendering.FX
                 if (isLeft)
                 {
                     reflectionCamera.transform.SetPositionAndRotation(leftEyePos, leftEyeRot);
-                    projection                          = renderCamera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left);
+                    projection = renderCamera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left);
                 }
                 else
                 {
                     reflectionCamera.transform.SetPositionAndRotation(rightEyePos, rightEyeRot);
-                    projection                          = renderCamera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right);
+                    projection = renderCamera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right);
                 }
 
                 renderCamera.transform.SetPositionAndRotation(camPos, camRot);

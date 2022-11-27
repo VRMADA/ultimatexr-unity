@@ -261,7 +261,7 @@ namespace UltimateXR.Mechanics.Weapons
                         {
                             Vector3 newForward = Vector3.Reflect(projectileForward, raycastHit.normal).normalized;
                             _projectiles[i].Projectile.transform.SetPositionAndRotation(raycastHit.point + newForward * 0.05f, Quaternion.LookRotation(newForward)); // + rayLength - raycastHit.distance));
-                            _projectiles[i].ProjectileDeflectSource       = projectileDeflect;
+                            _projectiles[i].ProjectileDeflectSource = projectileDeflect;
 
                             projectileDeflect.AudioDeflect?.Play(raycastHit.point);
 
