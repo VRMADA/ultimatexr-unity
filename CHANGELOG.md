@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Change some common operations to favor execution time: #12.
+- Change some common operations to favor execution time: [#12](https://github.com/VRMADA/ultimatexr-unity/pull/12).
+- Add PrecachingStarting and PrecachingFinished events to UxrManager.
 
 ## [0.9.5] - 2022-11-12
 
