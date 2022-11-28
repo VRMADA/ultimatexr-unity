@@ -247,7 +247,7 @@ namespace UltimateXR.Avatar
         /// <summary>
         ///     Gets all the enabled <see cref="UxrLaserPointer" /> components in the avatar.
         /// </summary>
-        public IEnumerable<UxrFingerTip> LaserPointers => UxrFingerTip.GetComponents(this);
+        public IEnumerable<UxrLaserPointer> LaserPointers => UxrLaserPointer.GetComponents(this);
 
         /// <summary>
         ///     Gets the avatar prefab Guid. It is stored instead of the GameObject because storing the GameObject would make an
