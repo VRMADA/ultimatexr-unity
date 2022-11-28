@@ -303,10 +303,7 @@ namespace UltimateXR.Locomotion
 
             UxrTeleportLocomotionBase[] allAvatarTeleports = Avatar.GetComponentsInChildren<UxrTeleportLocomotionBase>();
 
-            foreach (UxrTeleportLocomotionBase teleport in allAvatarTeleports.Where(teleport => teleport != this))
-            {
-                _otherAvatarTeleports.Add(teleport);
-            }
+            _otherAvatarTeleports.AddRange(allAvatarTeleports.Where(teleport => teleport != this));
 
             // If the teleport target is a prefab, instantiate. Otherwise just reference the object in the scene
 
@@ -792,12 +789,7 @@ namespace UltimateXR.Locomotion
                     // Raycast upwards to see if there is something between the ground and eye level. Since we can be teleported inside a box
                     // at eye level for instance, the previous raycast will not handle that case. We need to raycast from outside as well
 
-                    if (Physics.Raycast(teleportPos, Vector3.up, out hit, eyeHeight, LayerMaskRaycast, TriggerCollidersInteraction))
-                    {
-                        return false;
-                    }
-
-                    return true;
+                    return !Physics.Raycast(teleportPos, Vector3.up, eyeHeight, LayerMaskRaycast, TriggerCollidersInteraction);
                 }
             }
 

@@ -745,14 +745,7 @@ namespace UltimateXR.UI.UnityInputModule
 
             data.PressedThisFrame = false;
 
-            if (data.pointerPress != null && !fingerTipValid)
-            {
-                data.ReleasedThisFrame = true;
-            }
-            else
-            {
-                data.ReleasedThisFrame = false;
-            }
+            data.ReleasedThisFrame = data.pointerPress != null && !fingerTipValid;
 
             // Check for presses/releases by comparing the finger tip current/last positions against the UI object's plane
 
@@ -867,12 +860,7 @@ namespace UltimateXR.UI.UnityInputModule
 
             UxrCanvas canvas = uiGameObject.GetComponentInParent<UxrCanvas>();
 
-            if (canvas && !canvas.IsCompatible(handSide))
-            {
-                return false;
-            }
-
-            return true;
+            return !canvas || canvas.IsCompatible(handSide);
         }
 
         /// <summary>

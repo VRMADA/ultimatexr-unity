@@ -950,14 +950,9 @@ namespace UltimateXR.Editor.Manipulation
 
             foreach (Transform alignTransform in listGrabAlignTransformsBefore)
             {
-                if (listGrabAlignTransformsAfter.Contains(alignTransform) == false)
+                if (listGrabAlignTransformsAfter.Contains(alignTransform) == false && alignTransform.TryGetComponent<UxrGrabbableObjectSnapTransform>(out var alignTransformComponent))
                 {
-                    UxrGrabbableObjectSnapTransform alignTransformComponent = alignTransform.GetComponent<UxrGrabbableObjectSnapTransform>();
-
-                    if (alignTransformComponent != null)
-                    {
-                        DestroyImmediate(alignTransformComponent);
-                    }
+                    DestroyImmediate(alignTransformComponent);
                 }
             }
 
@@ -1100,7 +1095,7 @@ namespace UltimateXR.Editor.Manipulation
                                                                     return null;
                                                                 }).Where(g => g != null).ToList();
 
-            prefabs.Sort((o1, o2) => string.Compare(o1.name, o2.name, StringComparison.Ordinal));
+            prefabs.Sort((o1, o2) => string.CompareOrdinal(o1.name, o2.name));
             return prefabs;
         }
 

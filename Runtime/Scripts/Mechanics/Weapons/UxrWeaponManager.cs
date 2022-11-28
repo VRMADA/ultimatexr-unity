@@ -232,7 +232,7 @@ namespace UltimateXR.Mechanics.Weapons
 
                 if (_projectiles[i].ShotDescriptor.UseAutomaticProjectileTrajectory)
                 {
-                    newPos                                        = oldPos + projectileForward * _projectiles[i].ProjectileSpeed * Time.deltaTime;
+                    newPos                                        = oldPos + (_projectiles[i].ProjectileSpeed * Time.deltaTime * projectileForward);
                     _projectiles[i].Projectile.transform.position = newPos;
                 }
 
@@ -260,9 +260,8 @@ namespace UltimateXR.Mechanics.Weapons
                         if (projectileDeflect != null)
                         {
                             Vector3 newForward = Vector3.Reflect(projectileForward, raycastHit.normal).normalized;
-                            _projectiles[i].Projectile.transform.position = raycastHit.point + newForward * 0.05f; // + rayLength - raycastHit.distance));
-                            _projectiles[i].Projectile.transform.rotation = Quaternion.LookRotation(newForward);
-                            _projectiles[i].ProjectileDeflectSource       = projectileDeflect;
+                            _projectiles[i].Projectile.transform.SetPositionAndRotation(raycastHit.point + newForward * 0.05f, Quaternion.LookRotation(newForward)); // + rayLength - raycastHit.distance));
+                            _projectiles[i].ProjectileDeflectSource = projectileDeflect;
 
                             projectileDeflect.AudioDeflect?.Play(raycastHit.point);
 
@@ -324,7 +323,7 @@ namespace UltimateXR.Mechanics.Weapons
 
                                 if (rigidbody != null)
                                 {
-                                    rigidbody.AddForceAtPosition(projectileForward * _projectiles[i].ProjectileSpeed * _projectiles[i].ShotDescriptor.ProjectileImpactForceMultiplier, raycastHit.transform.position);
+                                    rigidbody.AddForceAtPosition(_projectiles[i].ProjectileSpeed * _projectiles[i].ShotDescriptor.ProjectileImpactForceMultiplier * projectileForward, raycastHit.transform.position);
                                 }
 
                                 UxrOverrideImpactDecal overrideDecal = raycastHit.collider.GetComponentInParent<UxrOverrideImpactDecal>();

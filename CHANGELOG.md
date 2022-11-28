@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Change some common operations to favor execution time: #12.
+
 ## [0.9.5] - 2022-11-12
 
 ### Added

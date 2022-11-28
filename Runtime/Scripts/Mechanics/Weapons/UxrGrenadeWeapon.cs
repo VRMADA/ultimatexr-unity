@@ -288,9 +288,7 @@ namespace UltimateXR.Mechanics.Weapons
 
                 foreach (Collider targetCollider in colliders)
                 {
-                    Rigidbody targetRigidbody = targetCollider.GetComponent<Rigidbody>();
-
-                    if (targetRigidbody != null)
+                    if (targetCollider.TryGetComponent<Rigidbody>(out var targetRigidbody))
                     {
                         targetRigidbody.AddExplosionForce(_physicsExplosionForce, transform.position, _damageRadius);
                     }

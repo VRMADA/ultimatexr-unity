@@ -496,7 +496,7 @@ namespace UltimateXR.Animation.Transforms
                         }
 
                         float deltaTime = GetDeltaTime(_translationUseUnscaledTime);
-                        transform.Translate(xAxis * _translationSpeed.x * deltaTime + yAxis * _translationSpeed.y * deltaTime + zAxis * _translationSpeed.z * deltaTime, Space.World);
+                        transform.Translate(_translationSpeed.x * deltaTime * xAxis + _translationSpeed.y * deltaTime * yAxis + _translationSpeed.z * deltaTime * zAxis, Space.World);
                         break;
                     }
 

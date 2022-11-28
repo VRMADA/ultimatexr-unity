@@ -92,7 +92,7 @@ namespace UltimateXR.Editor
             handPoses         = avatar != null ? avatar.GetAllHandPoses().ToList() : new List<UxrHandPoseAsset>();
             selectedPoseIndex = -1;
 
-            if (handPoses.Any() && handPosesProperty.objectReferenceValue != null)
+            if (handPoses.Count > 0 && handPosesProperty.objectReferenceValue != null)
             {
                 UxrHandPoseAsset handPoseAsset = handPosesProperty.objectReferenceValue as UxrHandPoseAsset;
 

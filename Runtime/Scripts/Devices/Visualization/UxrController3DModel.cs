@@ -482,14 +482,10 @@ namespace UltimateXR.Devices.Visualization
             {
                 UxrControllerElements enumValue = (UxrControllerElements)value;
 
-                if (elements.HasFlag(enumValue) && _hashedElements.TryGetValue(enumValue, out GameObject elementGameObject))
+                if (elements.HasFlag(enumValue) && _hashedElements.TryGetValue(enumValue, out GameObject elementGameObject) 
+                    && elementGameObject.TryGetComponent<Renderer>(out var elementRenderer))
                 {
-                    Renderer elementRenderer = elementGameObject.GetComponent<Renderer>();
-
-                    if (elementRenderer != null)
-                    {
-                        elementRenderer.material = material;
-                    }
+                    elementRenderer.material = material;
                 }
             }
         }
@@ -504,14 +500,10 @@ namespace UltimateXR.Devices.Visualization
             {
                 UxrControllerElements enumValue = (UxrControllerElements)value;
 
-                if (elements.HasFlag(enumValue) && _hashedElements.TryGetValue(enumValue, out GameObject elementGameObject))
+                if (elements.HasFlag(enumValue) && _hashedElements.TryGetValue(enumValue, out GameObject elementGameObject) 
+                    && elementGameObject.TryGetComponent<Renderer>(out var elementRenderer))
                 {
-                    Renderer elementRenderer = elementGameObject.GetComponent<Renderer>();
-
-                    if (elementRenderer != null)
-                    {
-                        elementRenderer.sharedMaterial = _hashedElementsOriginalMaterial[enumValue];
-                    }
+                    elementRenderer.sharedMaterial = _hashedElementsOriginalMaterial[enumValue];
                 }
             }
         }

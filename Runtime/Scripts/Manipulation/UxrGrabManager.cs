@@ -2436,8 +2436,7 @@ namespace UltimateXR.Manipulation
             if (grabber && grabber.HandBone)
             {
                 Matrix4x4 grabberMatrix = Matrix4x4.TRS(grabber.UnprocessedGrabberPosition, grabber.UnprocessedGrabberRotation, Vector3.one);
-                grabber.HandBone.position = grabberMatrix.MultiplyPoint(grabber.HandBoneRelativePos);
-                grabber.HandBone.rotation = grabberMatrix.rotation * grabber.HandBoneRelativeRot;
+                grabber.HandBone.SetPositionAndRotation(grabberMatrix.MultiplyPoint(grabber.HandBoneRelativePos), grabberMatrix.rotation * grabber.HandBoneRelativeRot);
             }
         }
 
@@ -2626,8 +2625,7 @@ namespace UltimateXR.Manipulation
                         finalRotation *= grabbableObject.GetGrabPointRelativeGrabRotation(grabber, pointIndex);
                         finalPosition =  grabber.transform.TransformPoint(grabbableObject.GetGrabPointRelativeGrabPosition(grabber, pointIndex));
 
-                        grabbableObject.transform.position = finalPosition;
-                        grabbableObject.transform.rotation = finalRotation;
+                        grabbableObject.transform.SetPositionAndRotation(finalPosition, finalRotation);
                     }
 
                     // Restrict movement?
@@ -2718,8 +2716,7 @@ namespace UltimateXR.Manipulation
                 finalPosition = grabberMain.transform.TransformPoint(grabbableObjectMain.GetGrabPointRelativeGrabPosition(grabberMain, grabPointMain));
             }
 
-            grabbableObjectMain.transform.position = finalPosition;
-            grabbableObjectMain.transform.rotation = finalRotation;
+            grabbableObjectMain.transform.SetPositionAndRotation(finalPosition, finalRotation);
 
             // Constrain using main hand
 
@@ -2838,8 +2835,8 @@ namespace UltimateXR.Manipulation
 
                 float t = 1.0f - Mathf.Clamp01(handTransitionPair.Value.Timer / UxrGrabbableObject.HandLockSeconds);
 
-                handTransitionPair.Key.HandBone.position = Vector3.Lerp(handTransitionPair.Key.Avatar.transform.TransformPoint(handTransitionPair.Value.StartLocalAvatarPosition), handTransitionPair.Key.transform.TransformPoint(handTransitionPair.Key.HandBoneRelativePos), t);
-                handTransitionPair.Key.HandBone.rotation = Quaternion.Slerp(handTransitionPair.Key.Avatar.transform.rotation * handTransitionPair.Value.StartLocalAvatarRotation, handTransitionPair.Key.transform.rotation * handTransitionPair.Key.HandBoneRelativeRot, t);
+                handTransitionPair.Key.HandBone.SetPositionAndRotation(Vector3.Lerp(handTransitionPair.Key.Avatar.transform.TransformPoint(handTransitionPair.Value.StartLocalAvatarPosition), handTransitionPair.Key.transform.TransformPoint(handTransitionPair.Key.HandBoneRelativePos), t),
+                                                                       Quaternion.Slerp(handTransitionPair.Key.Avatar.transform.rotation * handTransitionPair.Value.StartLocalAvatarRotation, handTransitionPair.Key.transform.rotation * handTransitionPair.Key.HandBoneRelativeRot, t));
 
                 if (deltaTime > 0.0f && handTransitionPair.Value.Timer < 0.0f && keysToRemove == null)
                 {

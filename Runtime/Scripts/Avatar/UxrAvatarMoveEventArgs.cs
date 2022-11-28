@@ -132,8 +132,7 @@ namespace UltimateXR.Avatar
             Vector3    relativePos = _oldWorldMatrixInverse.MultiplyPoint(transform.position);
             Quaternion relativeRot = _oldRotationInverse * transform.rotation;
 
-            transform.position = NewWorldMatrix.MultiplyPoint(relativePos);
-            transform.rotation = NewRotation * relativeRot;
+            transform.SetPositionAndRotation(NewWorldMatrix.MultiplyPoint(relativePos), NewRotation * relativeRot);
         }
 
         #endregion

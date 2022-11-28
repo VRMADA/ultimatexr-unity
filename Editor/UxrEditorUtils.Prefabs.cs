@@ -27,12 +27,7 @@ namespace UltimateXR.Editor
         {
             prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
 
-            if (prefab && (PrefabUtility.GetPrefabAssetType(prefab) == PrefabAssetType.Regular || PrefabUtility.GetPrefabAssetType(prefab) == PrefabAssetType.Variant))
-            {
-                return true;
-            }
-
-            return false;
+            return prefab && (PrefabUtility.GetPrefabAssetType(prefab) == PrefabAssetType.Regular || PrefabUtility.GetPrefabAssetType(prefab) == PrefabAssetType.Variant);
         }
 
         /// <summary>
@@ -75,12 +70,7 @@ namespace UltimateXR.Editor
                 // Debug.Log($"Root prefab of {prefabInstance.name} is {prefab.name}. Prefab type is {PrefabUtility.GetPrefabAssetType(prefab)}.");
             }
 
-            if (prefab && (PrefabUtility.GetPrefabAssetType(prefab) == PrefabAssetType.Regular || PrefabUtility.GetPrefabAssetType(prefab) == PrefabAssetType.Variant))
-            {
-                return true;
-            }
-
-            return false;
+            return prefab && (PrefabUtility.GetPrefabAssetType(prefab) == PrefabAssetType.Regular || PrefabUtility.GetPrefabAssetType(prefab) == PrefabAssetType.Variant);
         }
 
         /// <summary>
@@ -123,8 +113,7 @@ namespace UltimateXR.Editor
                     }
                     else
                     {
-                        prefab.transform.position   = Vector3.zero;
-                        prefab.transform.rotation   = Quaternion.identity;
+                        prefab.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
                         prefab.transform.localScale = Vector3.one;
 
                         if (!avatar.gameObject.IsPrefab())

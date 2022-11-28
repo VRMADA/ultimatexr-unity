@@ -212,14 +212,12 @@ namespace UltimateXR.Devices
 
             if (_updateAvatarLeftHand && wristLeft != null)
             {
-                wristLeft.position = SensorLeftHandPos;
-                wristLeft.rotation = SensorLeftHandRot;
+                wristLeft.SetPositionAndRotation(SensorLeftHandPos, SensorLeftHandRot);
             }
 
             if (_updateAvatarRightHand && wristRight != null)
             {
-                wristRight.position = SensorRightHandPos;
-                wristRight.rotation = SensorRightHandRot;
+                wristRight.SetPositionAndRotation(SensorRightHandPos, SensorRightHandRot);
             }
         }
 
@@ -273,12 +271,7 @@ namespace UltimateXR.Devices
                 return false;
             }
 
-            if (subsystem.TrySetTrackingOriginMode(requestedMode))
-            {
-                return true;
-            }
-
-            return false;
+            return subsystem.TrySetTrackingOriginMode(requestedMode);
         }
 
         /// <summary>

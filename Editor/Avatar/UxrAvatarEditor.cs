@@ -225,15 +225,13 @@ namespace UltimateXR.Editor.Avatar
                         if (GUILayout.Button(ContentFix, GUILayout.Width(FixButtonWidth)))
                         {
                             GameObject cameraController = new GameObject("Camera Controller");
-                            cameraController.transform.position = avatar.transform.position;
-                            cameraController.transform.rotation = avatar.transform.rotation;
+                            cameraController.transform.SetPositionAndRotation(avatar.transform.position, avatar.transform.rotation);
                             cameraController.transform.parent   = avatar.transform;
                             cameraController.transform.SetAsFirstSibling();
                             Undo.RegisterCreatedObjectUndo(cameraController, "Create Camera Controller");
 
                             GameObject cameraObject = new GameObject("Camera");
-                            cameraObject.transform.position = cameraController.transform.position;
-                            cameraObject.transform.rotation = cameraController.transform.rotation;
+                            cameraObject.transform.SetPositionAndRotation(cameraController.transform.position, cameraController.transform.rotation);
                             cameraObject.transform.parent   = cameraController.transform;
                             cameraObject.tag                = "MainCamera";
                             Undo.RegisterCreatedObjectUndo(cameraObject, "Create Camera");
@@ -252,8 +250,7 @@ namespace UltimateXR.Editor.Avatar
                             if (GUILayout.Button(ContentFix, GUILayout.Width(FixButtonWidth)))
                             {
                                 GameObject cameraController = new GameObject("Camera Controller");
-                                cameraController.transform.position = avatar.transform.position;
-                                cameraController.transform.rotation = avatar.transform.rotation;
+                                cameraController.transform.SetPositionAndRotation(avatar.transform.position, avatar.transform.rotation);
                                 cameraController.transform.parent   = avatar.transform;
                                 cameraController.transform.SetAsFirstSibling();
                                 Undo.RegisterCreatedObjectUndo(cameraController, "Create Camera Controller");
@@ -262,8 +259,7 @@ namespace UltimateXR.Editor.Avatar
                                 camera.nearClipPlane = 0.01f;
 
                                 Undo.RecordObject(camera.transform, "Move Camera");
-                                camera.transform.position = cameraController.transform.position;
-                                camera.transform.rotation = cameraController.transform.rotation;
+                                camera.transform.SetPositionAndRotation(cameraController.transform.position, cameraController.transform.rotation);
 
                                 Undo.SetTransformParent(camera.transform, cameraController.transform, "Re-parent Camera");
                             }
@@ -279,9 +275,8 @@ namespace UltimateXR.Editor.Avatar
                         if (GUILayout.Button(ContentFix, GUILayout.Width(FixButtonWidth)))
                         {
                             GameObject cameraController = new GameObject("Camera Controller");
-                            cameraController.transform.position = camera.transform.position;
-                            cameraController.transform.rotation = camera.transform.rotation;
-                            cameraController.transform.parent   = avatar.transform;
+                            cameraController.transform.SetPositionAndRotation(camera.transform.position, camera.transform.rotation);
+                            cameraController.transform.parent = avatar.transform;
                             cameraController.transform.SetAsFirstSibling();
                             Undo.RegisterCreatedObjectUndo(cameraController, "Create Camera Controller");
                             Undo.SetTransformParent(camera.transform, cameraController.transform, "Re-parent Camera");

@@ -101,7 +101,7 @@ namespace UltimateXR.Editor.Avatar
 
             // Select object variation
 
-            if (_objectVariationNames.Any())
+            if (_objectVariationNames.Count > 0)
             {
                 EditorGUI.BeginChangeCheck();
                 int handIndex = EditorGUILayout.Popup(ContentObjectVariationName, _objectVariationNames.IndexOf(_propertyObjectVariationName.stringValue), UxrEditorUtils.ToGUIContentArray(_objectVariationNames));
@@ -117,7 +117,7 @@ namespace UltimateXR.Editor.Avatar
 
             // Select material variation
 
-            if (_materialVariationNames.Any())
+            if (_materialVariationNames.Count > 0)
             {
                 EditorGUI.BeginChangeCheck();
                 int materialIndex = EditorGUILayout.Popup(ContentMaterialVariationName, _materialVariationNames.IndexOf(_propertyMaterialVariationName.stringValue), UxrEditorUtils.ToGUIContentArray(_materialVariationNames));
@@ -130,7 +130,7 @@ namespace UltimateXR.Editor.Avatar
 
             // Select Render Pipeline variation
 
-            if (_renderPipelineVariations.Count() > 1)
+            if (_renderPipelineVariations.Count > 1)
             {
                 EditorGUI.BeginChangeCheck();
                 _propertySelectedRenderPipeline.intValue = EditorGUILayout.Popup(ContentRenderPipeline, _propertySelectedRenderPipeline.intValue, UxrEditorUtils.ToGUIContentArray(_renderPipelineVariationStrings));
@@ -479,7 +479,7 @@ namespace UltimateXR.Editor.Avatar
         {
             if (_handGizmoRoot != null)
             {
-                DestroyImmediate(_handGizmoRoot.gameObject);
+                DestroyImmediate(_handGizmoRoot);
             }
 
             _handGizmoRoot     = null;

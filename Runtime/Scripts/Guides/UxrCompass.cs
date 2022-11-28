@@ -258,8 +258,7 @@ namespace UltimateXR.Guides
                         direction = -direction;
                     }
 
-                    _compassArrowPivot.transform.position = avatarCamera.transform.position + avatarCamera.transform.forward * _distanceToCamera;
-                    _compassArrowPivot.transform.rotation = Quaternion.LookRotation(avatarCamera.transform.forward, avatarCamera.transform.TransformDirection(direction));
+                    _compassArrowPivot.transform.SetPositionAndRotation(avatarCamera.transform.position + avatarCamera.transform.forward * _distanceToCamera, Quaternion.LookRotation(avatarCamera.transform.forward, avatarCamera.transform.TransformDirection(direction)));
                 }
             }
 
@@ -355,7 +354,7 @@ namespace UltimateXR.Guides
                 if (iconScale.Key.gameObject.activeInHierarchy)
                 {
                     float distance = Vector3.Distance(iconScale.Key.transform.position, UxrAvatar.LocalAvatar.CameraPosition);
-                    iconScale.Key.transform.localScale = Vector3.Max(iconScale.Value * _iconScale, iconScale.Value * _iconScale * (distance * 0.3f));
+                    iconScale.Key.transform.localScale = Vector3.Max(iconScale.Value * _iconScale, (distance * 0.3f) * _iconScale * iconScale.Value);
                 }
             }
         }

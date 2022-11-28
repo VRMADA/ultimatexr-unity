@@ -124,9 +124,7 @@ namespace UltimateXR.Rendering.FX
 
             reflectionCamera.cullingMask = ~(1 << 4) & _reflectLayers.value;
 
-            Renderer theRenderer = GetComponent<Renderer>();
-
-            if (theRenderer != null)
+            if (TryGetComponent<Renderer>(out var theRenderer))
             {
                 foreach (Material m in theRenderer.sharedMaterials)
                 {
@@ -238,29 +236,24 @@ namespace UltimateXR.Rendering.FX
                 headsetDevice.TryGetFeatureValue(CommonUsages.rightEyePosition,  out Vector3    rightEyePos);
                 headsetDevice.TryGetFeatureValue(CommonUsages.rightEyeRotation,  out Quaternion rightEyeRot);
 
-                renderCamera.transform.position = centerEyePos;
-                renderCamera.transform.rotation = centerEyeRot;
+                renderCamera.transform.SetPositionAndRotation(centerEyePos, centerEyeRot);
 
                 if (isLeft)
                 {
-                    reflectionCamera.transform.position = leftEyePos;
-                    reflectionCamera.transform.rotation = leftEyeRot;
-                    projection                          = renderCamera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left);
+                    reflectionCamera.transform.SetPositionAndRotation(leftEyePos, leftEyeRot);
+                    projection = renderCamera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left);
                 }
                 else
                 {
-                    reflectionCamera.transform.position = rightEyePos;
-                    reflectionCamera.transform.rotation = rightEyeRot;
-                    projection                          = renderCamera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right);
+                    reflectionCamera.transform.SetPositionAndRotation(rightEyePos, rightEyeRot);
+                    projection = renderCamera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right);
                 }
 
-                renderCamera.transform.position = camPos;
-                renderCamera.transform.rotation = camRot;
+                renderCamera.transform.SetPositionAndRotation(camPos, camRot);
             }
             else
             {
-                reflectionCamera.transform.position = renderCamera.transform.position;
-                reflectionCamera.transform.rotation = renderCamera.transform.rotation;
+                reflectionCamera.transform.SetPositionAndRotation(renderCamera.transform.position, renderCamera.transform.rotation);
             }
 
             // World->ReflectionCamera matrix

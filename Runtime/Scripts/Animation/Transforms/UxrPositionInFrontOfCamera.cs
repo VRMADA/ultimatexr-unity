@@ -44,8 +44,7 @@ namespace UltimateXR.Animation.Transforms
                     }
                 }
 
-                transform.position = UxrAvatar.LocalAvatar.CameraPosition + _forward * _distance + Vector3.up * _heightOffset;
-                transform.rotation = Quaternion.LookRotation(_forward, Vector3.up) * Quaternion.Euler(_eulerAngles);
+                transform.SetPositionAndRotation(UxrAvatar.LocalAvatar.CameraPosition + _forward * _distance + Vector3.up * _heightOffset, Quaternion.LookRotation(_forward, Vector3.up) * Quaternion.Euler(_eulerAngles));
             }
         }
 

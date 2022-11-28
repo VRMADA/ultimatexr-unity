@@ -49,10 +49,9 @@ namespace UltimateXR.Locomotion
 
             // Create arc GameObject
 
-            _arcGameObject                    = new GameObject("Arc");
-            _arcGameObject.transform.position = transform.position;
-            _arcGameObject.transform.rotation = transform.rotation;
-            _arcGameObject.transform.parent   = Avatar.transform;
+            _arcGameObject = new GameObject("Arc");
+            _arcGameObject.transform.SetPositionAndRotation(transform.position, transform.rotation);
+            _arcGameObject.transform.parent = Avatar.transform;
 
             _arcMeshFilter = _arcGameObject.AddComponent<MeshFilter>();
             _arcRenderer   = _arcGameObject.AddComponent<MeshRenderer>();
@@ -275,8 +274,7 @@ namespace UltimateXR.Locomotion
             float currentLength = 0.0f;
             float totalLength   = 0.0f;
 
-            _arcGameObject.transform.position = ControllerStart;
-            _arcGameObject.transform.rotation = Quaternion.LookRotation(ControllerForward);
+            _arcGameObject.transform.SetPositionAndRotation(ControllerStart, Quaternion.LookRotation(ControllerForward));
 
             _scroll += Time.deltaTime * (isValidTeleport ? _arcScrollSpeedValid : _arcScrollSpeedInvalid);
 
@@ -286,8 +284,8 @@ namespace UltimateXR.Locomotion
 
                 Vector3 point = EvaluateArc(ControllerStart, ControllerForward, parabolicSpeed, time);
 
-                _vertices[i * 2 + 0] = _arcGameObject.transform.InverseTransformPoint(point - right * 0.5f * _arcWidth);
-                _vertices[i * 2 + 1] = _arcGameObject.transform.InverseTransformPoint(point + right * 0.5f * _arcWidth);
+                _vertices[i * 2 + 0] = _arcGameObject.transform.InverseTransformPoint(point - _arcWidth * 0.5f * right);
+                _vertices[i * 2 + 1] = _arcGameObject.transform.InverseTransformPoint(point + _arcWidth * 0.5f * right);
 
                 float pointDistance = i == 0 ? 0.0f : Vector3.Distance(previousPoint, point);
 
@@ -353,7 +351,7 @@ namespace UltimateXR.Locomotion
         /// <returns>Position in the arc corresponding to the given time value</returns>
         private Vector3 EvaluateArc(Vector3 origin, Vector3 forward, float speed, float time)
         {
-            return origin + forward * speed * time - Vector3.up * 0.5f * 9.8f * time * time;
+            return origin + speed * time * forward - 0.5f * 9.8f * time * time * Vector3.up;
         }
 
         /// <summary>

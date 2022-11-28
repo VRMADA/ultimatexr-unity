@@ -98,10 +98,9 @@ namespace UltimateXR.Animation.IK
             if (_avatarBodyRoot == null)
             {
                 Debug.LogWarning("No common avatar body root found. If there is an avatar body it will not follow the head position.");
-                _avatarBodyRoot          = new GameObject("Dummy Root").transform;
-                _avatarBodyRoot.parent   = _avatarTransform;
-                _avatarBodyRoot.position = _avatarTransform.position;
-                _avatarBodyRoot.rotation = _avatarTransform.rotation;
+                _avatarBodyRoot        = new GameObject("Dummy Root").transform;
+                _avatarBodyRoot.parent = _avatarTransform;
+                _avatarBodyRoot.SetPositionAndRotation(_avatarTransform.position, _avatarTransform.rotation);
             }
 
             // Neck
@@ -110,10 +109,9 @@ namespace UltimateXR.Animation.IK
 
             if (_avatarNeck == null)
             {
-                _avatarNeck          = new GameObject("Dummy Neck").transform;
-                _avatarNeck.position = _avatarTransform.position + _avatarTransform.up * _settings.NeckBaseHeight + _avatarTransform.forward * _settings.NeckForwardOffset;
-                _avatarNeck.rotation = _avatarTransform.rotation;
-                _avatarNeck.parent   = _avatarBodyRoot;
+                _avatarNeck        = new GameObject("Dummy Neck").transform;
+                _avatarNeck.parent = _avatarBodyRoot;
+                _avatarNeck.SetPositionAndRotation(_avatarTransform.position + _avatarTransform.up * _settings.NeckBaseHeight + _avatarTransform.forward * _settings.NeckForwardOffset, _avatarTransform.rotation);
 
                 if (avatar.AvatarRig.Head.Head != null)
                 {
@@ -130,17 +128,15 @@ namespace UltimateXR.Animation.IK
 
             // Eyes
 
-            _avatarEyes          = new GameObject("Dummy Eyes").transform;
-            _avatarEyes.parent   = _avatarHead;
-            _avatarEyes.position = _avatarTransform.position + _avatarTransform.up * _settings.EyesBaseHeight + _avatarTransform.forward * _settings.EyesForwardOffset;
-            _avatarEyes.rotation = _avatarTransform.rotation;
+            _avatarEyes        = new GameObject("Dummy Eyes").transform;
+            _avatarEyes.parent = _avatarHead;
+            _avatarEyes.SetPositionAndRotation(_avatarTransform.position + _avatarTransform.up * _settings.EyesBaseHeight + _avatarTransform.forward * _settings.EyesForwardOffset, _avatarTransform.rotation);
 
             // Avatar Forward
 
-            _avatarForward          = new GameObject("Dummy Forward").transform;
-            _avatarForward.parent   = _avatarTransform;
-            _avatarForward.position = _avatarHead.position - Vector3.up * _avatarHead.position.y;
-            _avatarForward.rotation = _avatarTransform.rotation;
+            _avatarForward        = new GameObject("Dummy Forward").transform;
+            _avatarForward.parent = _avatarTransform;
+            _avatarForward.SetPositionAndRotation(_avatarHead.position - Vector3.up * _avatarHead.position.y, _avatarTransform.rotation);
 
             _avatarBodyRoot.parent = _avatarForward;
 
@@ -214,8 +210,7 @@ namespace UltimateXR.Animation.IK
             Vector3    neckPosition    = cameraTransform.TransformPoint(_neckPosRelativeToEyes);
             Quaternion neckRotation    = cameraTransform.rotation * _neckRotRelativeToEyes;
 
-            _avatarNeck.position = neckPosition;
-            _avatarNeck.rotation = neckRotation;
+            _avatarNeck.SetPositionAndRotation(neckPosition, neckRotation);
 
             // Update avatar pivot
 
@@ -246,9 +241,7 @@ namespace UltimateXR.Animation.IK
                                                                AvatarRotationDegreesPerSecond * rotationSpeedMultiplier * _settings.BodyPivotRotationSpeed * Time.deltaTime);
 
             // Since the avatar pivot is parent of all body nodes, move the neck back to its position
-
-            _avatarNeck.position = neckPosition;
-            _avatarNeck.rotation = neckRotation;
+            _avatarNeck.SetPositionAndRotation(neckPosition, neckRotation);
 
             if (_settings.LockBodyPivot)
             {
@@ -359,8 +352,7 @@ namespace UltimateXR.Animation.IK
 
             foreach (IndependentBoneInfo boneInfo in _independentBones)
             {
-                boneInfo.Transform.rotation = boneInfo.Rotation;
-                boneInfo.Transform.position = boneInfo.Position;
+                boneInfo.Transform.SetPositionAndRotation(boneInfo.Position, boneInfo.Rotation);
             }
         }
 
@@ -456,12 +448,10 @@ namespace UltimateXR.Animation.IK
 
             foreach (IndependentBoneInfo boneInfo in _independentBones)
             {
-                boneInfo.Transform.rotation = boneInfo.Rotation;
-                boneInfo.Transform.position = boneInfo.Position;
+                boneInfo.Transform.SetPositionAndRotation(boneInfo.Position, boneInfo.Rotation);
             }
 
-            _avatarNeck.position = neckPosition;
-            _avatarNeck.rotation = neckRotation;
+            _avatarNeck.SetPositionAndRotation(neckPosition, neckRotation);
         }
 
         /// <summary>

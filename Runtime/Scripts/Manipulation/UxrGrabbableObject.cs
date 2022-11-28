@@ -1502,8 +1502,7 @@ namespace UltimateXR.Manipulation
 
             if (IsLockedInPlace)
             {
-                transform.localPosition = localPositionBeforeUpdate;
-                transform.localRotation = localRotationBeforeUpdate;
+                transform.SetLocalPositionAndRotation(localPositionBeforeUpdate, localRotationBeforeUpdate);
 
                 if (propagateEvents)
                 {
@@ -1658,16 +1657,17 @@ namespace UltimateXR.Manipulation
                 if (_constraintExitTimer > 0.0f)
                 {
                     float constraintExitT = 1.0f - _constraintExitTimer / ConstrainSeconds;
-                    transform.localPosition = Vector3.Lerp(_constraintLocalExitPos, transform.localPosition, constraintExitT);
-                    transform.localRotation = Quaternion.Lerp(_constraintLocalExitRot, transform.localRotation, constraintExitT);
+
+                    transform.SetLocalPositionAndRotation(Vector3.Lerp(_constraintLocalExitPos, transform.localPosition, constraintExitT),
+                                                          Quaternion.Lerp(_constraintLocalExitRot, transform.localRotation, constraintExitT));
                 }
             }
 
             if (UxrGrabManager.Instance.GetHandsGrabbingCount(this) == 1 && _constraintTimer <= 0.0f && _constraintExitTimer <= 0.0f && _placementTimer <= 0.0f && gripInfo.HandLockTimer <= 0.0f && gripInfo.GrabTimer <= 0.0f)
             {
                 // Only apply smoothing when grabbing with a single hand and no transitions are being executed
-                transform.localPosition = UxrInterpolator.SmoothDampPosition(localPositionBeforeUpdate, transform.localPosition, _translationResistance);
-                transform.localRotation = UxrInterpolator.SmoothDampRotation(localRotationBeforeUpdate, transform.localRotation, _rotationResistance);
+                transform.SetLocalPositionAndRotation(UxrInterpolator.SmoothDampPosition(localPositionBeforeUpdate, transform.localPosition, _translationResistance),
+                                                      UxrInterpolator.SmoothDampRotation(localRotationBeforeUpdate, transform.localRotation, _rotationResistance));
             }
 
             if (propagateEvents)

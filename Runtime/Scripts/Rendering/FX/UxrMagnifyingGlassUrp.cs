@@ -158,9 +158,7 @@ namespace UltimateXR.Rendering.FX
 
             refractionCamera.cullingMask = ~(1 << 4) & _layers.value;
 
-            Renderer theRenderer = GetComponent<Renderer>();
-
-            if (theRenderer != null)
+            if (TryGetComponent<Renderer>(out var theRenderer))
             {
                 foreach (Material m in theRenderer.sharedMaterials)
                 {
@@ -231,21 +229,18 @@ namespace UltimateXR.Rendering.FX
 
                 if (isLeft)
                 {
-                    refractionCamera.transform.position = renderCamera.transform.position - renderCamera.transform.right * ipd * 0.5f;
-                    refractionCamera.transform.rotation = renderCamera.transform.rotation;
-                    projection                          = renderCamera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left);
+                    refractionCamera.transform.SetPositionAndRotation(renderCamera.transform.position - 0.5f * ipd * renderCamera.transform.right, renderCamera.transform.rotation);
+                    projection = renderCamera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left);
                 }
                 else
                 {
-                    refractionCamera.transform.position = renderCamera.transform.position + renderCamera.transform.right * ipd * 0.5f;
-                    refractionCamera.transform.rotation = renderCamera.transform.rotation;
-                    projection                          = renderCamera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right);
+                    refractionCamera.transform.SetPositionAndRotation(renderCamera.transform.position + 0.5f * ipd * renderCamera.transform.right, renderCamera.transform.rotation);
+                    projection = renderCamera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right);
                 }
             }
             else
             {
-                refractionCamera.transform.position = renderCamera.transform.position;
-                refractionCamera.transform.rotation = renderCamera.transform.rotation;
+                refractionCamera.transform.SetPositionAndRotation(renderCamera.transform.position, renderCamera.transform.rotation);
             }
 
             refractionCamera.transform.position += renderCamera.transform.forward * _cameraForwardOffset;

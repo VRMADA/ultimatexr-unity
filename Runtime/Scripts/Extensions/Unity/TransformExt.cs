@@ -553,8 +553,7 @@ namespace UltimateXR.Extensions.Unity
         /// <param name="t">Interpolation value</param>
         public static void ApplyInterpolation(Transform source, Transform a, Transform b, float t)
         {
-            source.position = Vector3.Lerp(a.position, b.position, t);
-            source.rotation = Quaternion.Slerp(a.rotation, b.rotation, t);
+            source.SetPositionAndRotation(Vector3.Lerp(a.position, b.position, t), Quaternion.Slerp(a.rotation, b.rotation, t));
         }
 
         /// <summary>
