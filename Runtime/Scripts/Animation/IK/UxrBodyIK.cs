@@ -98,8 +98,8 @@ namespace UltimateXR.Animation.IK
             if (_avatarBodyRoot == null)
             {
                 Debug.LogWarning("No common avatar body root found. If there is an avatar body it will not follow the head position.");
-                _avatarBodyRoot          = new GameObject("Dummy Root").transform;
-                _avatarBodyRoot.parent   = _avatarTransform;
+                _avatarBodyRoot        = new GameObject("Dummy Root").transform;
+                _avatarBodyRoot.parent = _avatarTransform;
                 _avatarBodyRoot.SetPositionAndRotation(_avatarTransform.position, _avatarTransform.rotation);
             }
 
@@ -128,14 +128,14 @@ namespace UltimateXR.Animation.IK
 
             // Eyes
 
-            _avatarEyes          = new GameObject("Dummy Eyes").transform;
-            _avatarEyes.parent   = _avatarHead;
+            _avatarEyes        = new GameObject("Dummy Eyes").transform;
+            _avatarEyes.parent = _avatarHead;
             _avatarEyes.SetPositionAndRotation(_avatarTransform.position + _avatarTransform.up * _settings.EyesBaseHeight + _avatarTransform.forward * _settings.EyesForwardOffset, _avatarTransform.rotation);
 
             // Avatar Forward
 
-            _avatarForward          = new GameObject("Dummy Forward").transform;
-            _avatarForward.parent   = _avatarTransform;
+            _avatarForward        = new GameObject("Dummy Forward").transform;
+            _avatarForward.parent = _avatarTransform;
             _avatarForward.SetPositionAndRotation(_avatarHead.position - Vector3.up * _avatarHead.position.y, _avatarTransform.rotation);
 
             _avatarBodyRoot.parent = _avatarForward;

@@ -276,7 +276,7 @@ namespace UltimateXR.Editor.Avatar
                         {
                             GameObject cameraController = new GameObject("Camera Controller");
                             cameraController.transform.SetPositionAndRotation(camera.transform.position, camera.transform.rotation);
-                            cameraController.transform.parent   = avatar.transform;
+                            cameraController.transform.parent = avatar.transform;
                             cameraController.transform.SetAsFirstSibling();
                             Undo.RegisterCreatedObjectUndo(cameraController, "Create Camera Controller");
                             Undo.SetTransformParent(camera.transform, cameraController.transform, "Re-parent Camera");
