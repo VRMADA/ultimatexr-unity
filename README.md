@@ -55,7 +55,7 @@ We provide the following ways to install **UltimateXR**:
 ## Learn UltimateXR
 
 ### Installation and setup
-- [Getting Started](https://www.ultimatexr.io/guides/getting-started/)
+- [Getting Started](https://www.ultimatexr.io/guides/installation)
 
 ### Supported platforms
 - [Overview](https://www.ultimatexr.io/guides/supported-platforms)
