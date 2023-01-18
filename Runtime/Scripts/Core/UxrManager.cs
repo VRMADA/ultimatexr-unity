@@ -1218,28 +1218,21 @@ namespace UltimateXR.Core
         /// </summary>
         private void PostUpdate()
         {
-            // Update animation
-
-            OnUpdatingStage(UxrUpdateStage.Animation);
+            // Avatar bones that are tracked
+            
+            OnUpdatingStage(UxrUpdateStage.AvatarUsingTracking);
 
             foreach (UxrAvatar avatar in UxrAvatar.EnabledComponents)
             {
                 if (avatar.AvatarMode == UxrAvatarMode.Local && avatar.AvatarController is { enabled: true } avatarController)
                 {
-                    OnAvatarUpdating(avatar, new UxrAvatarUpdateEventArgs(avatar, UxrUpdateStage.Animation));
-                    ((IUxrAvatarControllerUpdater)avatarController).UpdateAvatarAnimation();
-                    OnAvatarUpdated(avatar, new UxrAvatarUpdateEventArgs(avatar, UxrUpdateStage.Animation));
-                }
-                else if (avatar.AvatarMode == UxrAvatarMode.UpdateExternally)
-                {
-                    // This makes sure that hand poses are updated 
-                    OnAvatarUpdating(avatar, new UxrAvatarUpdateEventArgs(avatar, UxrUpdateStage.Animation));
-                    avatar.UpdateHandPoseTransforms();
-                    OnAvatarUpdated(avatar, new UxrAvatarUpdateEventArgs(avatar, UxrUpdateStage.Animation));
+                    OnAvatarUpdating(avatar, new UxrAvatarUpdateEventArgs(avatar, UxrUpdateStage.AvatarUsingTracking));
+                    ((IUxrAvatarControllerUpdater)avatarController).UpdateAvatarUsingTrackingDevices();
+                    OnAvatarUpdated(avatar, new UxrAvatarUpdateEventArgs(avatar, UxrUpdateStage.AvatarUsingTracking));
                 }
             }
 
-            OnStageUpdated(UxrUpdateStage.Animation);
+            OnStageUpdated(UxrUpdateStage.AvatarUsingTracking);
 
             // Update managers
 
@@ -1264,6 +1257,29 @@ namespace UltimateXR.Core
             }
 
             OnStageUpdated(UxrUpdateStage.Manipulation);
+
+            // Update animation
+
+            OnUpdatingStage(UxrUpdateStage.Animation);
+
+            foreach (UxrAvatar avatar in UxrAvatar.EnabledComponents)
+            {
+                if (avatar.AvatarMode == UxrAvatarMode.Local && avatar.AvatarController is { enabled: true } avatarController)
+                {
+                    OnAvatarUpdating(avatar, new UxrAvatarUpdateEventArgs(avatar, UxrUpdateStage.Animation));
+                    ((IUxrAvatarControllerUpdater)avatarController).UpdateAvatarAnimation();
+                    OnAvatarUpdated(avatar, new UxrAvatarUpdateEventArgs(avatar, UxrUpdateStage.Animation));
+                }
+                else if (avatar.AvatarMode == UxrAvatarMode.UpdateExternally)
+                {
+                    // This makes sure that hand poses are updated 
+                    OnAvatarUpdating(avatar, new UxrAvatarUpdateEventArgs(avatar, UxrUpdateStage.Animation));
+                    avatar.UpdateHandPoseTransforms();
+                    OnAvatarUpdated(avatar, new UxrAvatarUpdateEventArgs(avatar, UxrUpdateStage.Animation));
+                }
+            }
+
+            OnStageUpdated(UxrUpdateStage.Animation);
 
             // Update post-process
 

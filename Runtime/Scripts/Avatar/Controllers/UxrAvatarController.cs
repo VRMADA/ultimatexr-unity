@@ -56,11 +56,9 @@ namespace UltimateXR.Avatar.Controllers
         }
 
         /// <inheritdoc />
-        void IUxrAvatarControllerUpdater.UpdateAvatarAnimation()
+        void IUxrAvatarControllerUpdater.UpdateAvatarUsingTrackingDevices()
         {
-            // Will call the protected method, which is allowed to be overriden by child classes while
-            // hiding the functionality so that it is handled by the framework in the correct order.
-            UpdateAvatarAnimation();
+            UpdateAvatarUsingTrackingDevices();
         }
 
         /// <inheritdoc />
@@ -71,6 +69,14 @@ namespace UltimateXR.Avatar.Controllers
             UpdateAvatarManipulation();
         }
 
+        /// <inheritdoc />
+        void IUxrAvatarControllerUpdater.UpdateAvatarAnimation()
+        {
+            // Will call the protected method, which is allowed to be overriden by child classes while
+            // hiding the functionality so that it is handled by the framework in the correct order.
+            UpdateAvatarAnimation();
+        }
+        
         /// <inheritdoc />
         void IUxrAvatarControllerUpdater.UpdateAvatarPostProcess()
         {
@@ -111,18 +117,18 @@ namespace UltimateXR.Avatar.Controllers
         }
 
         /// <summary>
+        ///     Executes the avatar manipulation actions based on user input.
+        /// </summary>
+        protected virtual void UpdateAvatarManipulation()
+        {
+        }
+
+        /// <summary>
         ///     Updates the animation and rig transforms for the given frame. It is performed in a later stage than
         ///     <see cref="UpdateAvatar" /> to make sure the transforms override the transforms that Unity may have updated using
         ///     built-in components such as <see cref="Animator" />.
         /// </summary>
         protected virtual void UpdateAvatarAnimation()
-        {
-        }
-
-        /// <summary>
-        ///     Executes the avatar manipulation actions based on user input.
-        /// </summary>
-        protected virtual void UpdateAvatarManipulation()
         {
         }
 

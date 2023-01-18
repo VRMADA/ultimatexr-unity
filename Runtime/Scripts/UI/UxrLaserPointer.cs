@@ -24,19 +24,33 @@ namespace UltimateXR.UI
     {
         #region Inspector Properties/Serialized Fields
 
-        [SerializeField] protected UxrHandSide        _handSide             = UxrHandSide.Left;
-        [SerializeField] protected UxrInputButtons    _clickInput           = UxrInputButtons.Trigger;
-        [SerializeField] protected UxrInputButtons    _showLaserInput       = UxrInputButtons.Joystick;
-        [SerializeField] protected UxrButtonEventType _showLaserButtonEvent = UxrButtonEventType.Touching;
-        [SerializeField] protected GameObject         _optionalEnableWhenLaserOn;
-        [SerializeField] protected bool               _useControllerForward = true;
-        [SerializeField] protected bool               _invisible;
-        [SerializeField] protected float              _rayLength              = 100.0f;
-        [SerializeField] protected float              _rayWidth               = 0.003f;
-        [SerializeField] protected Color              _rayColorInteractive    = new Color(0.0f, 1.0f, 0.0f, 0.5f);
-        [SerializeField] protected Color              _rayColorNonInteractive = new Color(1.0f, 0.0f, 0.0f, 0.5f);
-        [SerializeField] protected Material           _rayHitMaterial;
-        [SerializeField] protected float              _rayHitSize = 0.004f;
+        // General
+        
+        [SerializeField] protected UxrHandSide _handSide             = UxrHandSide.Left;
+        [SerializeField] protected bool        _useControllerForward = true;
+        
+        // Interaction
+        
+        [SerializeField] protected UxrLaserPointerTargetTypes _targetTypes                 = UxrLaserPointerTargetTypes.UI | UxrLaserPointerTargetTypes.Colliders2D | UxrLaserPointerTargetTypes.Colliders3D;
+        [SerializeField] private   QueryTriggerInteraction    _triggerCollidersInteraction = QueryTriggerInteraction.Ignore;
+        [SerializeField] private   LayerMask                  _blockingMask                = ~0;
+        
+        // Input
+        
+        [SerializeField] protected UxrInputButtons    _clickInput                = UxrInputButtons.Trigger;
+        [SerializeField] protected UxrInputButtons    _showLaserInput            = UxrInputButtons.Joystick;
+        [SerializeField] protected UxrButtonEventType _showLaserButtonEvent      = UxrButtonEventType.Touching;
+        
+        // Appearance
+        
+        [SerializeField] protected bool       _invisible                 = false;
+        [SerializeField] protected float      _rayLength                 = 100.0f;
+        [SerializeField] protected float      _rayWidth                  = 0.003f;
+        [SerializeField] protected Color      _rayColorInteractive       = new Color(0.0f, 1.0f, 0.0f, 0.5f);
+        [SerializeField] protected Color      _rayColorNonInteractive    = new Color(1.0f, 0.0f, 0.0f, 0.5f);
+        [SerializeField] protected Material   _rayHitMaterial            = null;
+        [SerializeField] protected float      _rayHitSize                = 0.004f;
+        [SerializeField] protected GameObject _optionalEnableWhenLaserOn = null;
 
         #endregion
 
@@ -45,7 +59,10 @@ namespace UltimateXR.UI
         /// <summary>
         ///     Gets whether the laser is currently enabled.
         /// </summary>
-        public bool IsLaserEnabled => _isAutoEnabled || (Avatar.ControllerInput.IsControllerEnabled(_handSide) && Avatar.ControllerInput.GetButtonsEvent(_handSide, _showLaserInput, _showLaserButtonEvent));
+        public bool IsLaserEnabled => gameObject.activeInHierarchy && enabled &&
+                                      (ForceLaserEnabled ||
+                                       IsAutoEnabled ||
+                                       (Avatar.ControllerInput.IsControllerEnabled(_handSide) && Avatar.ControllerInput.GetButtonsEvent(_handSide, ShowLaserInput, ShowLaserButtonEvent)));
 
         /// <summary>
         ///     Gets the <see cref="Transform" /> that is used to compute the direction in which the laser points. The laser will
@@ -55,7 +72,7 @@ namespace UltimateXR.UI
         {
             get
             {
-                if (_useControllerForward && !Avatar.HasDummyControllerInput)
+                if (UseControllerForward && !Avatar.HasDummyControllerInput)
                 {
                     UxrController3DModel model = Avatar.ControllerInput.GetController3DModel(_handSide);
 
@@ -82,11 +99,163 @@ namespace UltimateXR.UI
         /// <summary>
         ///     Gets the hand the laser pointer belongs to.
         /// </summary>
-        public UxrHandSide HandSide
+        public UxrHandSide HandSide => _handSide;
+
+        /// <summary>
+        ///     Gets or sets whether the laser should be forcefully enabled. This is useful when
+        ///     <see cref="UxrCanvas.AutoEnableLaserPointer" /> is used or a controller input is required to enable the laser
+        ///     pointer.
+        /// </summary>
+        public bool ForceLaserEnabled { get; set; }
+
+        /// <summary>
+        ///     Gets or sets whether the laser should ignore the <see cref="UxrCanvas.AutoEnableLaserPointer" />
+        ///     property in canvases.
+        /// </summary>
+        public bool IgnoreAutoEnable { get; set; }
+
+        /// <summary>
+        ///     Gets or sets whether to use the real controller forward instead of the component's forward.
+        /// </summary>
+        public bool UseControllerForward
         {
-            get => _handSide;
-            set => _handSide = value;
+            get => _useControllerForward;
+            set => _useControllerForward = value;
         }
+
+        /// <summary>
+        /// Gets or sets the elements the laser can interact with.
+        /// </summary>
+        public UxrLaserPointerTargetTypes TargetTypes
+        {
+            get => _targetTypes;
+            set => _targetTypes = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets how to treat collisions against trigger volumes.
+        ///     By default the laser doesn't collide against trigger volumes.
+        /// </summary>
+        public QueryTriggerInteraction TriggerCollidersInteraction
+        {
+            get => _triggerCollidersInteraction;
+            set => _triggerCollidersInteraction = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the which layers will block the laser for 3D objects.
+        /// </summary>
+        public LayerMask BlockingMask
+        {
+            get => _blockingMask;
+            set => _blockingMask = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the input button(s) required for a click.
+        /// </summary>
+        public UxrInputButtons ClickInput
+        {
+            get => _clickInput;
+            set => _clickInput = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the input button(s) required to show the laser. Use <see cref="UxrInputButtons.None" /> to have the
+        ///     laser always enabled or <see cref="UxrInputButtons.Everything" /> to have it always disabled and let
+        ///     <see cref="UxrCanvas.AutoEnableLaserPointer" /> handle the enabling/disabling.
+        /// </summary>
+        public UxrInputButtons ShowLaserInput
+        {
+            get => _showLaserInput;
+            set => _showLaserInput = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the button event type required for <see cref="ShowLaserInput" />.
+        /// </summary>
+        public UxrButtonEventType ShowLaserButtonEvent
+        {
+            get => _showLaserButtonEvent;
+            set => _showLaserButtonEvent = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets whether to use an invisible laser ray.
+        /// </summary>
+        public bool IsInvisible
+        {
+            get => _invisible;
+            set => _invisible = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the maximum laser length. This is the distance that the ray will travel if not occluded.
+        /// </summary>
+        public float MaxRayLength
+        {
+            get => _rayLength;
+            set => _rayLength = value;
+        }
+
+        /// <summary>
+        ///     Gets the current laser ray length.
+        /// </summary>
+        public float CurrentRayLength { get; private set; }
+
+        /// <summary>
+        ///     Gets or sets the laser ray width.
+        /// </summary>
+        public float RayWidth
+        {
+            get => _rayWidth;
+            set => _rayWidth = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the ray color when it's pointing to an interactive element.
+        /// </summary>
+        public Color RayColorInteractive
+        {
+            get => _rayColorInteractive;
+            set => _rayColorInteractive = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the ray color when it's not pointing to an interactive element.
+        /// </summary>
+        public Color RayColorNonInteractive
+        {
+            get => _rayColorNonInteractive;
+            set => _rayColorNonInteractive = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the size of the ray hit quad..
+        /// </summary>
+        public float RayHitSize
+        {
+            get => _rayHitSize;
+            set => _rayHitSize = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets an optional GameObject that will be enabled or disabled along with the laser.
+        /// </summary>
+        public GameObject OptionalEnableWhenLaserOn
+        {
+            get => _optionalEnableWhenLaserOn;
+            set => _optionalEnableWhenLaserOn = value;
+        }
+        
+        #endregion
+
+        #region Internal Types & Data
+
+        /// <summary>
+        ///     Gets or sets whether the laser is enabled automatically due to pointing at a UI.
+        /// </summary>
+        internal bool IsAutoEnabled { get; set; }
 
         #endregion
 
@@ -98,7 +267,7 @@ namespace UltimateXR.UI
         /// <returns>Whether the user performed a click action</returns>
         public bool IsClickedThisFrame()
         {
-            return Avatar.ControllerInput.GetButtonsEvent(_handSide, _clickInput, UxrButtonEventType.PressDown);
+            return Avatar.ControllerInput.GetButtonsEvent(_handSide, ClickInput, UxrButtonEventType.PressDown);
         }
 
         /// <summary>
@@ -107,7 +276,7 @@ namespace UltimateXR.UI
         /// <returns>Whether the user performed a press action</returns>
         public bool IsReleasedThisFrame()
         {
-            return Avatar.ControllerInput.GetButtonsEvent(_handSide, _clickInput, UxrButtonEventType.PressUp);
+            return Avatar.ControllerInput.GetButtonsEvent(_handSide, ClickInput, UxrButtonEventType.PressUp);
         }
 
         #endregion
@@ -128,36 +297,28 @@ namespace UltimateXR.UI
 
             // Set up line renderer
 
-            if (_invisible == false)
-            {
-                _lineRenderer               = gameObject.AddComponent<LineRenderer>();
-                _lineRenderer.useWorldSpace = false;
+            _lineRenderer               = gameObject.AddComponent<LineRenderer>();
+            _lineRenderer.useWorldSpace = false;
 
-                SetLineRendererMesh(_rayLength);
+            SetLineRendererMesh(MaxRayLength);
 
-                _lineRenderer.material             = new Material(ShaderExt.UnlitTransparentColor);
-                _lineRenderer.material.renderQueue = (int)RenderQueue.Overlay + 1;
-            }
+            _lineRenderer.material             = new Material(ShaderExt.UnlitTransparentColor);
+            _lineRenderer.material.renderQueue = (int)RenderQueue.Overlay + 1;
 
             // Set up raycast hit quad
 
-            if (_invisible == false)
-            {
-                _hitQuad                  = new GameObject("Laser Hit");
-                _hitQuad.transform.parent = transform;
+            _hitQuad                  = new GameObject("Laser Hit");
+            _hitQuad.transform.parent = transform;
 
-                MeshFilter laserHitMeshFilter = _hitQuad.AddComponent<MeshFilter>();
-                laserHitMeshFilter.sharedMesh = MeshExt.CreateQuad(1.0f);
+            MeshFilter laserHitMeshFilter = _hitQuad.AddComponent<MeshFilter>();
+            laserHitMeshFilter.sharedMesh = MeshExt.CreateQuad(1.0f);
 
-                _laserHitRenderer                   = _hitQuad.AddComponent<MeshRenderer>();
-                _laserHitRenderer.receiveShadows    = false;
-                _laserHitRenderer.shadowCastingMode = ShadowCastingMode.Off;
-                _laserHitRenderer.sharedMaterial    = _rayHitMaterial;
+            _laserHitRenderer                   = _hitQuad.AddComponent<MeshRenderer>();
+            _laserHitRenderer.receiveShadows    = false;
+            _laserHitRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            _laserHitRenderer.sharedMaterial    = _rayHitMaterial;
 
-                _hitQuad.SetActive(false);
-            }
-
-            _isAutoEnabled = false;
+            _hitQuad.SetActive(false);
         }
 
         /// <summary>
@@ -165,77 +326,52 @@ namespace UltimateXR.UI
         /// </summary>
         private void LateUpdate()
         {
-            _isAutoEnabled = UxrPointerInputModule.Instance && UxrPointerInputModule.Instance.CheckRaycastAutoEnable(this);
-
-            if (_optionalEnableWhenLaserOn != null)
+            if (OptionalEnableWhenLaserOn != null)
             {
-                _optionalEnableWhenLaserOn.SetActive(IsLaserEnabled);
+                OptionalEnableWhenLaserOn.SetActive(IsLaserEnabled);
             }
 
             // TODO: In order to use UxrLaserPointer for other than Unity UI, the following part should be extracted. 
 
             UxrPointerEventData laserPointerEventData = UxrPointerInputModule.Instance != null ? UxrPointerInputModule.Instance.GetPointerEventData(this) : null;
 
-            if (_lineRenderer && laserPointerEventData != null)
+            if (_lineRenderer)
             {
-                _lineRenderer.enabled        = IsLaserEnabled;
-                _lineRenderer.material.color = UxrPointerInputModule.IsInteractive(laserPointerEventData.pointerEnter) ? _rayColorInteractive : _rayColorNonInteractive;
+                _lineRenderer.enabled        = IsLaserEnabled && !IsInvisible;
+                _lineRenderer.material.color = laserPointerEventData != null && laserPointerEventData.IsInteractive ? RayColorInteractive : RayColorNonInteractive;
 
                 if (_laserHitRenderer)
                 {
+                    _laserHitRenderer.enabled        = !IsInvisible;
                     _laserHitRenderer.material.color = _lineRenderer.material.color;
                 }
             }
 
-            float currentRayLength = _rayLength;
+            CurrentRayLength = MaxRayLength;
 
-            if (laserPointerEventData != null && laserPointerEventData.pointerCurrentRaycast.isValid && IsLaserEnabled)
+            if (laserPointerEventData != null && laserPointerEventData.HasData && IsLaserEnabled)
             {
-                currentRayLength = laserPointerEventData.pointerCurrentRaycast.distance;
+                CurrentRayLength = laserPointerEventData.pointerCurrentRaycast.distance;
 
                 if (Avatar.CameraComponent && _hitQuad)
                 {
                     _hitQuad.SetActive(true);
-                    _hitQuad.transform.localPosition = Vector3.forward * currentRayLength;
+                    _hitQuad.transform.localPosition = Vector3.forward * CurrentRayLength;
                     _hitQuad.transform.LookAt(Avatar.CameraPosition);
 
                     Plane plane = new Plane(Avatar.CameraForward, Avatar.CameraPosition);
                     float dist  = plane.GetDistanceToPoint(_hitQuad.transform.position);
-                    _hitQuad.transform.localScale = _rayHitSize * Mathf.Max(2.0f, dist) * Vector3.one;
+                    _hitQuad.transform.localScale = RayHitSize * Mathf.Max(2.0f, dist) * Vector3.one;
                 }
             }
             else
             {
-                // TODO: currentRayLength should come somehow from UxrLaserPointerRaycaster.Raycast() because the actual computation
-                // with the correct blocking objects and blocking mask is there
-
-                if (IsLaserEnabled && Physics.Raycast(LaserPos, LaserDir, out RaycastHit hitInfo, currentRayLength, -1, QueryTriggerInteraction.Ignore))
-                {
-                    currentRayLength = hitInfo.distance;
-
-                    if (Avatar.CameraComponent && _hitQuad)
-                    {
-                        _hitQuad.SetActive(true);
-                        _hitQuad.transform.localPosition = Vector3.forward * currentRayLength;
-                        _hitQuad.transform.LookAt(Avatar.CameraPosition);
-
-                        Plane plane = new Plane(Avatar.CameraForward, Avatar.CameraPosition);
-                        float dist  = plane.GetDistanceToPoint(_hitQuad.transform.position);
-                        _hitQuad.transform.localScale = _rayHitSize * Mathf.Max(2.0f, dist) * Vector3.one;
-                    }
-                }
-                else
-                {
-                    if (_hitQuad)
-                    {
-                        _hitQuad.SetActive(false);
-                    }
-                }
+                _hitQuad.SetActive(false);
             }
 
             if (_lineRenderer && _lineRenderer.enabled)
             {
-                SetLineRendererMesh(currentRayLength);
+                SetLineRendererMesh(CurrentRayLength);
             }
         }
 
@@ -249,13 +385,18 @@ namespace UltimateXR.UI
         /// <param name="rayLength">New ray length</param>
         private void SetLineRendererMesh(float rayLength)
         {
-            _lineRenderer.startWidth = _rayWidth;
-            _lineRenderer.endWidth   = _rayWidth;
+            _lineRenderer.startWidth = RayWidth;
+            _lineRenderer.endWidth   = RayWidth;
+
+            float t1 = Mathf.Min(rayLength * 0.33f, GradientLength);
+            float t2 = Mathf.Max(rayLength * 0.66f, rayLength - GradientLength);
 
             Vector3[] positions =
             {
-                        new Vector3(0.0f, 0.0f, 0.0f), new Vector3(0.0f,                                                                               0.0f, rayLength > GradientLength ? GradientLength : rayLength * 0.33f),
-                        new Vector3(0.0f, 0.0f, rayLength < GradientLength * 2.0f ? rayLength * 0.66f : rayLength - GradientLength), new Vector3(0.0f, 0.0f, rayLength)
+                        new Vector3(0.0f, 0.0f, 0.0f),
+                        new Vector3(0.0f, 0.0f, t1),
+                        new Vector3(0.0f, 0.0f, t2),
+                        new Vector3(0.0f, 0.0f, rayLength)
             };
 
             for (int i = 0; i < positions.Length; ++i)
@@ -268,13 +409,17 @@ namespace UltimateXR.UI
             Gradient colorGradient = new Gradient();
             colorGradient.colorKeys = new[]
                                       {
-                                                  new GradientColorKey(Color.white, 0.0f), new GradientColorKey(Color.white,                                                                          rayLength > GradientLength ? GradientLength / rayLength : 0.33f),
-                                                  new GradientColorKey(Color.white, rayLength < GradientLength * 2.0f ? 0.66f : 1.0f - GradientLength / rayLength), new GradientColorKey(Color.white, 1.0f)
+                                                  new GradientColorKey(Color.white, 0.0f),
+                                                  new GradientColorKey(Color.white, t1 / rayLength),
+                                                  new GradientColorKey(Color.white, t2 / rayLength),
+                                                  new GradientColorKey(Color.white, 1.0f)
                                       };
             colorGradient.alphaKeys = new[]
                                       {
-                                                  new GradientAlphaKey(0.0f, 0.0f), new GradientAlphaKey(1.0f,                                                                          rayLength > GradientLength ? GradientLength / rayLength : 0.3f),
-                                                  new GradientAlphaKey(1.0f, rayLength < GradientLength * 2.0f ? 0.66f : 1.0f - GradientLength / rayLength), new GradientAlphaKey(0.0f, 1.0f)
+                                                  new GradientAlphaKey(0.0f, 0.0f),
+                                                  new GradientAlphaKey(1.0f, t1 / rayLength),
+                                                  new GradientAlphaKey(1.0f, t2 / rayLength),
+                                                  new GradientAlphaKey(0.0f, 1.0f)
                                       };
             _lineRenderer.colorGradient = colorGradient;
 

@@ -469,7 +469,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
 
                 if (GUI.Button(GetPosesMenuButtonRect(PosesMenuColumnCreate, lastY), new GUIContent("Add Pose From File...", "Creates a new pose using an external pose file")))
                 {
-                    string path = EditorUtility.OpenFilePanel("Open existing pose", CurrentFolder, "asset");
+                    string path = EditorUtility.OpenFilePanel("Open existing pose", CurrentLoadFolder, "asset");
 
                     if (!string.IsNullOrEmpty(path))
                     {
@@ -480,11 +480,20 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
 
                         if (srcHandPoseAsset == null)
                         {
-                            EditorUtility.DisplayDialog("Error", "Could not load asset " + path + " as pose.", "OK");
+                            if (!UxrEditorUtils.CanLoadUsingAssetDatabase(path))
+                            {
+                                EditorUtility.DisplayDialog("Error", "Asset must be in the current project.", "OK");
+                            }
+                            else
+                            {
+                                EditorUtility.DisplayDialog("Error", "Could not load asset " + path + " as pose.", "OK");   
+                            }
                         }
                         else
                         {
-                            path = EditorUtility.SaveFilePanel("Select pose file to save", CurrentFolder, srcHandPoseAsset.name, "asset");
+                            CurrentLoadFolder = Path.GetDirectoryName(path); 
+                                        
+                            path = EditorUtility.SaveFilePanel("Select pose file to save", CurrentSaveFolder, srcHandPoseAsset.name, "asset");
 
                             if (string.IsNullOrEmpty(path))
                             {
@@ -501,12 +510,6 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                             {
                                 string poseName = Path.GetFileNameWithoutExtension(path);
                                 bool   save     = true;
-
-                                if (GetPoseType(poseName, _avatar) != UxrHandPoseType.None)
-                                {
-                                    // Already exists
-                                    save = EditorUtility.DisplayDialog("Overwrite?", "Pose " + poseName + " already exists. Overwrite?", "Yes", "Cancel");
-                                }
 
                                 if (save)
                                 {
@@ -538,25 +541,33 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
 
                 if (GUI.Button(GetPosesMenuButtonRect(PosesMenuColumnCreate, lastY), new GUIContent("Add All Poses From Folder...", "Adds all pose files from a folder to the current avatar")))
                 {
-                    string pathSrc = EditorUtility.OpenFolderPanel("Pose Assets Source Folder", CurrentFolder, string.Empty);
+                    string pathSrc = EditorUtility.OpenFolderPanel("Pose Assets Source Folder", CurrentLoadFolder, string.Empty);
 
                     if (string.IsNullOrEmpty(pathSrc))
                     {
                     }
-                    else if (!UxrEditorUtils.PathIsInCurrentProject(pathSrc))
+                    else if (!UxrEditorUtils.CanLoadUsingAssetDatabase(pathSrc))
                     {
-                        DisplayPathNotFromThisProjectError(pathSrc);
+                        EditorUtility.DisplayDialog("Error", "Path needs to belong to the same Unity project", "OK");
                     }
                     else
                     {
                         List<UxrHandPoseAsset> handPosesToAdd = new List<UxrHandPoseAsset>();
-                        string[]               files          = UxrEditorUtils.GetHandPosePresetFiles();
+                        string[]               files          = Directory.GetFiles(pathSrc);
 
                         foreach (string file in files)
                         {
-                            if (AssetDatabase.GetMainAssetTypeAtPath(file) == typeof(UxrHandPoseAsset))
+                            if (string.IsNullOrEmpty(file) || !string.Equals(Path.GetExtension(file), ".asset", StringComparison.OrdinalIgnoreCase))
                             {
-                                handPosesToAdd.Add((UxrHandPoseAsset)AssetDatabase.LoadMainAssetAtPath(file));
+                                continue;
+                            }
+
+                            string fixedFile = UxrEditorUtils.ToHandPoseAssetPath(file);
+                            
+                            if (AssetDatabase.GetMainAssetTypeAtPath(fixedFile) == typeof(UxrHandPoseAsset))
+                            {
+                                CurrentLoadFolder = pathSrc;
+                                handPosesToAdd.Add((UxrHandPoseAsset)AssetDatabase.LoadMainAssetAtPath(fixedFile));
                             }
                         }
 
@@ -566,7 +577,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                         }
                         else
                         {
-                            string pathDst = EditorUtility.SaveFolderPanel("Pose Assets Destination Folder", CurrentFolder, string.Empty);
+                            string pathDst = EditorUtility.SaveFolderPanel("Pose Assets Destination Folder", CurrentSaveFolder, string.Empty);
 
                             if (string.IsNullOrEmpty(pathDst))
                             {
@@ -1922,7 +1933,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
         {
             if (string.IsNullOrEmpty(path))
             {
-                path = EditorUtility.SaveFilePanel("Create new pose", CurrentFolder, GetUniquePoseName(avatar), "asset");
+                path = EditorUtility.SaveFilePanel("Create new pose", CurrentSaveFolder, GetUniquePoseName(avatar), "asset");
             }
 
             if (!string.IsNullOrEmpty(path))
@@ -1946,7 +1957,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                 UxrAvatar parentPrefab = avatar.GetParentPrefab(poseName);
 
                 if (parentPrefab && !EditorUtility.DisplayDialog("Use new pose?",
-                                                                 $"A pose with the name {poseName} is already present in parent prefab {parentPrefab.name}. The new pose will not delete the old one, but will hide it when using this avatar prefab ({avatar.GetAvatarPrefab().name}).",
+                                                                 $"A pose with the name {poseName} is already present in parent prefab {parentPrefab.name}. The new pose will not delete the old one, but will override it when using this avatar prefab ({avatar.GetAvatarPrefab().name}).",
                                                                  "Yes",
                                                                  "Cancel"))
                 {
@@ -1973,7 +1984,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                 string file = UxrEditorUtils.GetProjectRelativePath(path);
                 AssetDatabase.CreateAsset(handPose, file);
 
-                s_currentFolder = Path.GetDirectoryName(file);
+                CurrentSaveFolder = Path.GetDirectoryName(file);
 
                 SerializedObject serializedObject = new SerializedObject(avatar.GetAvatarPrefab());
                 serializedObject.Update();
@@ -2025,7 +2036,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
         /// <param name="loadRight">Overwrite current right hand?</param>
         private void PromptLoadExternalPose(bool loadLeft, bool loadRight)
         {
-            string path = EditorUtility.OpenFilePanel("Open existing pose", CurrentFolder, "asset");
+            string path = EditorUtility.OpenFilePanel("Open existing pose", CurrentLoadFolder, "asset");
 
             if (!string.IsNullOrEmpty(path))
             {
@@ -2037,7 +2048,14 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
 
                 if (externalPose == null)
                 {
-                    EditorUtility.DisplayDialog("Error", "Could not load asset " + path + " as pose.", "OK");
+                    if (!UxrEditorUtils.CanLoadUsingAssetDatabase(path))
+                    {
+                        EditorUtility.DisplayDialog("Error", "Asset must be in the current project.", "OK");
+                    }
+                    else
+                    {
+                        EditorUtility.DisplayDialog("Error", "Could not load asset " + path + " as pose.", "OK");
+                    }
                 }
                 else
                 {
@@ -2063,6 +2081,8 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                         SetPoseFromAsset(_avatar, externalPose, _currentHandPose, loadLeft, loadRight);
                         AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(_currentHandPose));
                         AssetDatabase.SaveAssets();
+                        
+                        CurrentLoadFolder = Path.GetDirectoryName(path);
                     }
                 }
             }
@@ -2150,7 +2170,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
         {
             bool tryFindDefault = GetAvatarPoseNames(avatar).Count == 0;
 
-            string path = EditorUtility.SaveFolderPanel("Pose Assets Destination Folder", CurrentFolder, string.Empty);
+            string path = EditorUtility.SaveFolderPanel("Pose Assets Destination Folder", CurrentSaveFolder, string.Empty);
 
             if (string.IsNullOrEmpty(path))
             {
@@ -2742,21 +2762,53 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
         // Internal properties
 
         /// <summary>
-        ///     Gets the folder to show then opening file/folder dialogs.
+        ///     Gets or sets the folder to show for open file/folder dialogs.
         /// </summary>
-        private string CurrentFolder
+        private string CurrentLoadFolder
         {
             get
             {
-                if (string.IsNullOrEmpty(s_currentFolder))
+                string defaultPath = "Assets/";
+                
+                if (string.IsNullOrEmpty(s_currentLoadFolder))
                 {
-                    return string.Empty;
+                    return defaultPath;
+                }
+                
+#if ULTIMATEXR_PACKAGE
+                if (s_currentLoadFolder.IsSubDirectoryOf(UxrEditorUtils.FullInstallationPath))
+                {
+                    return Path.GetFullPath(s_currentLoadFolder);;
+                }
+#endif
+
+                return s_currentLoadFolder + "/";
+            }
+            set
+            {
+                s_currentLoadFolder = value;
+            }
+        }
+
+        /// <summary>
+        ///     Gets or sets the folder to show for save file/folder dialogs.
+        /// </summary>
+        private string CurrentSaveFolder
+        {
+            get
+            {
+                string defaultPath = "Assets/";
+                
+                if (string.IsNullOrEmpty(s_currentSaveFolder))
+                {
+                    return defaultPath;
                 }
 
-                string folder = s_currentFolder + "/";
-                folder = folder.Substring("Assets/".Length);
-
-                return folder;
+                return s_currentSaveFolder + "/";
+            }
+            set
+            {
+                s_currentSaveFolder = value;
             }
         }
 
@@ -2812,7 +2864,8 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
 
         private static UxrHandPoseEditorWindow s_handPoseEditorWindow;
         private static int                     s_openWindowCount;
-        private static string                  s_currentFolder;
+        private static string                  s_currentLoadFolder;
+        private static string                  s_currentSaveFolder;
 
         private IReadOnlyList<string> _currentPoseNames;
 

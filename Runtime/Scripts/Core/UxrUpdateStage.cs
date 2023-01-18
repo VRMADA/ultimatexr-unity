@@ -14,15 +14,15 @@ namespace UltimateXR.Core
     public enum UxrUpdateStage
     {
         /// <summary>
-        ///     Stage where Avatars update their internal state, input, tracking and locomotion (root avatar
+        ///     Stage where avatars update their internal state, input, tracking and locomotion (root avatar
         ///     <see cref="Transform" />).
         /// </summary>
         Update,
 
         /// <summary>
-        ///     Stage where avatars update the different <see cref="Transform" /> components for hand animation and poses.
+        ///     Stage where avatars update bones that are tracked using tracking devices.
         /// </summary>
-        Animation,
+        AvatarUsingTracking,
 
         /// <summary>
         ///     Stage where the <see cref="UxrGrabManager" /> updates grabbable objects and avatar hand position/orientation
@@ -30,6 +30,11 @@ namespace UltimateXR.Core
         /// </summary>
         Manipulation,
 
+        /// <summary>
+        ///     Stage where avatars update the different <see cref="Transform" /> components for hand animation and poses.
+        /// </summary>
+        Animation,
+        
         /// <summary>
         ///     Post-processing stage where post-processing such as Inverse Kinematics are applied.
         /// </summary>

@@ -103,6 +103,18 @@ namespace UltimateXR.Editor.Avatar
             else
             {
                 UxrEditorUtils.GetPrefab(avatar.gameObject, out prefab);
+                
+                PrefabStage prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+
+                if (prefabStage == null || prefabStage.prefabContentsRoot != avatar.gameObject)
+                {
+                    // Not open in prefab window.
+                    // Fix for avatar prefabs nested in another higher-level prefab
+                    while (prefab != null && prefab.gameObject.transform.parent != null)
+                    {
+                        UxrEditorUtils.GetPrefab(prefab.gameObject, out prefab);
+                    }
+                }
             }
 
             if (prefab != null)
@@ -136,6 +148,12 @@ namespace UltimateXR.Editor.Avatar
                     propertyParentPrefab.objectReferenceValue = parentPrefab;
                     targetAvatarPrefabObject.ApplyModifiedProperties();
                     AssetDatabase.SaveAssets();
+                }
+
+                // Force instances getting parent prefab from their source prefab
+                if (prefab != null && avatar.gameObject != prefab && propertyParentPrefab != null)
+                {
+                    _propertyParentPrefab.prefabOverride = false;
                 }
 
                 if (targetAvatarPrefabObject == null && (_propertyPrefabGuid.stringValue != string.Empty || _propertyParentPrefab.objectReferenceValue != null))
@@ -208,8 +226,18 @@ namespace UltimateXR.Editor.Avatar
                             {
                                 Selection.activeGameObject = newInstance.gameObject;
                                 avatar                     = newInstance.GetComponent<UxrAvatar>();
+                                avatar.name                = prefab.name;
                             }
 
+                            // If in prefab stage, save
+                            PrefabStage prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+
+                            if (prefabStage != null && avatar.transform.parent != null)
+                            {
+                                // @TODO: Should save in innermost parent prefab, but currently the only way I found to force a save is using MarkSceneDirty
+                                EditorSceneManager.MarkSceneDirty(prefabStage.scene);
+                            }
+                            
                             return;
                         }
                     }

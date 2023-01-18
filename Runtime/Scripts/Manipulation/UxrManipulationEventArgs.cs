@@ -100,37 +100,37 @@ namespace UltimateXR.Manipulation
 
         /// <summary>
         ///     Gets the grabbable object related to the event. Can be null if the event doesn't use this property. Check the event
-        ///     documentation for use of this property.
+        ///     documentation to see how the property is used.
         /// </summary>
         public UxrGrabbableObject GrabbableObject { get; }
 
         /// <summary>
         ///     Gets the grabbable object anchor related to the event. Can be null if the event doesn't use this property. Check
-        ///     the event documentation for use of this property.
+        ///     the event documentation to see how the property is used.
         /// </summary>
         public UxrGrabbableObjectAnchor GrabbableAnchor { get; }
 
         /// <summary>
         ///     Gets the grabber related to the event. Can be null if the event doesn't use this property. Check the event
-        ///     documentation for use of this property.
+        ///     documentation to see how the property is used.
         /// </summary>
         public UxrGrabber Grabber { get; }
 
         /// <summary>
         ///     Gets the grabbable object's grab point index related to the event. Can be meaningless if the event doesn't use this
-        ///     property. Check the event documentation for use of this property.
+        ///     property. Check the event documentation to see how the property is used.
         /// </summary>
         public int GrabPointIndex { get; }
 
         /// <summary>
         ///     Gets whether the manipulation used more than one hand. Can be meaningless if the event doesn't use this property.
-        ///     Check the event documentation for use of this property.
+        ///     Check the event documentation to see how the property is used.
         /// </summary>
         public bool IsMultiHands { get; }
 
         /// <summary>
         ///     Gets whether the event was the result of passing the object from one hand to the other. Can be meaningless if the
-        ///     event doesn't use this property. Check the event documentation for use of this property.
+        ///     event doesn't use this property. Check the event documentation to see how the property is used.
         /// </summary>
         public bool IsSwitchHands { get; }
 

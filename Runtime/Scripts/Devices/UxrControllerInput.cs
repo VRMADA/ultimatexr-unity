@@ -50,22 +50,22 @@ namespace UltimateXR.Devices
         /// <summary>
         ///     Event called after any controller button state changed.
         /// </summary>
-        public event EventHandler<UxrInputButtonEventArgs> GlobalButtonStateChanged;
+        public static event EventHandler<UxrInputButtonEventArgs> GlobalButtonStateChanged;
 
         /// <summary>
         ///     Event called after any <see cref="UxrInput1D" /> element changed.
         /// </summary>
-        public event EventHandler<UxrInput1DEventArgs> GlobalInput1DChanged;
+        public static event EventHandler<UxrInput1DEventArgs> GlobalInput1DChanged;
 
         /// <summary>
         ///     Event called after any <see cref="UxrInput2D" /> element changed.
         /// </summary>
-        public event EventHandler<UxrInput2DEventArgs> GlobalInput2DChanged;
+        public static event EventHandler<UxrInput2DEventArgs> GlobalInput2DChanged;
 
         /// <summary>
         ///     Event called right before any haptic feedback was requested.
         /// </summary>
-        public event EventHandler<UxrControllerHapticEventArgs> GlobalHapticRequesting;
+        public static event EventHandler<UxrControllerHapticEventArgs> GlobalHapticRequesting;
 
         /// <summary>
         ///     Gets the current input component, which is the enabled input component belonging to the local avatar.
@@ -186,18 +186,6 @@ namespace UltimateXR.Devices
         }
 
         /// <inheritdoc />
-        public bool GetIgnoreControllerInput(UxrHandSide handSide)
-        {
-            return _ignoreControllerInput[handSide];
-        }
-
-        /// <inheritdoc />
-        public void SetIgnoreControllerInput(UxrHandSide handSide, bool ignore)
-        {
-            _ignoreControllerInput[handSide] = ignore;
-        }
-
-        /// <inheritdoc />
         public uint GetButtonTouchFlags(UxrHandSide handSide, bool getIgnoredInput = false)
         {
             if (ShouldIgnoreInput(handSide, getIgnoredInput))
@@ -304,11 +292,11 @@ namespace UltimateXR.Devices
         {
             uint touchFlagsLastFrame = GetButtonTouchFlagsLastFrame(handSide, getIgnoredInput);
             uint touchFlags          = GetButtonTouchFlags(handSide, getIgnoredInput);
-            
+
             foreach (UxrInputButtons button in buttons.GetFlags())
             {
                 uint buttonFlag = (uint)button;
-                
+
                 if ((touchFlagsLastFrame & buttonFlag) == 0 && (touchFlags & buttonFlag) == buttonFlag)
                 {
                     return true;
@@ -385,7 +373,7 @@ namespace UltimateXR.Devices
             foreach (UxrInputButtons button in buttons.GetFlags())
             {
                 uint buttonFlag = (uint)button;
-                
+
                 if ((pressFlagsLastFrame & buttonFlag) == 0 && (pressFlags & buttonFlag) == buttonFlag)
                 {
                     return true;
@@ -606,6 +594,32 @@ namespace UltimateXR.Devices
         #endregion
 
         #region Public Methods
+
+        /// <summary>
+        ///     Gets whether the given controller input should be ignored.
+        /// </summary>
+        /// <param name="handSide">
+        ///     Which controller to check. In <see cref="UxrControllerSetupType.Single" /> devices where
+        ///     <see cref="IsHandednessSupported" /> is false, such as in gamepads, both hands will address the single device.
+        /// </param>
+        /// <returns>True if the given input should be ignored</returns>
+        public static bool GetIgnoreControllerInput(UxrHandSide handSide)
+        {
+            return s_ignoreControllerInput[handSide];
+        }
+
+        /// <summary>
+        ///     Sets whether the given controller input should be ignored.
+        /// </summary>
+        /// <param name="handSide">
+        ///     Which controller to change. In <see cref="UxrControllerSetupType.Single" /> devices where
+        ///     <see cref="IsHandednessSupported" /> is false, such as in gamepads, both hands will address the single device.
+        /// </param>
+        /// <param name="ignore">Boolean telling whether to ignore the given controller input</param>
+        public static void SetIgnoreControllerInput(UxrHandSide handSide, bool ignore)
+        {
+            s_ignoreControllerInput[handSide] = ignore;
+        }
 
         /// <summary>
         ///     Gets the controller button (<see cref="UxrInputButtons" />) enum value given a controller element (
@@ -865,14 +879,6 @@ namespace UltimateXR.Devices
                     _controllers2DResetRight.Add(input2D, true);
                 }
             }
-
-            // These will tell when user input of the given hand needs to be ignored. Input buttons will still be updated but
-            // user should ignore them.
-            _ignoreControllerInput = new Dictionary<UxrHandSide, bool>
-                                     {
-                                                 { UxrHandSide.Left, false },
-                                                 { UxrHandSide.Right, false }
-                                     };
         }
 
         /// <summary>
@@ -1500,6 +1506,12 @@ namespace UltimateXR.Devices
 
         #region Private Types & Data
 
+        private static readonly Dictionary<UxrHandSide, bool> s_ignoreControllerInput = new Dictionary<UxrHandSide, bool>
+                                                                                        {
+                                                                                                    { UxrHandSide.Left, false },
+                                                                                                    { UxrHandSide.Right, false }
+                                                                                        };
+
         private readonly Dictionary<UxrInput1D, bool> _controllers1DResetLeft  = new Dictionary<UxrInput1D, bool>();
         private readonly Dictionary<UxrInput1D, bool> _controllers1DResetRight = new Dictionary<UxrInput1D, bool>();
         private readonly Dictionary<UxrInput2D, bool> _controllers2DResetLeft  = new Dictionary<UxrInput2D, bool>();
@@ -1514,8 +1526,6 @@ namespace UltimateXR.Devices
         private uint _buttonPressFlagsLeft;
         private uint _buttonTouchFlagsRight;
         private uint _buttonPressFlagsRight;
-
-        private Dictionary<UxrHandSide, bool> _ignoreControllerInput = new Dictionary<UxrHandSide, bool>();
 
         #endregion
     }

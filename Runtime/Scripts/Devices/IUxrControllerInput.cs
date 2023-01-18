@@ -176,26 +176,6 @@ namespace UltimateXR.Devices
         UxrControllerInputCapabilities GetControllerCapabilities(UxrHandSide handSide);
 
         /// <summary>
-        ///     Gets whether the given controller input should be ignored.
-        /// </summary>
-        /// <param name="handSide">
-        ///     Which controller to check. In <see cref="UxrControllerSetupType.Single" /> devices where
-        ///     <see cref="IsHandednessSupported" /> is false, such as in gamepads, both hands will address the single device.
-        /// </param>
-        /// <returns>True if the given input should be ignored</returns>
-        bool GetIgnoreControllerInput(UxrHandSide handSide);
-
-        /// <summary>
-        ///     Sets whether the given controller input should be ignored.
-        /// </summary>
-        /// <param name="handSide">
-        ///     Which controller to change. In <see cref="UxrControllerSetupType.Single" /> devices where
-        ///     <see cref="IsHandednessSupported" /> is false, such as in gamepads, both hands will address the single device.
-        /// </param>
-        /// <param name="ignore">Boolean telling whether to ignore the given controller input</param>
-        void SetIgnoreControllerInput(UxrHandSide handSide, bool ignore);
-
-        /// <summary>
         ///     Gets the state of an analog controller input element.
         /// </summary>
         /// <param name="handSide">

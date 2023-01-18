@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="UxrOculusTouchSteamVRInput.cs" company="VRMADA">
+// <copyright file="UxrOculusTouchRiftInputSteamVR.cs" company="VRMADA">
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
@@ -12,7 +12,7 @@ namespace UltimateXR.Devices.Integrations.Oculus
     /// <summary>
     ///     Oculus Touch controllers input using SteamVR.
     /// </summary>
-    public class UxrOculusTouchSteamVRInput : UxrSteamVRControllerInput
+    public class UxrOculusTouchRiftInputSteamVR : UxrSteamVRControllerInput
     {
         #region Public Overrides UxrSteamVRControllerInput
 
@@ -21,12 +21,9 @@ namespace UltimateXR.Devices.Integrations.Oculus
         {
             get
             {
-                yield return ControllerOculusTouchNameLeft;
-                yield return ControllerOculusTouchNameRight;
-                yield return ControllerOculusTouchQuestNameLeft;
-                yield return ControllerOculusTouchQuestNameRight;
-                yield return ControllerOculusTouchQuest2NameLeft;
-                yield return ControllerOculusTouchQuest2NameRight;
+                yield return "Oculus Rift CV1 (Left Controller)";
+                yield return "Oculus Rift CV1 (Right Controller)";
+
             }
         }
 
@@ -63,17 +60,6 @@ namespace UltimateXR.Devices.Integrations.Oculus
         {
             return UxrControllerInputCapabilities.HapticImpulses;
         }
-
-        #endregion
-
-        #region Private Types & Data
-
-        private const string ControllerOculusTouchNameLeft        = "oculus_touch_controller_left";
-        private const string ControllerOculusTouchNameRight       = "oculus_touch_controller_right";
-        private const string ControllerOculusTouchQuestNameLeft   = "oculus_quest_controller_left";
-        private const string ControllerOculusTouchQuestNameRight  = "oculus_quest_controller_right";
-        private const string ControllerOculusTouchQuest2NameLeft  = "oculus_quest2_controller_left";
-        private const string ControllerOculusTouchQuest2NameRight = "oculus_quest2_controller_right";
 
         #endregion
     }

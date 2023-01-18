@@ -34,9 +34,9 @@ namespace UltimateXR.UI
                 _crosshair.GetComponentsInChildren<Collider>().ForEach(c => c.enabled = false);
             }
 
-            _clickInput     = UxrInputButtons.None;
-            _showLaserInput = UxrInputButtons.None;
-            _invisible      = true;
+            ClickInput     = UxrInputButtons.None;
+            ShowLaserInput = UxrInputButtons.None;
+            IsInvisible    = true;
 
             // At the end so that the overriden parameters initialize the UxrLaserPointer component correctly.
             base.Awake();

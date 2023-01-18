@@ -4,6 +4,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using UltimateXR.Core.Components;
+using UnityEngine;
 
 namespace UltimateXR.Manipulation
 {
@@ -14,5 +15,21 @@ namespace UltimateXR.Manipulation
     /// </summary>
     public class UxrGrabbableObjectSnapTransform : UxrComponent
     {
+        #region Unity
+
+        /// <summary>
+        ///     Makes sure to hide the GameObject initially during play mode when working from the editor.
+        /// </summary>
+        protected override void Awake()
+        {
+            base.Awake();
+
+            if (Application.isEditor && Application.isPlaying)
+            {
+                gameObject.SetActive(false);
+            }
+        }
+
+        #endregion
     }
 }

@@ -170,6 +170,7 @@ namespace UltimateXR.Devices.Integrations.SteamVR
             if (enabled)
             {
                 // Listen to device connected events
+                SteamVR_Events.DeviceConnected.Remove(OnDeviceConnected);
                 SteamVR_Events.DeviceConnected.Listen(OnDeviceConnected);
             }
 

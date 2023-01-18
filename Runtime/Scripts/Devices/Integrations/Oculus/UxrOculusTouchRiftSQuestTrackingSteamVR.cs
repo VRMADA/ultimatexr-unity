@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="UxrOculusTouchSteamVRTracking.cs" company="VRMADA">
+// <copyright file="UxrOculusTouchRiftSQuestTrackingSteamVR.cs" company="VRMADA">
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
@@ -11,12 +11,12 @@ namespace UltimateXR.Devices.Integrations.Oculus
     /// <summary>
     ///     Tracking for Oculus Touch controllers using SteamVR SDK.
     /// </summary>
-    public class UxrOculusTouchSteamVRTracking : UxrSteamVRControllerTracking
+    public class UxrOculusTouchRiftSQuestTrackingSteamVR : UxrSteamVRControllerTracking
     {
         #region Public Overrides UxrControllerTracking
 
         /// <inheritdoc />
-        public override Type RelatedControllerInputType => typeof(UxrOculusTouchSteamVRInput);
+        public override Type RelatedControllerInputType => typeof(UxrOculusTouchRiftSQuestInputSteamVR);
 
         #endregion
     }

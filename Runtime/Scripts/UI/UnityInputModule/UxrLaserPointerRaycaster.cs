@@ -4,6 +4,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
+using UltimateXR.Core;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -37,13 +38,15 @@ namespace UltimateXR.UI.UnityInputModule
             {
                 return;
             }
+            
+            UxrPointerEventData pointerEventData = eventData as UxrPointerEventData;
 
             // Raycast against the canvas, gather all results and append to the list
 
             _raycastResults.Clear();
 
             var ray = new Ray(eventData.pointerCurrentRaycast.worldPosition, eventData.pointerCurrentRaycast.worldNormal);
-            Raycast(_canvas, eventCamera, ray, ref _raycastResults, ref resultAppendList, out float _);
+            Raycast(_canvas, pointerEventData?.LaserPointer, eventCamera, ray, ref _raycastResults, ref resultAppendList, out float _);
 
             // Assign correct indices and get closest raycast
 
@@ -80,12 +83,13 @@ namespace UltimateXR.UI.UnityInputModule
         ///     Performs a raycast to check which elements in a canvas were potentially interacted with.
         /// </summary>
         /// <param name="canvas">Canvas to check</param>
+        /// <param name="laserPointer">Source laser pointer or null if it could not be retrieved</param>
         /// <param name="cam">Camera from which to perform the checks</param>
         /// <param name="ray">Ray to use for intersection detection</param>
         /// <param name="results">Returns the list of results sorted by increasing distance</param>
         /// <param name="resultAppendList">Returns a list where the results have been appended to the existing content</param>
         /// <param name="occluderDistance">Returns the occluder distance</param>
-        private void Raycast(Canvas canvas, Camera cam, Ray ray, ref List<RaycastResult> results, ref List<RaycastResult> resultAppendList, out float occluderDistance)
+        private void Raycast(Canvas canvas, UxrLaserPointer laserPointer, Camera cam, Ray ray, ref List<RaycastResult> results, ref List<RaycastResult> resultAppendList, out float occluderDistance)
         {
             occluderDistance = -1.0f;
 
@@ -94,7 +98,10 @@ namespace UltimateXR.UI.UnityInputModule
                 return;
             }
 
-            float hitDistance = float.MaxValue;
+            float      hitDistance = float.MaxValue;
+            GameObject hitObject   = null;
+            Vector3    hitPosition = Vector3.zero;
+            int        hitDepth    = 0;
 
             // Check for objects in the path. Set hitDistance to the ray length to the closest hit.
 
@@ -106,73 +113,110 @@ namespace UltimateXR.UI.UnityInputModule
                                     Mathf.Max(rectTransformCanvas.localScale.x, rectTransformCanvas.localScale.y, rectTransformCanvas.localScale.z) *
                                     Mathf.Max(rectTransformCanvas.rect.width,   rectTransformCanvas.rect.height);
 
-                if (blockingObjects == BlockingObjects.ThreeD || blockingObjects == BlockingObjects.All)
+                bool blocking3D = laserPointer != null ? laserPointer.TargetTypes.HasFlag(UxrLaserPointerTargetTypes.Colliders3D) : blockingObjects.HasFlag(BlockingObjects.ThreeD);
+
+                if (blocking3D)
                 {
-                    if (Physics.Raycast(ray, out RaycastHit hit, maxDistance, m_BlockingMask, QueryTriggerInteraction.Ignore))
+                    if (Physics.Raycast(ray,
+                                        out RaycastHit hit,
+                                        maxDistance,
+                                        laserPointer != null ? laserPointer.BlockingMask : m_BlockingMask,
+                                        laserPointer != null ? laserPointer.TriggerCollidersInteraction : QueryTriggerInteraction.Ignore))
                     {
+                        hitObject        = hit.collider.gameObject;
+                        hitPosition      = hit.point;
+                        hitDepth         = UxrConstants.UI.Depth3DObject;
                         hitDistance      = hit.distance;
                         occluderDistance = hitDistance;
                     }
                 }
 
-                if (blockingObjects == BlockingObjects.TwoD || blockingObjects == BlockingObjects.All)
-                {
-                    RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, maxDistance, m_BlockingMask);
+                bool blocking2D = laserPointer != null ? laserPointer.TargetTypes.HasFlag(UxrLaserPointerTargetTypes.Colliders2D) : blockingObjects.HasFlag(BlockingObjects.TwoD);
 
-                    if (hit.collider != null)
+                if (blocking2D)
+                {
+                    RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, maxDistance, laserPointer != null ? laserPointer.BlockingMask : m_BlockingMask);
+
+                    if (hit.collider != null && hit.distance < hitDistance)
                     {
+                        hitObject        = hit.collider.gameObject;
+                        hitPosition      = hit.point;
+                        hitDepth         = UxrConstants.UI.Depth2DObject;
                         hitDistance      = hit.fraction * maxDistance;
                         occluderDistance = hitDistance;
                     }
                 }
             }
 
+            if (hitObject != null)
+            {
+                var result = new RaycastResult
+                             {
+                                         gameObject     = hitObject,
+                                         module         = this,
+                                         distance       = hitDistance,
+                                         screenPosition = cam.WorldToScreenPoint(hitPosition),
+                                         worldPosition  = hitPosition,
+                                         depth          = hitDepth,
+                                         sortingLayer   = 0,
+                                         sortingOrder   = 0,
+                             };
+
+                results.Add(result);
+            }
+
             // Iterate over all canvas graphics
 
-            IList<Graphic> listGraphics = GraphicRegistry.GetGraphicsForCanvas(canvas);
+            bool processUI = laserPointer == null || laserPointer.TargetTypes.HasFlag(UxrLaserPointerTargetTypes.UI);
 
-            for (int i = 0; i < listGraphics.Count; ++i)
+            if (processUI)
             {
-                if (listGraphics[i].depth == -1 || !listGraphics[i].raycastTarget)
+                IList<Graphic> listGraphics = GraphicRegistry.GetGraphicsForCanvas(canvas);
+
+                for (int i = 0; i < listGraphics.Count; i++)
                 {
-                    continue;
-                }
+                    Graphic graphic = listGraphics[i];
+                    if (graphic.depth == -1 || !graphic.raycastTarget)
+                    {
+                        continue;
+                    }
 
-                float distance = Vector3.Dot(listGraphics[i].transform.forward, listGraphics[i].transform.position - ray.origin) / Vector3.Dot(listGraphics[i].transform.forward, ray.direction);
+                    float distance = Vector3.Dot(graphic.transform.forward, graphic.transform.position - ray.origin) / Vector3.Dot(graphic.transform.forward, ray.direction);
 
-                if (distance < 0.0f)
-                {
-                    continue;
-                }
+                    if (distance < 0.0f)
+                    {
+                        continue;
+                    }
 
-                if (distance - HitDistanceThreshold > hitDistance)
-                {
-                    continue;
-                }
+                    if (distance - HitDistanceThreshold > hitDistance)
+                    {
+                        continue;
+                    }
 
-                Vector3 position        = ray.GetPoint(distance);
-                Vector2 pointerPosition = cam.WorldToScreenPoint(position);
+                    Vector3 position        = ray.GetPoint(distance);
+                    Vector2 pointerPosition = cam.WorldToScreenPoint(position);
 
-                if (!RectTransformUtility.RectangleContainsScreenPoint(listGraphics[i].rectTransform, pointerPosition, cam))
-                {
-                    continue;
-                }
+                    if (!RectTransformUtility.RectangleContainsScreenPoint(graphic.rectTransform, pointerPosition, cam))
+                    {
+                        continue;
+                    }
 
-                if (listGraphics[i].Raycast(pointerPosition, cam))
-                {
-                    var result = new RaycastResult
-                                 {
-                                             gameObject     = listGraphics[i].gameObject,
-                                             module         = this,
-                                             distance       = distance,
-                                             screenPosition = pointerPosition,
-                                             worldPosition  = position,
-                                             depth          = listGraphics[i].depth,
-                                             sortingLayer   = canvas.sortingLayerID,
-                                             sortingOrder   = canvas.sortingOrder,
-                                 };
+                    if (graphic.Raycast(pointerPosition, cam))
+                    {
+                        var result = new RaycastResult
+                                     {
+                                                 gameObject     = graphic.gameObject,
+                                                 module         = this,
+                                                 distance       = distance,
+                                                 screenPosition = pointerPosition,
+                                                 worldPosition  = position,
+                                                 depth          = graphic.depth,
+                                                 sortingLayer   = canvas.sortingLayerID,
+                                                 sortingOrder   = canvas.sortingOrder,
+                                     };
 
-                    results.Add(result);
+                        results.Add(result);
+                    }
                 }
             }
 

@@ -140,6 +140,11 @@ namespace UltimateXR.Avatar
         public static UxrControllerInput LocalAvatarInput => LocalAvatar != null ? LocalAvatar.ControllerInput : null;
 
         /// <summary>
+        ///     Gets the standard avatar controller component if it exists.
+        /// </summary>
+        public static UxrStandardAvatarController LocalStandardAvatarController => LocalAvatar != null ? LocalAvatar.GetCachedComponent<UxrStandardAvatarController>() : null;
+
+        /// <summary>
         ///     Gets the avatar rig.
         /// </summary>
         public UxrAvatarRig AvatarRig => _rig;
@@ -1272,7 +1277,7 @@ namespace UltimateXR.Avatar
         /// <summary>
         ///     Makes sure the rig constructor is called when the component is reset.
         /// </summary>
-        private void Reset()
+        protected override void Reset()
         {
             _rig     = new UxrAvatarRig();
             _rigInfo = new UxrAvatarRigInfo();

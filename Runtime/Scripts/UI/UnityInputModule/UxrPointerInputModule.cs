@@ -93,20 +93,14 @@ namespace UltimateXR.UI.UnityInputModule
 
             bool usedEvent = SendUpdateEventToSelectedObject();
 
-            foreach (UxrFingerTip fingerTip in UxrFingerTip.AllComponents)
+            foreach (UxrFingerTip fingerTip in UxrFingerTip.EnabledComponentsInLocalAvatar)
             {
-                if (fingerTip.Avatar.AvatarMode == UxrAvatarMode.Local)
-                {
-                    ProcessPointerEvents(GetFingerTipPointerEventData(fingerTip));
-                }
+                ProcessPointerEvents(GetFingerTipPointerEventData(fingerTip));
             }
 
-            foreach (UxrLaserPointer laserPointer in UxrLaserPointer.AllComponents)
+            foreach (UxrLaserPointer laserPointer in UxrLaserPointer.EnabledComponentsInLocalAvatar)
             {
-                if (laserPointer.Avatar.AvatarMode == UxrAvatarMode.Local)
-                {
-                    ProcessPointerEvents(GetLaserPointerEventData(laserPointer));
-                }
+                ProcessPointerEvents(GetLaserPointerEventData(laserPointer));
             }
 
             /*
@@ -161,37 +155,6 @@ namespace UltimateXR.UI.UnityInputModule
                 }
 
                 currentTransform = currentTransform.parent;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        ///     Checks whether to enable the laser renderer for a given laser pointer, because it is currently pointing to a UI
-        ///     element.
-        /// </summary>
-        /// <param name="laserPointer">Laser pointer to check</param>
-        /// <returns>Whether the laser pointer should enable the laser automatically</returns>
-        public bool CheckRaycastAutoEnable(UxrLaserPointer laserPointer)
-        {
-            if (laserPointer)
-            {
-                UxrPointerEventData pointerEventData = GetPointerEventData(laserPointer);
-
-                if (pointerEventData != null && pointerEventData.pointerCurrentRaycast.gameObject != null)
-                {
-                    UxrCanvas[] canvasVR = pointerEventData.pointerCurrentRaycast.gameObject.GetComponentsInParent<UxrCanvas>();
-
-                    foreach (UxrCanvas canvas in canvasVR)
-                    {
-                        if (canvas.CanvasInteractionType == UxrInteractionType.LaserPointers &&
-                            canvas.AutoEnableLaserPointer &&
-                            pointerEventData.pointerCurrentRaycast.distance <= canvas.AutoEnableDistance)
-                        {
-                            return true;
-                        }
-                    }
-                }
             }
 
             return false;
@@ -551,6 +514,38 @@ namespace UltimateXR.UI.UnityInputModule
         #region Private Methods
 
         /// <summary>
+        ///     Gets whether a ray-casted UI element requires auto-enabling the laser pointer.
+        /// </summary>
+        /// <param name="raycast">Raycast to check</param>
+        /// <param name="laserPointer">The laser pointer</param>
+        /// <returns>Whether the UI element will auto-enable the laser pointer</returns>
+        private bool DoesAutoEnableLaserPointer(RaycastResult raycast, UxrLaserPointer laserPointer)
+        {
+            if (laserPointer.IgnoreAutoEnable)
+            {
+                return false;
+            }
+
+            if (raycast.isValid && raycast.gameObject)
+            {
+                UxrCanvas[] canvasVR = raycast.gameObject.GetComponentsInParent<UxrCanvas>();
+
+                foreach (UxrCanvas canvas in canvasVR)
+                {
+                    if (canvas.CanvasInteractionType == UxrInteractionType.LaserPointers &&
+                        canvas.AutoEnableLaserPointer &&
+                        canvas.IsCompatible(laserPointer.HandSide) &&
+                        raycast.distance <= canvas.AutoEnableDistance)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         ///     Coroutine that sends haptic feedback when elements are being dragged.
         /// </summary>
         /// <returns>Coroutine enumerator</returns>
@@ -659,7 +654,7 @@ namespace UltimateXR.UI.UnityInputModule
         {
             if (!_fingerTipEventData.TryGetValue(fingerTip, out data) && create)
             {
-                data = new UxrPointerEventData(eventSystem, fingerTip.Avatar, fingerTip.Side);
+                data = new UxrPointerEventData(eventSystem, fingerTip);
                 _fingerTipEventData.Add(fingerTip, data);
             }
         }
@@ -674,7 +669,7 @@ namespace UltimateXR.UI.UnityInputModule
         {
             if (!_laserPointerEventData.TryGetValue(laserPointer, out data) && create)
             {
-                data = new UxrPointerEventData(eventSystem, laserPointer.Avatar, laserPointer.HandSide);
+                data = new UxrPointerEventData(eventSystem, laserPointer);
                 _laserPointerEventData.Add(laserPointer, data);
             }
         }
@@ -716,18 +711,26 @@ namespace UltimateXR.UI.UnityInputModule
 
             eventSystem.RaycastAll(data, m_RaycastResultCache);
             RaycastResult raycast = FindFirstRaycast(m_RaycastResultCache, data);
-            m_RaycastResultCache.Clear();
 
-            // Check if it is a compatible hand using our UxrCanvas
+            // Check if it is a compatible hand using our UxrCanvas.
+            // TODO: Support 2D/3D objects in the UxrFingerTipRaycaster?
 
-            if (IsHandCompatible(fingerTip.Side, raycast.gameObject))
+            data.IgnoredGameObject = null;
+            data.GameObject2D      = raycast.isValid && raycast.depth == UxrConstants.UI.Depth2DObject ? raycast.gameObject : null;
+            data.GameObject3D      = raycast.isValid && raycast.depth == UxrConstants.UI.Depth3DObject ? raycast.gameObject : null;
+            data.IsInteractive     = raycast.isValid && !data.IsNonUI && IsInteractive(raycast.gameObject);
+
+            bool isHandCompatible = IsHandCompatible(fingerTip.Side, raycast.gameObject);
+
+            if (data.IsNonUI || !isHandCompatible)
             {
-                data.pointerCurrentRaycast = raycast;
+                // If finger tip should be ignored, null the raycast object so that events still gets processed as if nothing was hit.
+                // This is mainly to process things correctly if the finger tip is invalidated at runtime.
+                data.IgnoredGameObject = raycast.gameObject;
+                raycast.gameObject     = null;
             }
-            else
-            {
-                return data;
-            }
+
+            data.pointerCurrentRaycast = raycast;
 
             // Try to find our ray casting module
 
@@ -761,7 +764,7 @@ namespace UltimateXR.UI.UnityInputModule
                 }
             }
 
-            // Whenever a finger tip gets outside we force a release.
+            // Make sure here that UI events will get called appropriately
 
             if (data.pointerCurrentRaycast.gameObject == null && data.pointerEnter != null)
             {
@@ -794,21 +797,69 @@ namespace UltimateXR.UI.UnityInputModule
             raycastResult.worldPosition = laserPointer.LaserPos;
             raycastResult.worldNormal   = laserPointer.LaserDir;
             data.pointerCurrentRaycast  = raycastResult;
+            data.IgnoredGameObject      = null;
 
             eventSystem.RaycastAll(data, m_RaycastResultCache);
             RaycastResult raycast = FindFirstRaycast(m_RaycastResultCache, data);
-            m_RaycastResultCache.Clear();
 
-            // Check if it is a compatible hand using our UxrCanvas
+            // Raycasts are performed using length to canvas. If no raycast was found, raycast using laser length first.
 
-            if (IsHandCompatible(laserPointer.HandSide, raycast.gameObject))
+            bool colliderRaycastProcessed = false;
+
+            if (!raycast.isValid)
             {
-                data.pointerCurrentRaycast = raycast;
+                if (laserPointer.TargetTypes.HasFlag(UxrLaserPointerTargetTypes.Colliders3D))
+                {
+                    if (Physics.Raycast(new Ray(laserPointer.LaserPos, laserPointer.LaserDir), out RaycastHit hit, laserPointer.MaxRayLength, laserPointer.BlockingMask, laserPointer.TriggerCollidersInteraction))
+                    {
+                        raycast.gameObject       = hit.collider.gameObject;
+                        raycast.distance         = hit.distance;
+                        data.GameObject2D        = null;
+                        data.GameObject3D        = hit.collider.gameObject;
+                        data.IsInteractive       = false;
+                        colliderRaycastProcessed = true;
+                    }
+                }
+                else if (laserPointer.TargetTypes.HasFlag(UxrLaserPointerTargetTypes.Colliders2D))
+                {
+                    RaycastHit2D hit = Physics2D.Raycast(laserPointer.LaserPos, laserPointer.LaserDir, laserPointer.MaxRayLength, laserPointer.BlockingMask);
+                    
+                    if (hit.collider)
+                    {
+                        raycast.gameObject       = hit.collider.gameObject;
+                        raycast.distance         = hit.distance;
+                        data.GameObject2D        = hit.collider.gameObject;
+                        data.GameObject3D        = null;
+                        data.IsInteractive       = false;
+                        colliderRaycastProcessed = true;
+                    }
+                }
             }
-            else
+
+            if (!colliderRaycastProcessed)
             {
-                return data;
+                // Check if the current ray-casted element is interactive
+
+                data.GameObject2D  = raycast.isValid && raycast.depth == UxrConstants.UI.Depth2DObject ? raycast.gameObject : null;
+                data.GameObject3D  = raycast.isValid && raycast.depth == UxrConstants.UI.Depth3DObject ? raycast.gameObject : null;
+                data.IsInteractive = raycast.isValid && !data.IsNonUI && IsInteractive(raycast.gameObject);
             }
+
+            laserPointer.IsAutoEnabled = !data.IsNonUI && DoesAutoEnableLaserPointer(raycast, laserPointer);
+
+            bool isHandCompatible = IsHandCompatible(laserPointer.HandSide, raycast.gameObject);
+
+            if (data.IsNonUI || !laserPointer.IsLaserEnabled || !isHandCompatible)
+            {
+                // If laser should be ignored, null the raycast object so that events still gets processed as if nothing was hit.
+                // TODO: Make sure that this is called after controller input processing during this frame
+
+                data.IgnoredGameObject = raycast.gameObject;
+                raycast.gameObject     = null;
+                data.IsInteractive     = false;
+            }
+
+            data.pointerCurrentRaycast = raycast;
 
             // Try to find our ray casting module
 
@@ -820,21 +871,18 @@ namespace UltimateXR.UI.UnityInputModule
                 data.position = raycast.screenPosition;
             }
 
-            // First force a release if the laser was disabled.
+            // Make sure here that UI events will get called appropriately
 
-            bool laserPointerValid = laserPointer.gameObject.activeInHierarchy && laserPointer.enabled;
-            data.PressedThisFrame = laserPointerValid && laserPointer.IsClickedThisFrame();
+            data.PressedThisFrame = isHandCompatible && laserPointer.IsLaserEnabled && laserPointer.IsClickedThisFrame();
 
-            if (data.pointerPress != null && !laserPointerValid)
+            if (data.pointerPress != null && !laserPointer.IsLaserEnabled)
             {
                 data.ReleasedThisFrame = true;
             }
             else
             {
-                data.ReleasedThisFrame = laserPointerValid && laserPointer.IsReleasedThisFrame();
+                data.ReleasedThisFrame = laserPointer.IsLaserEnabled && laserPointer.IsReleasedThisFrame();
             }
-
-            // Whenever a finger tip gets outside we force a release.
 
             if (data.pointerCurrentRaycast.gameObject == null && data.pointerEnter != null)
             {
@@ -855,7 +903,7 @@ namespace UltimateXR.UI.UnityInputModule
         {
             if (uiGameObject == null)
             {
-                return true;
+                return false;
             }
 
             UxrCanvas canvas = uiGameObject.GetComponentInParent<UxrCanvas>();

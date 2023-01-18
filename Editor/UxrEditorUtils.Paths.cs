@@ -27,6 +27,30 @@ namespace UltimateXR.Editor
         #region Public Methods
 
         /// <summary>
+        ///     Returns whether an asset can be loaded using <see cref="AssetDatabase.LoadAssetAtPath"/>
+        /// </summary>
+        /// <param name="path">Path to check</param>
+        /// <returns>Boolean telling whether the given asset can be loaded</returns>
+        public static bool CanLoadUsingAssetDatabase(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return false;
+            }
+
+#if ULTIMATEXR_PACKAGE
+
+            if (path.IsSubDirectoryOf(FullInstallationPath))
+            {
+                return true;
+            }
+
+#endif
+
+            return path.IsSubDirectoryOf(Application.dataPath);
+        }
+
+        /// <summary>
         ///     Returns whether the given path is in the current project.
         /// </summary>
         /// <param name="path">Path to check</param>
@@ -111,16 +135,17 @@ namespace UltimateXR.Editor
         public static string ToHandPoseAssetPath(string path)
         {
 #if ULTIMATEXR_PACKAGE
-            if (path.StartsWith(FullInstallationPath))
+            if (path.IsSubDirectoryOf(FullInstallationPath))
             {
                 path = $"Packages/{UxrConstants.PackageName}/{path.Substring(FullInstallationPath.Length)}";
             }
-#else
-            if (path.StartsWith(Application.dataPath))
+            else
+#endif
+            if (path.IsSubDirectoryOf(Application.dataPath))
             {
                 path = $"Assets{path.Substring(Application.dataPath.Length)}";
             }
- #endif
+
             return path;
         }
 

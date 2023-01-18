@@ -938,7 +938,7 @@ namespace UltimateXR.Editor.Manipulation
                 SetSelectedAvatarForGrips(newSelectedAvatar);
                 ComputeGrabPoseMeshes(SelectedAvatarForGrips, _propPreviewGrabPosesMode);
             }
-
+            
             // Get current align transforms
 
             foreach (Object targetObject in serializedObject.targetObjects)
@@ -975,7 +975,7 @@ namespace UltimateXR.Editor.Manipulation
                 {
                     ComputeGrabPoseMeshes(SelectedAvatarForGrips, _propPreviewGrabPosesMode);
                 }
-
+                
                 MarkRegenerationRequired(UxrPreviewPoseRegeneration.None);
                 serializedObject.ApplyModifiedProperties();
             }

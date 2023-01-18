@@ -7,14 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.6] - 2023-01-18
+
 ### Added
 
-- Change some common operations to favor execution time: [#12](https://github.com/VRMADA/ultimatexr-unity/pull/12).
+- Add SteamVR support for Rift/Rift-S/Quest/Quest2 headsets and controllers.
+- Add selective 2D/3D/UI GameObject interaction to UxrLaserPointer.
 - Add PrecachingStarting and PrecachingFinished events to UxrManager.
+- Add new exposed parameters to UxrLaserPointer for scripting.
+- Add new exposed parameters to UxrPointerEventData for scripting.
+- Add LocalStandardAvatarController property to UxrAvatar for quick access.
+
+### Changed
+
+- Improve UxrLaserPointer inspector.
+- Improve UxrPointerInputModule event handling.
+- Make UxrControllerInput::GetIgnoreControllerInput() and SetIgnoreControllerInput()
+  static so that they can be called at any point whether the controllers are active or not.
+- Change some common operations to favor execution time:
+  [#12](https://github.com/VRMADA/ultimatexr-unity/pull/12).
+- Make grab preview poses no longer shown by default during play mode in the editor.
+  Preview GameObjects are initially deactivated.
+- Improve hand pose editor load/save dialog boxes by caching the last load and save
+  folders separately.
+- Change .meta files in Examples\FullScene\Settings\URP so that the IDs don't collide
+  with the default URP project IDs.
 
 ### Fixed
 
+- Fix Transform.SetLocalPositionAndRotation when not available through new Unity API.
+- Fix UxrLaserPointer to not send UI events when laser is disabled.
+- Fix uninitialized hand pose when hand tracking is supported but not available.
+- Fix grabbable object position constraint not working correctly when grabbed using
+  both hands.
+- Fix UxrGrabbableInspector not storing correctly new grab point parameters right
+  after it has been created.
+- Fix Grab Toggle mode in UxrGrabbableObject not keeping the pose during the grab.
+- Fix "Enable When Hand Near" parameter in UxrGrabbableObject being enabled incorrectly
+  sometimes when another grabbed object was in closer range.
+- Fix hand grab pose incorrectly changing when moving within the range of a grabbable
+  object enabled by a non-default grab button.
+- Fix bug in hand pose editor that prevents to load external pose files when using
+  UltimateXR in package installation mode.
+- Fix bug in hand pose editor where the "Add all poses from folder" loads all hand
+  pose presets instead.
+- Fix UxrGrabManager's GrabObject, PlaceObject, ReleaseObject direct methods calls not
+  updating the avatar's grab pose.
+- Fix global events in UxrControllerInput that should be static but are not:
+  GlobalButtonStateChanged, GlobalInput1DChanged, GlobalInput2DChanged,
+  GlobalHapticRequesting.
+- Fix UxrAvatar Reset to make it override.
 - Fix UxrAvatar.LaserPointers to return correct laser pointers instead of finger tips.
+- Fix avatar parent prefab not being stored correctly when inside a nested prefab.
+- Fix UxrGrenadeWeapon pin so that the timer cannot be reset by quickly releasing
+  and grabbing the pin again.
+- Fix UxrSteamControllerInput so that OnDeviceConnected is called only once.
 
 ## [0.9.5] - 2022-11-12
 
@@ -234,7 +281,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First public release!
 
-[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.9.5...HEAD
+[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.9.6...HEAD
+[0.9.6]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.6
 [0.9.5]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.5
 [0.9.4]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.4
 [0.9.3]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.3

@@ -75,13 +75,13 @@ namespace UltimateXR.Devices.Visualization
 
             if (grabber.Side == UxrHandSide.Left)
             {
-                _ignoreInputLeft = grabber.Avatar.ControllerInput.GetIgnoreControllerInput(UxrHandSide.Left);
-                grabber.Avatar.ControllerInput.SetIgnoreControllerInput(UxrHandSide.Left, true);
+                _ignoreInputLeft = UxrControllerInput.GetIgnoreControllerInput(UxrHandSide.Left);
+                UxrControllerInput.SetIgnoreControllerInput(UxrHandSide.Left, true);
             }
             else
             {
-                _ignoreInputRight = grabber.Avatar.ControllerInput.GetIgnoreControllerInput(UxrHandSide.Right);
-                grabber.Avatar.ControllerInput.SetIgnoreControllerInput(UxrHandSide.Right, true);
+                _ignoreInputRight = UxrControllerInput.GetIgnoreControllerInput(UxrHandSide.Right);
+                UxrControllerInput.SetIgnoreControllerInput(UxrHandSide.Right, true);
             }
         }
 
@@ -213,14 +213,7 @@ namespace UltimateXR.Devices.Visualization
 
                 // Restore blocked input
 
-                if (e.Grabber.Side == UxrHandSide.Left)
-                {
-                    e.Grabber.Avatar.ControllerInput.SetIgnoreControllerInput(UxrHandSide.Left, _ignoreInputLeft);
-                }
-                else
-                {
-                    e.Grabber.Avatar.ControllerInput.SetIgnoreControllerInput(UxrHandSide.Right, _ignoreInputRight);
-                }
+                UxrControllerInput.SetIgnoreControllerInput(e.Grabber.Side, e.Grabber.Side == UxrHandSide.Left ? _ignoreInputLeft : _ignoreInputRight);
             }
         }
 

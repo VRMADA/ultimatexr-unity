@@ -26,8 +26,9 @@ namespace UltimateXR.Editor
         public static bool GetPrefab(GameObject gameObject, out GameObject prefab)
         {
             prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
+            PrefabAssetType prefabAssetType = prefab != null ? PrefabUtility.GetPrefabAssetType(prefab) : PrefabAssetType.NotAPrefab; 
 
-            return prefab && (PrefabUtility.GetPrefabAssetType(prefab) == PrefabAssetType.Regular || PrefabUtility.GetPrefabAssetType(prefab) == PrefabAssetType.Variant);
+            return prefab && (prefabAssetType == PrefabAssetType.Regular || prefabAssetType == PrefabAssetType.Variant);
         }
 
         /// <summary>

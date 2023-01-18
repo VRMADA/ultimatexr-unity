@@ -25,16 +25,21 @@ namespace UltimateXR.Avatar.Controllers
         void UpdateAvatar();
 
         /// <summary>
-        ///     Updates the animation and rig transforms for the given frame. It is performed in a later stage than
-        ///     <see cref="UpdateAvatar" /> to make sure the transforms override the transforms that Unity may have updated using
-        ///     built-in components such as <see cref="Animator" />.
+        ///     Updates the avatar using the current tracking data.
         /// </summary>
-        void UpdateAvatarAnimation();
+        void UpdateAvatarUsingTrackingDevices();
 
         /// <summary>
         ///     Updates the avatar manipulation actions based on user input.
         /// </summary>
         void UpdateAvatarManipulation();
+
+        /// <summary>
+        ///     Updates the animation and rig transforms for the given frame. It is performed in a later stage than
+        ///     <see cref="UpdateAvatar" /> to make sure the transforms override the transforms that Unity may have updated using
+        ///     built-in components such as <see cref="Animator" />.
+        /// </summary>
+        void UpdateAvatarAnimation();
 
         /// <summary>
         ///     Updates the avatar for a given frame, at the end of all stages and UltimateXR manager updates such as the

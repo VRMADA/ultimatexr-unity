@@ -237,7 +237,7 @@ namespace UltimateXR.Mechanics.Weapons
         /// <param name="e">Event parameters</param>
         private void Pin_Grabbed(object sender, UxrManipulationEventArgs e)
         {
-            if (e.IsOwnershipChanged && _activationTrigger == UxrGrenadeActivationMode.TriggerPin)
+            if (e.IsOwnershipChanged && _activationTrigger == UxrGrenadeActivationMode.TriggerPin && !IsActivated)
             {
                 _timer = _timerSeconds;
 

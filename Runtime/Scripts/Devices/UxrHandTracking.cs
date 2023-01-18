@@ -4,7 +4,6 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
-using System.Linq;
 using UltimateXR.Avatar.Rig;
 using UltimateXR.Core;
 using UltimateXR.Manipulation.HandPoses;

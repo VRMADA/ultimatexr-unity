@@ -163,10 +163,22 @@ namespace UltimateXR.Editor.Manipulation
             propertyDst.FindPropertyRelative(PropertyGrabberProximityUseDefault).boolValue        = propertySrc.FindPropertyRelative(PropertyGrabberProximityUseDefault).boolValue;
             propertyDst.FindPropertyRelative(PropertyGrabberProximityIndex).intValue              = propertySrc.FindPropertyRelative(PropertyGrabberProximityIndex).intValue;
             propertyDst.FindPropertyRelative(PropertyEnableOnHandNear).objectReferenceValue       = null;
+            
+            // Create grip pose entries
 
-            SerializedProperty gripPoseInfoProperty = GetGripPoseInfoSerializedProperty(propertyDst);
-            gripPoseInfoProperty.FindPropertyRelative(PropertyGripAlignTransformHandLeft).objectReferenceValue  = null;
-            gripPoseInfoProperty.FindPropertyRelative(PropertyGripAlignTransformHandRight).objectReferenceValue = null;
+            propertyDst.FindPropertyRelative(PropertyAvatarGripPoseEntries).arraySize = propertySrc.FindPropertyRelative(PropertyAvatarGripPoseEntries).arraySize;
+
+            for (int i = 0; i < propertySrc.FindPropertyRelative(PropertyAvatarGripPoseEntries).arraySize; ++i)
+            {
+                SerializedProperty gripPoseEntriesSrc = propertySrc.FindPropertyRelative(PropertyAvatarGripPoseEntries).GetArrayElementAtIndex(i);
+                SerializedProperty gripPoseEntriesDst = propertyDst.FindPropertyRelative(PropertyAvatarGripPoseEntries).GetArrayElementAtIndex(i);
+
+                gripPoseEntriesDst.FindPropertyRelative(PropertyGripPoseAvatarGuid).stringValue                   = gripPoseEntriesSrc.FindPropertyRelative(PropertyGripPoseAvatarGuid).stringValue;
+                gripPoseEntriesDst.FindPropertyRelative(PropertyGripHandPose).objectReferenceValue                = null;
+                gripPoseEntriesDst.FindPropertyRelative(PropertyGripPoseBlendValue).floatValue                    = 0.5f;
+                gripPoseEntriesDst.FindPropertyRelative(PropertyGripAlignTransformHandLeft).objectReferenceValue  = null;
+                gripPoseEntriesDst.FindPropertyRelative(PropertyGripAlignTransformHandRight).objectReferenceValue = null;
+            }
         }
 
         #endregion
@@ -289,13 +301,17 @@ namespace UltimateXR.Editor.Manipulation
 
                         if (handPoses.Any())
                         {
+                            EditorGUI.BeginChangeCheck();
                             UxrHandPoseAsset handPose = gripPoseInfoProperty.FindPropertyRelative(PropertyGripHandPose).objectReferenceValue as UxrHandPoseAsset;
-
-                            if (handPose == null)
+                            if (EditorGUI.EndChangeCheck())
                             {
-                                SetGrabbableObjectGrabPoseMeshesDirty(property, grabPointIndex);
+                                if (handPose == null)
+                                {
+                                    SetGrabbableObjectGrabPoseMeshesDirty(property, grabPointIndex);
+                                }
                             }
-                            else
+
+                            if (handPose != null)
                             {
                                 UxrHandPoseAsset selectedHandPoseAsset = handPoses.FirstOrDefault(p => p.name == handPose.name);
 

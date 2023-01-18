@@ -369,7 +369,10 @@ namespace UltimateXR.Avatar.Controllers
         {
             base.OnEnable();
 
-            UxrManager.AvatarMoved += UxrManager_AvatarMoved;
+            UxrManager.AvatarMoved                 += UxrManager_AvatarMoved;
+            UxrGrabManager.Instance.ObjectGrabbed  += UxrGrabManager_ObjectGrabbed;
+            UxrGrabManager.Instance.ObjectPlaced   += UxrGrabManager_ObjectPlacedOrReleased;
+            UxrGrabManager.Instance.ObjectReleased += UxrGrabManager_ObjectPlacedOrReleased;
         }
 
         /// <summary>
@@ -379,7 +382,10 @@ namespace UltimateXR.Avatar.Controllers
         {
             base.OnDisable();
 
-            UxrManager.AvatarMoved -= UxrManager_AvatarMoved;
+            UxrManager.AvatarMoved                 -= UxrManager_AvatarMoved;
+            UxrGrabManager.Instance.ObjectGrabbed  -= UxrGrabManager_ObjectGrabbed;
+            UxrGrabManager.Instance.ObjectPlaced   -= UxrGrabManager_ObjectPlacedOrReleased;
+            UxrGrabManager.Instance.ObjectReleased -= UxrGrabManager_ObjectPlacedOrReleased;
         }
 
         /// <summary>
@@ -410,6 +416,45 @@ namespace UltimateXR.Avatar.Controllers
             if (_bodyIK != null && e.Avatar == Avatar)
             {
                 _bodyIK.NotifyAvatarMoved(e);
+            }
+        }
+
+        /// <summary>
+        ///     Event handling method called when an object was grabbed.
+        ///     It's used to check if the avatar hand grab pose needs to be changed.
+        /// </summary>
+        /// <param name="sender">Event sender</param>
+        /// <param name="e">Event parameters</param>
+        private void UxrGrabManager_ObjectGrabbed(object sender, UxrManipulationEventArgs e)
+        {
+            if (e.Grabber != null && Avatar == e.Grabber.Avatar)
+            {
+                UpdateGrabPoseInfo(e.Grabber, e.GrabbableObject);
+            }
+        }
+
+        /// <summary>
+        ///     Event handling method called when an object was released.
+        ///     It's used to check if the avatar hand grab pose needs to be changed.
+        /// </summary>
+        /// <param name="sender">Event sender</param>
+        /// <param name="e">Event parameters</param>
+        private void UxrGrabManager_ObjectPlacedOrReleased(object sender, UxrManipulationEventArgs e)
+        {
+            if (e.Grabber != null && Avatar == e.Grabber.Avatar)
+            {
+                ClearGrabButtonsOverride(e.Grabber.Side);
+                GetHandInfo(e.Grabber.Side).GrabBlendValue = -1.0f;
+
+                if (e.Grabber.Side == UxrHandSide.Left)
+                {
+                    LeftHandGrabPoseNameOverride = null;
+                }
+
+                if (e.Grabber.Side == UxrHandSide.Right)
+                {
+                    RightHandGrabPoseNameOverride = null;
+                }
             }
         }
 
@@ -447,28 +492,27 @@ namespace UltimateXR.Avatar.Controllers
 
             // Check with the help of the grab manager if we need to override the grab buttons based on proximity to a grabbable object that used non-default grab buttons.
 
+            UxrInputButtons GetRequiredGrabButtonsOverride(UxrHandSide handSide)
+            {
+                if( UxrGrabManager.Instance.GetClosestGrabbableObject(Avatar, handSide, out UxrGrabbableObject grabbableObject, out int grabPoint) &&
+                    !grabbableObject.GetGrabPoint(grabPoint).UseDefaultGrabButtons &&
+                    (Avatar.ControllerInput.GetButtonsEvent(handSide, grabbableObject.GetGrabPoint(grabPoint).InputButtons, UxrButtonEventType.PressDown, ProcessIgnoredInput) ||
+                     Avatar.ControllerInput.GetButtonsEvent(handSide, handSide == UxrHandSide.Left ? LeftHandGrabButtons : RightHandGrabButtons, UxrButtonEventType.PressDown, ProcessIgnoredInput)))
+                {
+                    return grabbableObject.GetGrabPoint(grabPoint).InputButtons;
+                }
+
+                return UxrInputButtons.Everything;
+            }
+
             if (!UxrGrabManager.Instance.IsHandGrabbing(Avatar, UxrHandSide.Left))
             {
-                if (UxrGrabManager.Instance.GetClosestGrabbableObject(Avatar, UxrHandSide.Left, out UxrGrabbableObject grabbableObjectLeft, out int grabPointLeft))
-                {
-                    LeftHandGrabButtonsOverride = grabbableObjectLeft.GetGrabPoint(grabPointLeft).UseDefaultGrabButtons ? UxrInputButtons.Everything : grabbableObjectLeft.GetGrabPoint(grabPointLeft).InputButtons;
-                }
-                else
-                {
-                    LeftHandGrabButtonsOverride = UxrInputButtons.Everything;
-                }
+                LeftHandGrabButtonsOverride = GetRequiredGrabButtonsOverride(UxrHandSide.Left);
             }
 
             if (!UxrGrabManager.Instance.IsHandGrabbing(Avatar, UxrHandSide.Right))
             {
-                if (UxrGrabManager.Instance.GetClosestGrabbableObject(Avatar, UxrHandSide.Right, out UxrGrabbableObject grabbableObjectRight, out int grabPointRight))
-                {
-                    RightHandGrabButtonsOverride = grabbableObjectRight.GetGrabPoint(grabPointRight).UseDefaultGrabButtons ? UxrInputButtons.Everything : grabbableObjectRight.GetGrabPoint(grabPointRight).InputButtons;
-                }
-                else
-                {
-                    RightHandGrabButtonsOverride = UxrInputButtons.Everything;
-                }
+                RightHandGrabButtonsOverride = GetRequiredGrabButtonsOverride(UxrHandSide.Right);
             }
 
             // Update only internal vars (are we grabbing and/or pointing?) but don't execute the actions. We might change things like the grab pose name at runtime
@@ -486,16 +530,13 @@ namespace UltimateXR.Avatar.Controllers
         {
             base.UpdateAvatarAnimation();
 
-            // We update the avatar animation in a different method so that it can be called at a different stage.
-            // When the avatar has Animator components that update the bone transforms, pose animations and IK components need to be processed after.
-
-            UpdateAvatarUsingTrackingDevices();
-
-            // Now execute the actions
+            // Execute the event actions that potentially change the current poses
 
             ProcessControllerEvents(_listControllerEvents, ControllerEventTypes.All, EventProcessing.ExecuteActions);
 
             // Update animation
+            // We update the avatar animation in a different method so that it can be called at a different stage.
+            // When the avatar has Animator components that update the bone transforms, pose animations and IK components need to be processed after.
 
             Avatar.UpdateHandPoseTransforms();
         }
@@ -638,7 +679,7 @@ namespace UltimateXR.Avatar.Controllers
 
                 bool        isLeftSide = IsLeftSideAnimation(e.TypeOfAnimation);
                 UxrHandSide handSide   = isLeftSide ? UxrHandSide.Left : UxrHandSide.Right;
-                HandInfo    handInfo   = isLeftSide ? _leftHandInfo : _rightHandInfo;
+                HandInfo    handInfo   = GetHandInfo(handSide);
 
                 // Prepare additional grab vars that we may need
 
@@ -681,7 +722,7 @@ namespace UltimateXR.Avatar.Controllers
 
                             if (eventProcessing.HasFlag(EventProcessing.InternalVars))
                             {
-                                handInfo.IsPointing = !handInfo.IsGrabbing;
+                                handInfo.IsPointing = !handInfo.IsGrabbing && !UxrGrabManager.Instance.IsHandGrabbing(Avatar, handSide);
                             }
 
                             allowAnimation = handInfo.IsPointing;
@@ -690,7 +731,7 @@ namespace UltimateXR.Avatar.Controllers
                         case UxrAnimationType.LeftHandOther:
                         case UxrAnimationType.RightHandOther:
 
-                            allowAnimation = !handInfo.IsPointing && !handInfo.IsGrabbing;
+                            allowAnimation = !handInfo.IsPointing && !handInfo.IsGrabbing && !UxrGrabManager.Instance.IsHandGrabbing(Avatar, handSide);
                             break;
                     }
 
@@ -763,18 +804,32 @@ namespace UltimateXR.Avatar.Controllers
                 }
             }
 
-            // If no events were found, set the default pose
+            // If no events were found, set the default or grab pose depending on the current state
 
             if (eventProcessing.HasFlag(EventProcessing.ExecuteActions))
             {
                 if (!eventProcessedLeft)
                 {
-                    Avatar.SetCurrentHandPose(UxrHandSide.Left, LeftHandDefaultPoseNameOverride ?? Avatar.DefaultHandPoseName);
+                    if (UxrGrabManager.Instance.IsHandGrabbing(Avatar, UxrHandSide.Left))
+                    {
+                        Avatar.SetCurrentHandPose(UxrHandSide.Left, LeftHandGrabPoseNameOverride ?? LeftHandGrabPoseName, _leftHandInfo.GrabBlendValue);
+                    }
+                    else
+                    {
+                        Avatar.SetCurrentHandPose(UxrHandSide.Left, LeftHandDefaultPoseNameOverride ?? Avatar.DefaultHandPoseName);
+                    }
                 }
 
                 if (!eventProcessedRight)
                 {
-                    Avatar.SetCurrentHandPose(UxrHandSide.Right, RightHandDefaultPoseNameOverride ?? Avatar.DefaultHandPoseName);
+                    if (UxrGrabManager.Instance.IsHandGrabbing(Avatar, UxrHandSide.Right))
+                    {
+                        Avatar.SetCurrentHandPose(UxrHandSide.Right, RightHandGrabPoseNameOverride ?? RightHandGrabPoseName, _rightHandInfo.GrabBlendValue);
+                    }
+                    else
+                    {
+                        Avatar.SetCurrentHandPose(UxrHandSide.Right, RightHandDefaultPoseNameOverride ?? Avatar.DefaultHandPoseName);
+                    }
                 }
             }
         }
@@ -786,7 +841,7 @@ namespace UltimateXR.Avatar.Controllers
         /// <param name="controllerEvent">The event to process</param>
         private void ExecuteEventAction(UxrHandSide handSide, UxrAvatarControllerEvent controllerEvent)
         {
-            HandInfo handInfo = handSide == UxrHandSide.Left ? _leftHandInfo : _rightHandInfo;
+            HandInfo handInfo = GetHandInfo(handSide);
             Avatar.SetCurrentHandPose(handSide, controllerEvent.PoseName, IsGrabAnimation(controllerEvent.TypeOfAnimation) && handInfo.GrabBlendValue >= 0.0f ? handInfo.GrabBlendValue : controllerEvent.PoseBlendValue);
         }
 
@@ -797,153 +852,81 @@ namespace UltimateXR.Avatar.Controllers
         /// <param name="handSide">Which hand is being processed</param>
         private void ProcessHandManipulation(HandInfo handInfo, UxrHandSide handSide)
         {
-            bool       resetLeftGrab  = false;
-            bool       resetRightGrab = false;
-            UxrGrabber grabber        = Avatar.GetGrabber(handSide);
-
-            // First 
+            UxrGrabber grabber = Avatar.GetGrabber(handSide);
 
             if (!handInfo.WasGrabbingLastFrame && handInfo.IsGrabbing && handInfo.LetGrabAgain)
             {
+                // Pressed grab action.
                 // We get the grabber instead of the return value of TryGrab() because we may already be grabbing an object with a special UxrGrabMode.
 
                 UxrGrabManager.Instance.TryGrab(Avatar, handSide);
-
-                if (grabber && grabber.GrabbedObject)
-                {
-                    // Override animator grab name?
-
-                    string             overrideGrabPoseName = UxrGrabManager.Instance.GetOverrideGrabPoseName(grabber, grabber.GrabbedObject);
-                    UxrRuntimeHandPose overrideGrabPose     = !string.IsNullOrEmpty(overrideGrabPoseName) ? Avatar.GetRuntimeHandPose(overrideGrabPoseName) : null;
-
-                    if (overrideGrabPose != null)
-                    {
-                        if (grabber.Side == UxrHandSide.Left)
-                        {
-                            LeftHandGrabPoseNameOverride = overrideGrabPoseName;
-                        }
-                        else
-                        {
-                            RightHandGrabPoseNameOverride = overrideGrabPoseName;
-                        }
-                    }
-                    else
-                    {
-                        if (grabber.Side == UxrHandSide.Left)
-                        {
-                            LeftHandGrabPoseNameOverride = null;
-                        }
-                        else
-                        {
-                            RightHandGrabPoseNameOverride = null;
-                        }
-                    }
-
-                    // Is blend pose?
-
-                    if (overrideGrabPose != null && overrideGrabPose.PoseType == UxrHandPoseType.Blend)
-                    {
-                        if (grabber.Side == UxrHandSide.Left)
-                        {
-                            _leftHandInfo.GrabBlendValue = UxrGrabManager.Instance.GetOverrideGrabPoseBlendValue(grabber, grabber.GrabbedObject);
-                        }
-                        else
-                        {
-                            _rightHandInfo.GrabBlendValue = UxrGrabManager.Instance.GetOverrideGrabPoseBlendValue(grabber, grabber.GrabbedObject);
-                        }
-                    }
-                    else
-                    {
-                        if (grabber.Side == UxrHandSide.Left)
-                        {
-                            if (overrideGrabPose == null)
-                            {
-                                LeftHandGrabPoseNameOverride = null;
-                            }
-
-                            _leftHandInfo.GrabBlendValue = -1.0f;
-                        }
-                        else
-                        {
-                            if (overrideGrabPose == null)
-                            {
-                                RightHandGrabPoseNameOverride = null;
-                            }
-
-                            _rightHandInfo.GrabBlendValue = -1.0f;
-                        }
-                    }
-                }
-                else if (grabber)
-                {
-                    if (grabber.Side == UxrHandSide.Left)
-                    {
-                        resetLeftGrab = true;
-                    }
-                    else
-                    {
-                        resetRightGrab = true;
-                    }
-                }
             }
             else if (handInfo.WasGrabbingLastFrame && !handInfo.IsGrabbing)
             {
+                // Released grab action.
                 UxrGrabManager.Instance.TryRelease(Avatar, handSide);
+            }
+            else if (UxrGrabManager.Instance.IsHandGrabbing(Avatar, handSide) && grabber.GrabbedObject)
+            {
+                // Update pose info to refresh potential blend value mainly
+                UpdateGrabPoseInfo(grabber, grabber.GrabbedObject);
+            }
+        }
 
-                // We restore the original button grab combination in case it was overwritten for this latest grab
+        /// <summary>
+        ///     Updates the internal grab information for the given grabber and grabbed object.
+        /// </summary>
+        /// <param name="grabber">Grabber</param>
+        /// <param name="grabbableObject">Grabbed object</param>
+        private void UpdateGrabPoseInfo(UxrGrabber grabber, UxrGrabbableObject grabbableObject)
+        {
+            // Change the avatar's grab pose
 
-                if (handSide == UxrHandSide.Left)
+            string             overrideGrabPoseName = UxrGrabManager.Instance.GetOverrideGrabPoseName(grabber, grabbableObject);
+            UxrRuntimeHandPose overrideGrabPose     = !string.IsNullOrEmpty(overrideGrabPoseName) ? Avatar.GetRuntimeHandPose(overrideGrabPoseName) : null;
+
+            if (grabber.Side == UxrHandSide.Left)
+            {
+                LeftHandGrabPoseNameOverride = overrideGrabPose != null ? overrideGrabPoseName : null;
+            }
+            else
+            {
+                RightHandGrabPoseNameOverride = overrideGrabPose != null ? overrideGrabPoseName : null;
+            }
+
+            // Is it a blend pose?
+
+            if (overrideGrabPose != null && overrideGrabPose.PoseType == UxrHandPoseType.Blend)
+            {
+                if (grabber.Side == UxrHandSide.Left)
                 {
-                    resetLeftGrab = true;
+                    _leftHandInfo.GrabBlendValue = UxrGrabManager.Instance.GetOverrideGrabPoseBlendValue(grabber, grabbableObject);
                 }
                 else
                 {
-                    resetRightGrab = true;
+                    _rightHandInfo.GrabBlendValue = UxrGrabManager.Instance.GetOverrideGrabPoseBlendValue(grabber, grabbableObject);
                 }
             }
-            else if (grabber && grabber.GrabbedObject == null)
+            else
             {
-                if (handSide == UxrHandSide.Left)
+                if (grabber.Side == UxrHandSide.Left)
                 {
-                    LeftHandGrabPoseNameOverride = null;
+                    if (overrideGrabPose == null)
+                    {
+                        LeftHandGrabPoseNameOverride = null;
+                    }
+
+                    _leftHandInfo.GrabBlendValue = -1.0f;
                 }
                 else
                 {
-                    RightHandGrabPoseNameOverride = null;
-                }
-            }
-            else if (grabber && grabber.GrabbedObject != null)
-            {
-                string             overrideGrabPoseName = UxrGrabManager.Instance.GetOverrideGrabPoseName(grabber, grabber.GrabbedObject);
-                UxrRuntimeHandPose overrideGrabPose     = !string.IsNullOrEmpty(overrideGrabPoseName) ? Avatar.GetRuntimeHandPose(overrideGrabPoseName) : null;
-
-                // Keep updating blend value
-
-                if (overrideGrabPose != null && overrideGrabPose.PoseType == UxrHandPoseType.Blend)
-                {
-                    if (grabber.Side == UxrHandSide.Left)
+                    if (overrideGrabPose == null)
                     {
-                        _leftHandInfo.GrabBlendValue = UxrGrabManager.Instance.GetOverrideGrabPoseBlendValue(grabber, grabber.GrabbedObject);
+                        RightHandGrabPoseNameOverride = null;
                     }
-                    else
-                    {
-                        _rightHandInfo.GrabBlendValue = UxrGrabManager.Instance.GetOverrideGrabPoseBlendValue(grabber, grabber.GrabbedObject);
-                    }
+
+                    _rightHandInfo.GrabBlendValue = -1.0f;
                 }
-            }
-
-            if (resetLeftGrab)
-            {
-                LeftHandGrabButtonsOverride  = UxrInputButtons.Everything;
-                LeftHandGrabPoseNameOverride = null;
-                _leftHandInfo.GrabBlendValue = -1.0f;
-            }
-
-            if (resetRightGrab)
-            {
-                RightHandGrabButtonsOverride  = UxrInputButtons.Everything;
-                RightHandGrabPoseNameOverride = null;
-                _rightHandInfo.GrabBlendValue = -1.0f;
             }
         }
 
@@ -1092,6 +1075,16 @@ namespace UltimateXR.Avatar.Controllers
         }
 
         /// <summary>
+        ///     Gets the hand information given the side.
+        /// </summary>
+        /// <param name="handSide">Which side to retrieve</param>
+        /// <returns>Hand information</returns>
+        private HandInfo GetHandInfo(UxrHandSide handSide)
+        {
+            return handSide == UxrHandSide.Left ? _leftHandInfo : _rightHandInfo;
+        }
+
+        /// <summary>
         ///     Returns the current override button that requires to be pressed to execute the grab action. It will return
         ///     <see cref="UxrInputButtons.Everything" /> if no override is active.
         /// </summary>
@@ -1100,6 +1093,22 @@ namespace UltimateXR.Avatar.Controllers
         private UxrInputButtons GetGrabButtonsOverride(UxrHandSide handSide)
         {
             return handSide == UxrHandSide.Left ? LeftHandGrabButtonsOverride : RightHandGrabButtonsOverride;
+        }
+
+        /// <summary>
+        ///     Clears the current override button that requires to be pressed to execute the grab action.
+        /// </summary>
+        /// <param name="handSide">Which side to reset</param>
+        private void ClearGrabButtonsOverride(UxrHandSide handSide)
+        {
+            if (handSide == UxrHandSide.Left)
+            {
+                LeftHandGrabButtonsOverride = UxrInputButtons.Everything;
+            }
+            else
+            {
+                RightHandGrabButtonsOverride = UxrInputButtons.Everything;
+            }
         }
 
         #endregion

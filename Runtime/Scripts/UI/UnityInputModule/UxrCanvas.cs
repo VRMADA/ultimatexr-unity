@@ -162,12 +162,6 @@ namespace UltimateXR.UI.UnityInputModule
             else if (_interactionType == UxrInteractionType.LaserPointers)
             {
                 _newRaycasterLaserPointer = GetOrAddRaycaster<UxrLaserPointerRaycaster>(_oldRaycaster);
-
-                if (_newRaycasterLaserPointer.blockingObjects == GraphicRaycaster.BlockingObjects.None)
-                {
-                    // By default GraphicRaycaster has no blocking objects but in VR with laser pointers we want them
-                    //_newRaycasterLaserPointer.blockingObjects = GraphicRaycaster.BlockingObjects.ThreeD;
-                }
             }
         }
 
@@ -179,14 +173,21 @@ namespace UltimateXR.UI.UnityInputModule
         /// <returns></returns>
         private T GetOrAddRaycaster<T>(GraphicRaycaster oldRaycaster) where T : GraphicRaycaster
         {
-            T rayCaster = UnityCanvas.GetOrAddComponent<T>();
+            bool copyParameters = UnityCanvas.GetComponent<T>() == null;
+            T    rayCaster      = UnityCanvas.GetOrAddComponent<T>();
+            
             rayCaster.enabled = true;
 
             if (oldRaycaster && rayCaster)
             {
-                rayCaster.ignoreReversedGraphics = oldRaycaster.ignoreReversedGraphics;
-                rayCaster.blockingObjects        = oldRaycaster.blockingObjects;
-                oldRaycaster.enabled             = false;
+                if (copyParameters)
+                {
+                    rayCaster.ignoreReversedGraphics = oldRaycaster.ignoreReversedGraphics;
+                    rayCaster.blockingObjects        = GraphicRaycaster.BlockingObjects.All;
+                    rayCaster.blockingMask           = oldRaycaster.blockingMask;
+                }
+                
+                oldRaycaster.enabled = false;
             }
 
             return rayCaster;

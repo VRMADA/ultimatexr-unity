@@ -33,7 +33,14 @@ namespace UltimateXR.Devices.Integrations.Meta
             get
             {
 #if ULTIMATEXR_USE_OCULUS_SDK
-                _isLeftHandAvailable = OVRPlugin.GetHandState(OVRPlugin.Step.Render, OVRPlugin.Hand.HandLeft, ref _leftHandState);
+                if (OVRPlugin.GetHandState(OVRPlugin.Step.Render, OVRPlugin.Hand.HandLeft, ref _leftHandState))
+                {
+                    _isLeftHandAvailable = _leftHandState.Status.HasFlag(OVRPlugin.HandStatus.HandTracked);
+                }
+                else
+                {
+                    _isLeftHandAvailable = false;
+                }
                 return _isLeftHandAvailable;
 #else
                 return false;
@@ -47,7 +54,14 @@ namespace UltimateXR.Devices.Integrations.Meta
             get
             {
 #if ULTIMATEXR_USE_OCULUS_SDK
-                _isRightHandAvailable = OVRPlugin.GetHandState(OVRPlugin.Step.Render, OVRPlugin.Hand.HandRight, ref _rightHandState);
+                if (OVRPlugin.GetHandState(OVRPlugin.Step.Render, OVRPlugin.Hand.HandRight, ref _rightHandState))
+                {
+                    _isRightHandAvailable = _rightHandState.Status.HasFlag(OVRPlugin.HandStatus.HandTracked);
+                }
+                else
+                {
+                    _isRightHandAvailable = false;
+                }
                 return _isRightHandAvailable;
 #else
                 return false;
