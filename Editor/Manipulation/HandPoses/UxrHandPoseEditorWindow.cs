@@ -15,6 +15,7 @@ using UltimateXR.Avatar.Rig;
 using UltimateXR.Core;
 using UltimateXR.Core.Math;
 using UltimateXR.Editor.Avatar;
+using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Manipulation;
