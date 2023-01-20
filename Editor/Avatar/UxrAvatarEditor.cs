@@ -410,7 +410,7 @@ namespace UltimateXR.Editor.Avatar
             if (_foldoutGeneral)
             {
                 GUI.enabled = false;
-                EditorGUILayout.ObjectField(ContentPrefab, prefab, typeof(GameObject));
+                EditorGUILayout.ObjectField(ContentPrefab, prefab, typeof(GameObject), false);
                 EditorGUILayout.PropertyField(_propertyParentPrefab, ContentParentPrefab);
                 GUI.enabled = true;
                 EditorGUILayout.PropertyField(_propertyAvatarMode, ContentAvatarMode);

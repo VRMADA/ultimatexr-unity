@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add new symbol ULTIMATEXR_UNITY_XR_OCULUS when Unity.XR.Oculus is available.
+
+### Changed
+
+- Remove deprecated references to CommonUsages.thumbrest and CommonUsages.thumbTouch
+  in UxrUnityXRControllerInput.cs and use OculusUsages.thumbrest and
+  OculusUsages.thumbTouch instead if available. Add support for OculusUsages.indexTouch.
+
+### Fixed
+
+- Fix the following global input events in UxrControllerInput not being called:
+  GlobalButtonStateChanged, GlobalInput1DChanged, GlobalInput2DChanged.
+- Fix warnings in example scene when loading ShotgunPump01.mp3 and ShotgunPump02.mp3
+
 ## [0.9.6] - 2023-01-18
 
 ### Added
@@ -215,7 +231,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix UxrWeaponManager not tracking actors correctly.
 - Fix UxrMagnifyingGlassUrp error when not using URP.
 - Fix CyborgAvatar_URP base to use index controllers correctly.
-- Fix some CyborgAvatar_BRP base materials that were using the URP variants.
+- Fix some CyborgAvatar_BRP base materials that are using the URP variants.
 
 ## [0.8.4] - 2022-08-05
 

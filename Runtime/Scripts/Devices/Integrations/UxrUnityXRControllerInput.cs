@@ -9,6 +9,9 @@ using UltimateXR.Core;
 using UltimateXR.Haptics;
 using UnityEngine;
 using UnityEngine.XR;
+#if ULTIMATEXR_UNITY_XR_OCULUS
+using Unity.XR.Oculus;
+#endif
 
 namespace UltimateXR.Devices.Integrations
 {
@@ -757,6 +760,16 @@ namespace UltimateXR.Devices.Integrations
             }
             else if (button == UxrInputButtons.Trigger)
             {
+                if (buttonContact == ButtonContact.Touch)
+                {
+#if ULTIMATEXR_UNITY_XR_OCULUS
+                    if (inputDevice.TryGetFeatureValue(OculusUsages.indexTouch, out bool valueTouch))
+                    {
+                        return valueTouch;
+                    }
+#endif
+                }
+
                 if (inputDevice.TryGetFeatureValue(CommonUsages.trigger, out float valueFloat))
                 {
                     // We try getting the float value first because in analog buttons like the oculus it will trigger too early with the bool version.
@@ -806,17 +819,22 @@ namespace UltimateXR.Devices.Integrations
             {
                 if (buttonContact == ButtonContact.Press)
                 {
-                    if (inputDevice.TryGetFeatureValue(CommonUsages.thumbrest, out bool value))
+#if ULTIMATEXR_UNITY_XR_OCULUS
+                    if (inputDevice.TryGetFeatureValue(OculusUsages.thumbrest, out bool value))
                     {
                         return value;
                     }
+#endif
                 }
-                else if (buttonContact == ButtonContact.Touch)
+
+                if (buttonContact == ButtonContact.Touch)
                 {
-                    if (inputDevice.TryGetFeatureValue(CommonUsages.thumbTouch, out float floatValue))
+#if ULTIMATEXR_UNITY_XR_OCULUS
+                    if (inputDevice.TryGetFeatureValue(OculusUsages.thumbTouch, out bool value))
                     {
-                        return floatValue > 0.0f;
+                        return value;
                     }
+#endif
                 }
             }
             else if (button == UxrInputButtons.IndexCapSense)

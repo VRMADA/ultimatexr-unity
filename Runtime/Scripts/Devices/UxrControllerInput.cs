@@ -1110,7 +1110,7 @@ namespace UltimateXR.Devices
             // We will generate events based on the input gathered. We use event trigger methods
             // for this internally, but we check first if there is any subscription to the event
             // in order to avoid iterating through all the elements unnecessarily
-            if (ButtonStateChanged != null)
+            if (ButtonStateChanged != null || GlobalButtonStateChanged != null)
             {
                 // Button events
                 foreach (UxrInputButtons button in Enum.GetValues(typeof(UxrInputButtons)))
@@ -1133,7 +1133,7 @@ namespace UltimateXR.Devices
                 }
             }
 
-            if (Input1DChanged != null)
+            if (Input1DChanged != null || GlobalInput1DChanged != null)
             {
                 // UxrInput1D events
                 foreach (UxrInput1D input1D in Enum.GetValues(typeof(UxrInput1D)))
@@ -1183,7 +1183,7 @@ namespace UltimateXR.Devices
                 }
             }
 
-            if (Input2DChanged != null)
+            if (Input2DChanged != null || GlobalInput2DChanged != null)
             {
                 // UxrInput2D events
                 foreach (UxrInput2D input2D in Enum.GetValues(typeof(UxrInput2D)))
