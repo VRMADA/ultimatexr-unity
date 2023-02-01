@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix laser pointers not working correctly when mixing UI with 2D/3D objects.
 - Fix the following global input events in UxrControllerInput not being called:
   GlobalButtonStateChanged, GlobalInput1DChanged, GlobalInput2DChanged.
 - Fix warnings in example scene when loading ShotgunPump01.mp3 and ShotgunPump02.mp3

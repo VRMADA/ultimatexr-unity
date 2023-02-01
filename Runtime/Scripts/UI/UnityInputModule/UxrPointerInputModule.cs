@@ -328,7 +328,7 @@ namespace UltimateXR.UI.UnityInputModule
                     first = i;
                 }
 
-                if (candidates[i].gameObject.GetTopmostCanvas() == initialCanvas)
+                if (initialCanvas != null && candidates[i].gameObject.GetTopmostCanvas() == initialCanvas)
                 {
                     return candidates[i];
                 }
