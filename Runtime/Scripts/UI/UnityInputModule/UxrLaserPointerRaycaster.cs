@@ -41,12 +41,17 @@ namespace UltimateXR.UI.UnityInputModule
 
             UxrPointerEventData pointerEventData = eventData as UxrPointerEventData;
 
+            if (pointerEventData == null || pointerEventData.LaserPointer == null)
+            {
+                return;
+            }
+
             // Raycast against the canvas, gather all results and append to the list
 
             _raycastResults.Clear();
 
-            var ray = new Ray(eventData.pointerCurrentRaycast.worldPosition, eventData.pointerCurrentRaycast.worldNormal);
-            Raycast(_canvas, pointerEventData?.LaserPointer, eventCamera, ray, ref _raycastResults, ref resultAppendList, out float _);
+            var ray = new Ray(pointerEventData.LaserPointer.LaserPos, pointerEventData.LaserPointer.LaserDir);
+            Raycast(_canvas, pointerEventData.LaserPointer, eventCamera, ray, ref _raycastResults, ref resultAppendList, out float _);
 
             // Assign correct indices and get closest raycast
 
@@ -212,7 +217,7 @@ namespace UltimateXR.UI.UnityInputModule
                     }
 
                     float distance = Vector3.Dot(graphic.transform.forward, graphic.transform.position - ray.origin) / Vector3.Dot(graphic.transform.forward, ray.direction);
-
+                    
                     if (distance < 0.0f)
                     {
                         continue;

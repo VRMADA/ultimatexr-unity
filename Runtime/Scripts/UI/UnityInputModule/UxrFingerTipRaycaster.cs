@@ -71,20 +71,27 @@ namespace UltimateXR.UI.UnityInputModule
                 return;
             }
 
+            UxrPointerEventData pointerEventData = eventData as UxrPointerEventData;
+
+            if (pointerEventData == null || pointerEventData.FingerTip == null)
+            {
+                return;
+            }
+
             // Raycast against the canvas, gather all results and append to the list
 
             _raycastResults.Clear();
 
             // First check finger angle. This helps avoiding unwanted clicks.
 
-            if (Vector3.Angle(eventData.pointerCurrentRaycast.worldNormal, _canvas.transform.forward) > _fingerTipMaxAllowedAngle)
+            if (Vector3.Angle(pointerEventData.FingerTip.WorldDir, _canvas.transform.forward) > _fingerTipMaxAllowedAngle)
             {
                 return;
             }
 
             // Raycast
 
-            var ray = new Ray(eventData.pointerCurrentRaycast.worldPosition, _canvas.transform.forward);
+            var ray = new Ray(pointerEventData.FingerTip.WorldPos, pointerEventData.FingerTip.WorldDir);
             Raycast(_canvas, eventCamera, ray, ref _raycastResults, ref resultAppendList);
 
             // Assign correct indices and get closest raycast

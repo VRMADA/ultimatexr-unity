@@ -711,6 +711,7 @@ namespace UltimateXR.UI.UnityInputModule
 
             eventSystem.RaycastAll(data, m_RaycastResultCache);
             RaycastResult raycast = FindFirstRaycast(m_RaycastResultCache, data);
+            m_RaycastResultCache.Clear();
 
             // Check if it is a compatible hand using our UxrCanvas.
             // TODO: Support 2D/3D objects in the UxrFingerTipRaycaster?
@@ -801,6 +802,7 @@ namespace UltimateXR.UI.UnityInputModule
 
             eventSystem.RaycastAll(data, m_RaycastResultCache);
             RaycastResult raycast = FindFirstRaycast(m_RaycastResultCache, data);
+            m_RaycastResultCache.Clear();
 
             // Raycasts are performed using length to canvas. If no raycast was found, raycast using laser length first.
 
