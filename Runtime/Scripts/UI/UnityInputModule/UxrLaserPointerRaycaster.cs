@@ -16,13 +16,24 @@ namespace UltimateXR.UI.UnityInputModule
     ///     interaction using laser pointers from a distance.
     /// </summary>
     [RequireComponent(typeof(Canvas))]
-    public class UxrLaserPointerRaycaster : GraphicRaycaster
+    public class UxrLaserPointerRaycaster : UxrGraphicRaycaster
     {
         #region Public Overrides GraphicRaycaster
 
         /// <inheritdoc />
         public override void Raycast(PointerEventData eventData, List<RaycastResult> resultAppendList)
         {
+            // Check if it should be ray-casted
+
+            UxrPointerEventData pointerEventData = eventData as UxrPointerEventData;
+
+            if (pointerEventData == null || pointerEventData.LaserPointer == null)
+            {
+                return;
+            }
+
+            // Initialize if necessary
+
             if (_canvas == null)
             {
                 _canvas      = gameObject.GetComponent<Canvas>();
@@ -35,13 +46,6 @@ namespace UltimateXR.UI.UnityInputModule
             }
 
             if (_canvasGroup != null && _canvasGroup.interactable == false)
-            {
-                return;
-            }
-
-            UxrPointerEventData pointerEventData = eventData as UxrPointerEventData;
-
-            if (pointerEventData == null || pointerEventData.LaserPointer == null)
             {
                 return;
             }
@@ -78,36 +82,6 @@ namespace UltimateXR.UI.UnityInputModule
 
                 eventData.pointerCurrentRaycast = raycastNearest.Value;
             }
-        }
-
-        #endregion
-
-        #region Public Methods
-
-        /// <summary>
-        ///     Checks whether the raycast result describes a collision against a 2D or 3D object.
-        /// </summary>
-        /// <param name="result">Raycast result</param>
-        /// <returns>Whether collision is against a 2D or 3D object</returns>
-        public static bool Is2DOr3DRaycastResult(RaycastResult result)
-        {
-            return result.depth == UxrConstants.UI.Depth2DObject || result.depth == UxrConstants.UI.Depth3DObject;
-        }
-
-        /// <summary>
-        ///     Compares two raycast results.
-        /// </summary>
-        /// <param name="a">Raycast result 1</param>
-        /// <param name="b">Raycast result 2</param>
-        /// <returns>Less than 0 if a is closer than b, 0 if they are at the same distance and greater than 0 if b is closer than a</returns>
-        public static int CompareDepth(RaycastResult a, RaycastResult b)
-        {
-            if (Is2DOr3DRaycastResult(a) || Is2DOr3DRaycastResult(b))
-            {
-                return a.distance.CompareTo(b.distance);
-            }
-
-            return a.depth.CompareTo(b.depth);
         }
 
         #endregion
@@ -217,7 +191,7 @@ namespace UltimateXR.UI.UnityInputModule
                     }
 
                     float distance = Vector3.Dot(graphic.transform.forward, graphic.transform.position - ray.origin) / Vector3.Dot(graphic.transform.forward, ray.direction);
-                    
+
                     if (distance < 0.0f)
                     {
                         continue;

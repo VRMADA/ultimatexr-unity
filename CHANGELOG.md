@@ -9,10 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add support for Unity UI input on the screen and UltimateXR UI input in VR at
+  the same time.
 - Add new symbol ULTIMATEXR_UNITY_XR_OCULUS when Unity.XR.Oculus is available.
 
 ### Changed
 
+- UxrInputModule component parameter "Disable Other Input Modules" is now disabled
+  by default instead of being enabled.
 - Remove deprecated references to CommonUsages.thumbrest and CommonUsages.thumbTouch
   in UxrUnityXRControllerInput.cs and use OculusUsages.thumbrest and
   OculusUsages.thumbTouch instead if available. Add support for OculusUsages.indexTouch.

@@ -6,6 +6,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UltimateXR.Avatar;
 using UltimateXR.Core;
 using UltimateXR.Extensions.Unity;
@@ -33,7 +34,7 @@ namespace UltimateXR.UI.UnityInputModule
     {
         #region Inspector Properties/Serialized Fields
 
-        [SerializeField] protected bool               _disableOtherInputModules    = true;
+        [SerializeField] protected bool               _disableOtherInputModules    = false;
         [SerializeField] protected bool               _autoEnableOnWorldCanvases   = true;
         [SerializeField] protected bool               _autoAssignEventCamera       = true;
         [SerializeField] protected UxrInteractionType _interactionTypeOnAutoEnable = UxrInteractionType.FingerTips;
@@ -77,6 +78,26 @@ namespace UltimateXR.UI.UnityInputModule
 
         #region Public Overrides BaseInputModule
 
+        /// <summary>
+        ///     Updates the input module. This is additional functionality to enable the UXR input module to coexist with Unity's
+        ///     input module for screen UI.
+        /// </summary>
+        /// <remarks>From user Cind13 in https://forum.unity.com/threads/multiple-processing-inputmodules.369578/</remarks>
+        public override void UpdateModule()
+        {
+            MethodInfo changeEventModuleMethod = EventSystem.current.GetType().GetMethod("ChangeEventModule",
+                                                                                         BindingFlags.NonPublic | BindingFlags.Instance,
+                                                                                         null,
+                                                                                         new[] { typeof(BaseInputModule) },
+                                                                                         null);
+            changeEventModuleMethod.Invoke(EventSystem.current, new object[] { this });
+            EventSystem.current.UpdateModules();
+            List<BaseInputModule> activeInputModules = GetInputModules();
+            activeInputModules.Remove(this);
+            activeInputModules.Insert(0, this);
+            SetInputModules(activeInputModules);
+        }
+
         /// <inheritdoc />
         public override bool IsModuleSupported()
         {
@@ -86,10 +107,25 @@ namespace UltimateXR.UI.UnityInputModule
         /// <inheritdoc />
         public override void Process()
         {
+            // Execute other input modules if they are not requested to be disabled
+
+            if (!_disableOtherInputModules)
+            {
+                foreach (BaseInputModule module in GetInputModules())
+                {
+                    if (module != this)
+                    {
+                        module.Process();
+                    }
+                }
+            }
+
             if (UxrManager.Instance == null)
             {
                 return;
             }
+
+            // Update this input module
 
             bool usedEvent = SendUpdateEventToSelectedObject();
 
@@ -118,6 +154,30 @@ namespace UltimateXR.UI.UnityInputModule
                     SendSubmitEventToSelectedObject();
                 }
             }*/
+        }
+
+        #endregion
+
+        #region Public Overrides PointerInputModule
+
+        /// <summary>
+        ///     Overrides Object.ToString().
+        /// </summary>
+        /// <remarks>From user chrpetry in https://forum.unity.com/threads/multiple-processing-inputmodules.369578/</remarks>
+        /// <returns>String description of the class</returns>
+        public override string ToString()
+        {
+            var moduleStringList = new List<string>();
+
+            foreach (var module in GetInputModules())
+            {
+                if (module != this)
+                {
+                    moduleStringList.Add(module.ToString());
+                }
+            }
+
+            return string.Join("\n\n", moduleStringList);
         }
 
         #endregion
@@ -247,6 +307,8 @@ namespace UltimateXR.UI.UnityInputModule
         /// </summary>
         protected override void Start()
         {
+            base.Start();
+
             if (eventSystem != null)
             {
                 eventSystem.pixelDragThreshold = _dragThreshold;
@@ -318,7 +380,9 @@ namespace UltimateXR.UI.UnityInputModule
 
             for (int i = 0; i < candidatesCount; ++i)
             {
-                if (candidates[i].gameObject == null)
+                UxrGraphicRaycaster module = candidates[i].module as UxrGraphicRaycaster;
+
+                if (candidates[i].gameObject == null || module == null)
                 {
                     continue;
                 }
@@ -394,6 +458,11 @@ namespace UltimateXR.UI.UnityInputModule
         /// <param name="pointerEventData">Pointer event data</param>
         protected virtual void ProcessPointerPressRelease(UxrPointerEventData pointerEventData)
         {
+            if (ShouldIgnoreEventData(pointerEventData))
+            {
+                return;
+            }
+
             GameObject currentOverGo = pointerEventData.pointerCurrentRaycast.gameObject;
 
             // PointerDown notification
@@ -512,6 +581,42 @@ namespace UltimateXR.UI.UnityInputModule
         #endregion
 
         #region Private Methods
+
+        /// <summary>
+        ///     Checks whether the given pointer event data should be ignored. Event data coming from non-UXR modules will be
+        ///     ignored.
+        /// </summary>
+        /// <param name="pointerEventData">Pointer event data</param>
+        /// <returns>Whether the event data should be ignored</returns>
+        private static bool ShouldIgnoreEventData(UxrPointerEventData pointerEventData)
+        {
+            return pointerEventData.pointerCurrentRaycast.module as UxrGraphicRaycaster == null;
+        }
+
+        /// <summary>
+        ///     Gets the list of active input modules. This is additional functionality to enable the UXR input module to coexist
+        ///     with Unity's input module for screen UI.
+        /// </summary>
+        /// <remarks>From user Cind13 in https://forum.unity.com/threads/multiple-processing-inputmodules.369578/</remarks>
+        /// <returns>List of input modules</returns>
+        private List<BaseInputModule> GetInputModules()
+        {
+            EventSystem current              = EventSystem.current;
+            FieldInfo   m_SystemInputModules = current.GetType().GetField("m_SystemInputModules", BindingFlags.NonPublic | BindingFlags.Instance);
+            return m_SystemInputModules.GetValue(current) as List<BaseInputModule>;
+        }
+
+        /// <summary>
+        ///     Sets the list of active input modules. This is additional functionality to enable the UXR input module to coexist
+        ///     with Unity's input module for screen UI.
+        /// </summary>
+        /// <remarks>From user Cind13 in https://forum.unity.com/threads/multiple-processing-inputmodules.369578/</remarks>
+        private void SetInputModules(List<BaseInputModule> inputModules)
+        {
+            EventSystem current              = EventSystem.current;
+            FieldInfo   m_SystemInputModules = current.GetType().GetField("m_SystemInputModules", BindingFlags.NonPublic | BindingFlags.Instance);
+            m_SystemInputModules.SetValue(current, inputModules);
+        }
 
         /// <summary>
         ///     Gets whether a ray-casted UI element requires auto-enabling the laser pointer.
@@ -825,7 +930,7 @@ namespace UltimateXR.UI.UnityInputModule
                 else if (laserPointer.TargetTypes.HasFlag(UxrLaserPointerTargetTypes.Colliders2D))
                 {
                     RaycastHit2D hit = Physics2D.Raycast(laserPointer.LaserPos, laserPointer.LaserDir, laserPointer.MaxRayLength, laserPointer.BlockingMask);
-                    
+
                     if (hit.collider)
                     {
                         raycast.gameObject       = hit.collider.gameObject;

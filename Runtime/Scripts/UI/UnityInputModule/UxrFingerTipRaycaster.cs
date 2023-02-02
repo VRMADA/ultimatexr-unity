@@ -15,7 +15,7 @@ namespace UltimateXR.UI.UnityInputModule
     ///     interaction.
     /// </summary>
     [RequireComponent(typeof(Canvas))]
-    public class UxrFingerTipRaycaster : GraphicRaycaster
+    public class UxrFingerTipRaycaster : UxrGraphicRaycaster
     {
         #region Inspector Properties/Serialized Fields
 
@@ -55,6 +55,17 @@ namespace UltimateXR.UI.UnityInputModule
         /// <inheritdoc />
         public override void Raycast(PointerEventData eventData, List<RaycastResult> resultAppendList)
         {
+            // Check if it should be ray-casted
+            
+            UxrPointerEventData pointerEventData = eventData as UxrPointerEventData;
+
+            if (pointerEventData == null || pointerEventData.FingerTip == null)
+            {
+                return;
+            }
+
+            // Initialize if necessary
+            
             if (_canvas == null)
             {
                 _canvas      = gameObject.GetComponent<Canvas>();
@@ -67,13 +78,6 @@ namespace UltimateXR.UI.UnityInputModule
             }
 
             if (_canvasGroup != null && _canvasGroup.interactable == false)
-            {
-                return;
-            }
-
-            UxrPointerEventData pointerEventData = eventData as UxrPointerEventData;
-
-            if (pointerEventData == null || pointerEventData.FingerTip == null)
             {
                 return;
             }
