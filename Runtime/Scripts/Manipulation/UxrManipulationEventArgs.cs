@@ -154,9 +154,9 @@ namespace UltimateXR.Manipulation
         public Vector3 ReleaseAngularVelocity { get; internal set; }
 
         /// <summary>
-        ///     Gets the placement type in place events.
+        ///     Gets the placement flags in place events.
         /// </summary>
-        public UxrPlacementType PlacementType { get; internal set; }
+        public UxrPlacementOptions PlacementOptions { get; internal set; }
 
         #endregion
 

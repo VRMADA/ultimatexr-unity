@@ -312,7 +312,7 @@ namespace UltimateXR.CameraUtils
                 }
             }
 
-            return !colliderHit.gameObject.GetComponentInParent<UxrIgnoreWallFade>();
+            return !colliderHit.gameObject.GetComponentInParent<UxrIgnoreWallFade>() && !colliderHit.gameObject.GetComponentInParent<UxrAvatar>();
         }
 
         /// <summary>

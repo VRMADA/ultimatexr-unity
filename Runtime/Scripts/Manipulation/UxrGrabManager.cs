@@ -306,7 +306,7 @@ namespace UltimateXR.Manipulation
 
                 case UxrManipulationSyncEventType.Place:
 
-                    PlaceObject(syncArgs.EventArgs.GrabbableObject, syncArgs.EventArgs.GrabbableAnchor, syncArgs.EventArgs.PlacementType, propagateEvents);
+                    PlaceObject(syncArgs.EventArgs.GrabbableObject, syncArgs.EventArgs.GrabbableAnchor, syncArgs.EventArgs.PlacementOptions, propagateEvents);
                     break;
 
                 case UxrManipulationSyncEventType.Remove:
@@ -512,21 +512,20 @@ namespace UltimateXR.Manipulation
         /// <summary>
         ///     Places a <see cref="UxrGrabbableObject" /> on an <see cref="UxrGrabbableObjectAnchor" />.
         ///     <para>
-        ///         It can be placed either instantly or smoothly depending on <paramref name="placementType" />.
-        ///         If the object is currently being grabbed, all grips will be released. There is one exception to this: when the
-        ///         object is constrained to the world (<see cref="UxrGrabbableObject.IsConstrained" />) because in
-        ///         this case the constraints may prevent the grip from removing the object from the anchor again.
+        ///         It can be placed either instantly or smoothly depending on <paramref name="placementOptions" />.
+        ///         If the object is currently being grabbed, <paramref name="placementOptions" /> can also decide
+        ///         whether the grips are released or not.
         ///     </para>
         /// </summary>
         /// <param name="grabbableObject">The object to place</param>
         /// <param name="anchor">The anchor to place it on</param>
-        /// <param name="placementType">The interpolation to use</param>
+        /// <param name="placementOptions">Placement options</param>
         /// <param name="propagateEvents">Whether to propagate potential Removing/Removed/Placing/Placed events.</param>
         /// <returns>
         ///     Whether the object was placed or not. The placement can fail if there was a null argument or if the anchor has
         ///     already an object on it.
         /// </returns>
-        public bool PlaceObject(UxrGrabbableObject grabbableObject, UxrGrabbableObjectAnchor anchor, UxrPlacementType placementType, bool propagateEvents)
+        public bool PlaceObject(UxrGrabbableObject grabbableObject, UxrGrabbableObjectAnchor anchor, UxrPlacementOptions placementOptions, bool propagateEvents)
         {
             if (grabbableObject == null)
             {
@@ -541,9 +540,9 @@ namespace UltimateXR.Manipulation
             UxrGrabber               grabber      = null;
             int                      grabbedPoint = -1;
             UxrGrabbableObjectAnchor oldAnchor    = grabbableObject.CurrentAnchor;
-            bool                     releaseGrip  = true;
+            bool                     releaseGrip  = !placementOptions.HasFlag(UxrPlacementOptions.DontRelease);
 
-            if (!grabbableObject.IsConstrained)
+            if (releaseGrip)
             {
                 // Release the grips if there are any.
 
@@ -558,9 +557,9 @@ namespace UltimateXR.Manipulation
                     grabbersToRelease.ForEach(g => ReleaseObject(g, grabbableObject, false));
                 }
             }
-            else
+
+            if (grabbableObject.IsConstrained)
             {
-                releaseGrip = false;
                 grabbableObject.StartSmoothConstrain();
             }
 
@@ -665,7 +664,7 @@ namespace UltimateXR.Manipulation
             }
 
             // Start smooth transition to final position/orientation if necessary
-            if (placementType == UxrPlacementType.Smooth)
+            if (placementOptions == UxrPlacementOptions.Smooth)
             {
                 grabbableObject.StartSmoothAnchorPlacement();
             }
@@ -677,7 +676,7 @@ namespace UltimateXR.Manipulation
             // Raise events
 
             UxrManipulationEventArgs placedEventArgs = new UxrManipulationEventArgs(grabbableObject, anchor, grabber, grabbedPoint);
-            placedEventArgs.PlacementType = placementType;
+            placedEventArgs.PlacementOptions = placementOptions;
             OnObjectPlaced(placedEventArgs, propagateEvents);
 
             if (placedEventArgs.Grabber)
@@ -2522,7 +2521,7 @@ namespace UltimateXR.Manipulation
                 }
                 else
                 {
-                    PlaceObject(grabber.GrabbedObject, anchorCandidate, UxrPlacementType.Smooth, true);
+                    PlaceObject(grabber.GrabbedObject, anchorCandidate, UxrPlacementOptions.Smooth, true);
                 }
 
                 grabber.GrabbedObject = null;

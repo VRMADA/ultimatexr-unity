@@ -429,7 +429,13 @@ namespace UltimateXR.Locomotion
             {
                 Vector3 newPosition = Avatar.CameraFloorPosition - Avatar.ProjectedCameraForward * _backStepDistance;
 
-                if (Physics.Raycast(newPosition + Vector3.up * RaycastAboveGround, -Vector3.up, out RaycastHit backStepRaycast, _maxAllowedHeightDifference > 0.0f ? _maxAllowedHeightDifference : RaycastLongDistance, BlockingTargetLayers, TriggerCollidersInteraction))
+                if (HasBlockingRaycastHit(Avatar,
+                                          newPosition + UpVector * RaycastAboveGround,
+                                          -UpVector,
+                                          _maxAllowedHeightDifference > 0.0f ? _maxAllowedHeightDifference : RaycastLongDistance,
+                                          BlockingTargetLayers,
+                                          TriggerCollidersInteraction,
+                                          out RaycastHit backStepRaycast))
                 {
                     if (NotifyDestinationRaycast(backStepRaycast, true))
                     {
@@ -493,9 +499,6 @@ namespace UltimateXR.Locomotion
         /// <returns>Boolean telling whether the new position is a valid teleport destination or not</returns>
         protected bool IsValidTeleport(bool checkBlockingInBetween, ref Vector3 newPosition, Vector3 hitNormal, out bool isValidSlope)
         {
-            Vector3 eyePosStart = Avatar.CameraFloorPosition;
-            Vector3 eyePosEnd   = newPosition;
-
             isValidSlope = true;
 
             if (!IsAllowedToTeleport)
@@ -503,13 +506,16 @@ namespace UltimateXR.Locomotion
                 return false;
             }
 
-            if (Mathf.Abs(newPosition.y - Avatar.transform.position.y) > MaxAllowedHeightDifference)
+            Vector3 localNewPosition = Avatar.transform.InverseTransformPoint(newPosition);
+
+            if (Mathf.Abs(localNewPosition.y) > MaxAllowedHeightDifference)
             {
                 return false;
             }
 
-            eyePosStart.y = Avatar.CameraPosition.y;
-            eyePosEnd.y   = newPosition.y + (Avatar.CameraPosition.y - Avatar.transform.position.y);
+            float   eyeHeight   = Avatar.transform.InverseTransformPoint(Avatar.CameraPosition).y;
+            Vector3 eyePosStart = Avatar.CameraPosition;
+            Vector3 eyePosEnd   = newPosition + UpVector * eyeHeight;
 
             // Check if there is something blocking in a straight line if requested, used in a back step
 
@@ -531,16 +537,22 @@ namespace UltimateXR.Locomotion
                     return false;
                 }
 
-                if (MaxAllowedHeightDifference > 0.0f && Vector3.Angle(hitNormal, Vector3.up) > MaxAllowedSlopeDegrees)
+                if (MaxAllowedHeightDifference > 0.0f && Vector3.Angle(hitNormal, UpVector) > MaxAllowedSlopeDegrees)
                 {
                     // Check if we are hitting a tall enough wall to see if we can have an early negative. This avoids the filtering
                     // below to allow climbing up the first portion of the wall.
                     // What we do is raycast in an inclined upwards direction to see if the wall is significantly enough above the raycast.
 
                     Vector3 rayStart = newPosition + hitNormal * 0.1f;
-                    Vector3 rayEnd   = newPosition + Vector3.up * MaxAllowedHeightDifference;
+                    Vector3 rayEnd   = newPosition + UpVector * MaxAllowedHeightDifference;
 
-                    if (Physics.Raycast(rayStart, (rayEnd - rayStart).normalized, out RaycastHit _, Vector3.Distance(rayStart, rayEnd) + 0.01f, BlockingTargetLayers, TriggerCollidersInteraction))
+                    if (HasBlockingRaycastHit(Avatar,
+                                              rayStart,
+                                              (rayEnd - rayStart).normalized,
+                                              Vector3.Distance(rayStart, rayEnd) + 0.01f,
+                                              BlockingTargetLayers,
+                                              TriggerCollidersInteraction,
+                                              out RaycastHit _))
                     {
                         // We are hitting the base of a tall wall
                         isValidSlope = false;
@@ -633,7 +645,7 @@ namespace UltimateXR.Locomotion
                 {
                     TeleportReference      = spawnPos;
                     TeleportLocalPosition  = TransformExt.GetLocalPosition(TeleportReference, spawnPos.position);
-                    TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Vector3.ProjectOnPlane(spawnPos.forward, Vector3.up));
+                    TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Vector3.ProjectOnPlane(spawnPos.forward, spawnPos.up));
 
                     EnableTeleportObjects(true, true);
                 }
@@ -670,15 +682,15 @@ namespace UltimateXR.Locomotion
                     }
                     else if (ReorientationType == UxrReorientationType.UseTeleportFromToDirection)
                     {
-                        TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Vector3.ProjectOnPlane(teleportPos - Avatar.CameraPosition, Vector3.up));
+                        TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Vector3.ProjectOnPlane(teleportPos - Avatar.CameraPosition, UpVector));
                     }
                     else if (ReorientationType == UxrReorientationType.AllowUserJoystickRedirect)
                     {
                         Vector2 joystickValue     = Avatar.ControllerInput.GetInput2D(HandSide, UxrInput2D.Joystick);
-                        Vector3 projectedForward  = Vector3.ProjectOnPlane(ControllerForward, Vector3.up).normalized;
+                        Vector3 projectedForward  = Vector3.ProjectOnPlane(ControllerForward, UpVector).normalized;
                         Vector3 joystickDirection = new Vector3(joystickValue.x, 0.0f, joystickValue.y).normalized;
 
-                        TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Quaternion.LookRotation(projectedForward, Vector3.up) * Quaternion.LookRotation(joystickDirection, Vector3.up) * Vector3.forward);
+                        TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Quaternion.LookRotation(projectedForward, UpVector) * Quaternion.LookRotation(joystickDirection, UpVector) * Vector3.forward);
                     }
                 }
             }
@@ -730,7 +742,7 @@ namespace UltimateXR.Locomotion
                 UxrManager.Instance.TeleportLocalAvatarRelative(TeleportReference,
                                                                 parentToDestination,
                                                                 TransformExt.GetWorldPosition(TeleportReference, TeleportLocalPosition),
-                                                                Quaternion.LookRotation(TransformExt.GetWorldDirection(TeleportReference, TeleportLocalDirection)),
+                                                                Quaternion.LookRotation(TransformExt.GetWorldDirection(TeleportReference, TeleportLocalDirection), UpVector),
                                                                 _translationType,
                                                                 TranslationSeconds,
                                                                 () =>
@@ -769,15 +781,19 @@ namespace UltimateXR.Locomotion
         {
             isValidSlope = false;
 
-            float eyeHeight = newEyePos.y - teleportPos.y;
-
-            if (Physics.Raycast(newEyePos, -Vector3.up, out RaycastHit hit, eyeHeight * 1.2f, LayerMaskRaycast, TriggerCollidersInteraction))
+            Vector3 localNewEyePos   = Avatar.transform.InverseTransformPoint(newEyePos);
+            Vector3 localTeleportPos = Avatar.transform.InverseTransformPoint(teleportPos);
+            float   eyeHeight        = localNewEyePos.y - localTeleportPos.y;
+            
+            if (HasBlockingRaycastHit(Avatar, newEyePos, -UpVector, eyeHeight * 1.2f, LayerMaskRaycast, TriggerCollidersInteraction, out RaycastHit hit))
             {
-                float slopeDegrees = Mathf.Abs(Vector3.Angle(hit.normal, Vector3.up));
+                float slopeDegrees = Mathf.Abs(Vector3.Angle(hit.normal, UpVector));
 
                 isValidSlope = slopeDegrees < MaxAllowedSlopeDegrees;
                 bool valid = isValidSlope && (ValidTargetLayers.value & 1 << hit.collider.gameObject.layer) != 0;
-                valid = valid && Mathf.Abs(hit.point.y - teleportPos.y) < MaxVerticalHeightDisparity;
+
+                Vector3 localHitPoint = Avatar.transform.InverseTransformPoint(hit.point);
+                valid = valid && Mathf.Abs(localHitPoint.y - localTeleportPos.y) < MaxVerticalHeightDisparity;
 
                 if (hit.collider.GetComponentInParent<UxrIgnoreTeleportDestination>() != null)
                 {
@@ -789,7 +805,7 @@ namespace UltimateXR.Locomotion
                     // Raycast upwards to see if there is something between the ground and eye level. Since we can be teleported inside a box
                     // at eye level for instance, the previous raycast will not handle that case. We need to raycast from outside as well
 
-                    return !Physics.Raycast(teleportPos, Vector3.up, eyeHeight, LayerMaskRaycast, TriggerCollidersInteraction);
+                    return !HasBlockingRaycastHit(Avatar, teleportPos, UpVector, eyeHeight, LayerMaskRaycast, TriggerCollidersInteraction, out RaycastHit _);
                 }
             }
 
@@ -984,8 +1000,8 @@ namespace UltimateXR.Locomotion
 
                 if (_teleportTarget != null)
                 {
-                    _teleportTarget.transform.position = TransformExt.GetWorldPosition(TeleportReference, value) + Vector3.up * TargetPlacementAboveHit;
-                    _teleportTarget.OrientArrow(Quaternion.LookRotation(TransformExt.GetWorldDirection(TeleportReference, TeleportLocalDirection)));
+                    _teleportTarget.transform.position = TransformExt.GetWorldPosition(TeleportReference, value) + UpVector * TargetPlacementAboveHit;
+                    _teleportTarget.OrientArrow(Quaternion.LookRotation(TransformExt.GetWorldDirection(TeleportReference, TeleportLocalDirection), UpVector));
                 }
             }
         }
@@ -1003,7 +1019,7 @@ namespace UltimateXR.Locomotion
 
                 if (_teleportTarget != null)
                 {
-                    _teleportTarget.OrientArrow(Quaternion.LookRotation(TeleportReference != null ? TeleportReference.rotation * value : value));
+                    _teleportTarget.OrientArrow(Quaternion.LookRotation(TeleportReference != null ? TeleportReference.rotation * value : value, UpVector));
                 }
             }
         }
@@ -1011,6 +1027,11 @@ namespace UltimateXR.Locomotion
         #endregion
 
         #region Private Types & Data
+
+        /// <summary>
+        /// Gets the up vector used to compute rotations so that it is always computed in the correct space.
+        /// </summary>
+        protected Vector3 UpVector => Avatar.transform.up;
 
         /// <summary>
         ///     Gets the raw unprocessed world position on the controller where the ray-casting starts.

@@ -136,7 +136,7 @@ namespace UltimateXR.Animation.IK
 
             _avatarForward        = new GameObject("Dummy Forward").transform;
             _avatarForward.parent = _avatarTransform;
-            _avatarForward.SetPositionAndRotation(_avatarHead.position - Vector3.up * _avatarHead.position.y, _avatarTransform.rotation);
+            _avatarForward.SetPositionAndRotation(_avatarHead.position - avatar.transform.up * _avatarHead.position.y, _avatarTransform.rotation);
 
             _avatarBodyRoot.parent = _avatarForward;
 
@@ -216,14 +216,14 @@ namespace UltimateXR.Animation.IK
 
             _avatarForward.position = GetAvatarForwardOffset(_avatarForward, _avatarNeck, _avatarForwardPosRelativeToNeck);
 
-            if (Vector3.Angle(cameraTransform.forward, Vector3.up) > CameraUpsideDownAngleThreshold &&
-                Vector3.Angle(cameraTransform.forward, -Vector3.up) > CameraUpsideDownAngleThreshold &&
+            if (Vector3.Angle(cameraTransform.forward, _avatar.transform.up) > CameraUpsideDownAngleThreshold &&
+                Vector3.Angle(cameraTransform.forward, -_avatar.transform.up) > CameraUpsideDownAngleThreshold &&
                 Vector3.Angle(cameraTransform.forward, _avatarForward.forward) < 90.0f)
             {
                 // _straightSpineForward contains the forward direction where the avatar looks (vector.y is 0).
                 // This is different from _avatarForward.forward because avatarForward allows the head to rotate
                 // some degrees without rotating the whole body along with it.
-                _straightSpineForward = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up);
+                _straightSpineForward = Vector3.ProjectOnPlane(cameraTransform.forward, _avatar.transform.up);
             }
 
             float bodyRotationAngle = Vector3.Angle(_straightSpineForward, _avatarForward.forward);
@@ -236,8 +236,8 @@ namespace UltimateXR.Animation.IK
             // Update avatar forward direction
 
             float rotationSpeedMultiplier = Vector3.Angle(_avatarForward.forward, _avatarForwardTarget) / 30.0f;
-            _avatarForward.rotation = Quaternion.RotateTowards(Quaternion.LookRotation(_avatarForward.forward),
-                                                               Quaternion.LookRotation(_avatarForwardTarget),
+            _avatarForward.rotation = Quaternion.RotateTowards(Quaternion.LookRotation(_avatarForward.forward, _avatar.transform.up),
+                                                               Quaternion.LookRotation(_avatarForwardTarget,   _avatar.transform.up),
                                                                AvatarRotationDegreesPerSecond * rotationSpeedMultiplier * _settings.BodyPivotRotationSpeed * Time.deltaTime);
 
             // Since the avatar pivot is parent of all body nodes, move the neck back to its position
@@ -276,7 +276,7 @@ namespace UltimateXR.Animation.IK
             if (!_settings.LockBodyPivot)
             {
                 // Compute head rotation without the rotation around the Y axis:
-                Quaternion headPropagateRotation = Quaternion.Inverse(Quaternion.LookRotation(_straightSpineForward)) * _headUniversalLocalAxes.UniversalRotation;
+                Quaternion headPropagateRotation = Quaternion.Inverse(Quaternion.LookRotation(_straightSpineForward, _avatar.transform.up)) * _headUniversalLocalAxes.UniversalRotation;
 
                 // Remove the rotation that the head can do without propagation to chest/spine:
                 headPropagateRotation = Quaternion.RotateTowards(headPropagateRotation, Quaternion.identity, _settings.HeadFreeRangeBend);
@@ -460,8 +460,8 @@ namespace UltimateXR.Animation.IK
         /// <param name="e">Move event parameters</param>
         public void NotifyAvatarMoved(UxrAvatarMoveEventArgs e)
         {
-            float angle = Vector3.SignedAngle(e.OldForward, e.NewForward, Vector3.up);
-            _avatarForwardTarget  = Quaternion.AngleAxis(angle, Vector3.up) * _avatarForwardTarget;
+            float angle = Vector3.SignedAngle(e.OldForward, e.NewForward, _avatar.transform.up);
+            _avatarForwardTarget = Quaternion.AngleAxis(angle, _avatar.transform.up) * _avatarForwardTarget;
         }
 
         #endregion

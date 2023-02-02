@@ -219,7 +219,7 @@ namespace UltimateXR.Avatar
         /// <summary>
         ///     Gets the avatar's camera forward vector projected onto the XZ plane, the floor.
         /// </summary>
-        public Vector3 ProjectedCameraForward => CameraComponent != null ? Vector3.ProjectOnPlane(CameraComponent.transform.forward, Vector3.up).normalized : Vector3.zero;
+        public Vector3 ProjectedCameraForward => CameraComponent != null ? Vector3.ProjectOnPlane(CameraComponent.transform.forward, transform.up).normalized : Vector3.zero;
 
         /// <summary>
         ///     Gets the currently enabled controller inputs belonging to the avatar, except for any

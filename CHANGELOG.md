@@ -11,12 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add support for Unity UI input on the screen and UltimateXR UI input in VR at
   the same time.
+- Add new functionality DontRelease to UxrPlacementOptions that keeps the object
+  grabbed when UxrManager.Instance.PlaceObject() is called.
 - Add new symbol ULTIMATEXR_UNITY_XR_OCULUS when Unity.XR.Oculus is available.
 
 ### Changed
 
-- UxrInputModule component parameter "Disable Other Input Modules" is now disabled
-  by default instead of being enabled.
+- Improve teleportation raycasts to discard avatar colliders and grabbed objects.
+- Improve teleportation to handle avatars with roll/pitch.
+- Improve Body IK to handle avatars with roll/pitch. Improved precision by
+  performing computations in local avatar space.
+- Rename UxrPlacementType to UxrPlacementOptions.
+- Disable UxrInputModule component parameter "Disable Other Input Modules" by default
+  instead of being enabled.
 - Remove deprecated references to CommonUsages.thumbrest and CommonUsages.thumbTouch
   in UxrUnityXRControllerInput.cs and use OculusUsages.thumbrest and
   OculusUsages.thumbTouch instead if available. Add support for OculusUsages.indexTouch.
@@ -24,8 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix laser pointers not working correctly when mixing UI with 2D/3D objects.
-- Fix bug in UI module where finger tips and laser pointers could not interact with
+- Fix bug in UI module where finger tips and laser pointers cannot interact with
   multiple canvases when close to each other.
+- Fix null reference exception in manipulation system when placing constrained objects
+  on anchors and grabbing them again.
 - Fix the following global input events in UxrControllerInput not being called:
   GlobalButtonStateChanged, GlobalInput1DChanged, GlobalInput2DChanged.
 - Fix warnings in example scene when loading ShotgunPump01.mp3 and ShotgunPump02.mp3

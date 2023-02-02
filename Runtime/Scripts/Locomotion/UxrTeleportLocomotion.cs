@@ -171,8 +171,8 @@ namespace UltimateXR.Locomotion
                 // Compute trajectory
 
                 bool    isValidTeleport  = false;
-                Vector3 right            = Vector3.Cross(ControllerForward, Vector3.up).normalized;
-                Vector3 projectedForward = Vector3.ProjectOnPlane(ControllerForward, Vector3.up).normalized;
+                Vector3 right            = Vector3.Cross(ControllerForward, UpVector).normalized;
+                Vector3 projectedForward = Vector3.ProjectOnPlane(ControllerForward, UpVector).normalized;
                 float   angle            = -Vector3.SignedAngle(ControllerForward, projectedForward, right);
 
                 if (Mathf.Abs(angle) < AbsoluteMaxArcAngleThreshold && _arcWidth > 0.0f)
@@ -274,7 +274,7 @@ namespace UltimateXR.Locomotion
             float currentLength = 0.0f;
             float totalLength   = 0.0f;
 
-            _arcGameObject.transform.SetPositionAndRotation(ControllerStart, Quaternion.LookRotation(ControllerForward));
+            _arcGameObject.transform.SetPositionAndRotation(ControllerStart, Quaternion.LookRotation(ControllerForward, UpVector));
 
             _scroll += Time.deltaTime * (isValidTeleport ? _arcScrollSpeedValid : _arcScrollSpeedInvalid);
 
@@ -351,7 +351,7 @@ namespace UltimateXR.Locomotion
         /// <returns>Position in the arc corresponding to the given time value</returns>
         private Vector3 EvaluateArc(Vector3 origin, Vector3 forward, float speed, float time)
         {
-            return origin + speed * time * forward - 0.5f * 9.8f * time * time * Vector3.up;
+            return origin + speed * time * forward - 0.5f * 9.8f * time * time * UpVector;
         }
 
         /// <summary>

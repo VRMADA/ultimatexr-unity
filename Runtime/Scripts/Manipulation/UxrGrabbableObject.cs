@@ -697,7 +697,7 @@ namespace UltimateXR.Manipulation
 
             if (_startAnchor)
             {
-                UxrGrabManager.Instance.PlaceObject(this, _startAnchor, UxrPlacementType.Immediate, propagateEvents);
+                UxrGrabManager.Instance.PlaceObject(this, _startAnchor, UxrPlacementOptions.None, propagateEvents);
             }
         }
 

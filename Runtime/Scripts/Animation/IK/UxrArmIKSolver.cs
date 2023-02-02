@@ -108,7 +108,9 @@ namespace UltimateXR.Animation.IK
                 return;
             }
 
-            Vector3 handPosition = Hand.position;
+            Vector3 localClaviclePos = ToLocalAvatarPos(Clavicle.position);
+            Vector3 localForearmPos  = ToLocalAvatarPos(Forearm.position);
+            Vector3 localHandPos     = ToLocalAvatarPos(Hand.position);
 
             if (Clavicle != null)
             {
@@ -119,22 +121,29 @@ namespace UltimateXR.Animation.IK
 
                 if (armSolveOptions.HasFlag(UxrArmSolveOptions.SolveClavicle))
                 {
-                    // Compute the rotation to make the clavicle look at the elbow
-                    Vector3 clavicleLookAt = (Forearm.position - Clavicle.position).normalized;
-                    clavicleLookAt = Vector3.Scale(clavicleLookAt, _clavicleDeformationAxesScale) + _clavicleDeformationAxesBias;
+                    // Compute the rotation to make the clavicle look at the elbow.
+                    // Computations are performed in local avatar space to allow avatars with pitch/roll and improve precision.
 
-                    Quaternion rotationLookAt   = Quaternion.Slerp(Clavicle.transform.rotation, Quaternion.LookRotation(clavicleLookAt) * _clavicleUniversalLocalAxes.UniversalToActualAxesRotation, _clavicleDeformation);
-                    float      deformationAngle = Vector3.Angle(rotationLookAt * _clavicleUniversalLocalAxes.LocalForward, Clavicle.rotation * _clavicleUniversalLocalAxes.LocalForward);
+                    Vector3 avatarClavicleLookAt = (localForearmPos - localClaviclePos).normalized;
+                    avatarClavicleLookAt = Vector3.Scale(avatarClavicleLookAt, _clavicleDeformationAxesScale) + _clavicleDeformationAxesBias;
+
+                    Quaternion avatarClavicleRotation = ToLocalAvatarRot(Clavicle.rotation);
+
+                    Quaternion avatarClavicleRotationLookAt = Quaternion.Slerp(avatarClavicleRotation,
+                                                                               Quaternion.LookRotation(avatarClavicleLookAt) * _clavicleUniversalLocalAxes.UniversalToActualAxesRotation,
+                                                                               _clavicleDeformation);
+
+                    float deformationAngle = Quaternion.Angle(avatarClavicleRotationLookAt, avatarClavicleRotation);
 
                     if (deformationAngle > _clavicleRangeOfMotionAngle)
                     {
-                        rotationLookAt = Quaternion.Slerp(Clavicle.transform.rotation, rotationLookAt, _clavicleRangeOfMotionAngle / deformationAngle);
+                        avatarClavicleRotationLookAt = Quaternion.Slerp(avatarClavicleRotation, avatarClavicleRotationLookAt, _clavicleRangeOfMotionAngle / deformationAngle);
                     }
 
                     // Smooth out:
-                    Quaternion lastClavicleRotation = Avatar.transform.rotation * _lastClavicleLocalRotation;
-                    float      totalDegrees         = Quaternion.Angle(lastClavicleRotation, rotationLookAt);
-                    float      degreesRot           = ClavicleMaxDegreesPerSecond * Time.deltaTime;
+
+                    float totalDegrees = Quaternion.Angle(_lastClavicleLocalRotation, avatarClavicleRotationLookAt);
+                    float degreesRot   = ClavicleMaxDegreesPerSecond * Time.deltaTime;
 
                     if (_smooth == false)
                     {
@@ -143,84 +152,87 @@ namespace UltimateXR.Animation.IK
 
                     if (_lastClavicleRotationInitialized == false || totalDegrees < 0.001f)
                     {
-                        Clavicle.rotation = rotationLookAt;
+                        Clavicle.rotation = ToWorldRot(avatarClavicleRotationLookAt);
                     }
                     else
                     {
-                        Clavicle.rotation = Quaternion.Slerp(lastClavicleRotation, rotationLookAt, Mathf.Clamp01(degreesRot / totalDegrees));
+                        Clavicle.rotation = Quaternion.Slerp(ToWorldRot(_lastClavicleLocalRotation),
+                                                             ToWorldRot(avatarClavicleRotationLookAt),
+                                                             Mathf.Clamp01(degreesRot / totalDegrees));
                     }
-
-                    lastClavicleRotation = Quaternion.Inverse(Avatar.transform.rotation) * rotationLookAt;
                 }
 
-                Hand.position = handPosition;
+                Hand.position = ToWorldPos(localHandPos);
             }
 
-            // Find the plane of intersection between 2 spheres (sphere with "upper arm" radius and sphere with "forearm" radius):
-            Vector3 armPosition = Arm.position;
+            // Find the plane of intersection between 2 spheres (sphere with "upper arm" radius and sphere with "forearm" radius).
+            // Computations are performed in local avatar space to allow avatars with pitch/roll and improve precision.
 
-            float a = 2.0f * (handPosition.x - armPosition.x);
-            float b = 2.0f * (handPosition.y - armPosition.y);
-            float c = 2.0f * (handPosition.z - armPosition.z);
-            float d = armPosition.x * armPosition.x - handPosition.x * handPosition.x + armPosition.y * armPosition.y - handPosition.y * handPosition.y +
-                      armPosition.z * armPosition.z - handPosition.z * handPosition.z - _upperArmLength * _upperArmLength + _forearmLength * _forearmLength;
+            localForearmPos = ToLocalAvatarPos(Forearm.position);
+            Vector3 localArmPos = ToLocalAvatarPos(Arm.position);
+
+            float a = 2.0f * (localHandPos.x - localArmPos.x);
+            float b = 2.0f * (localHandPos.y - localArmPos.y);
+            float c = 2.0f * (localHandPos.z - localArmPos.z);
+            float d = localArmPos.x * localArmPos.x - localHandPos.x * localHandPos.x + localArmPos.y * localArmPos.y - localHandPos.y * localHandPos.y +
+                      localArmPos.z * localArmPos.z - localHandPos.z * localHandPos.z - _upperArmLength * _upperArmLength + _forearmLength * _forearmLength;
 
             // Find the center of the circle intersecting the 2 spheres. Check if the intersection exists (hand may be stretched over the limits)
-            float t = (armPosition.x * a + armPosition.y * b + armPosition.z * c + d) / (a * (armPosition.x - handPosition.x) + b * (armPosition.y - handPosition.y) + c * (armPosition.z - handPosition.z));
+            float t = (localArmPos.x * a + localArmPos.y * b + localArmPos.z * c + d) / (a * (localArmPos.x - localHandPos.x) + b * (localArmPos.y - localHandPos.y) + c * (localArmPos.z - localHandPos.z));
 
-            Vector3 armToCenter     = (handPosition - armPosition) * t;
-            Vector3 center          = Forearm.position;
-            float   safeDistance    = 0.001f;
-            float   maxHandDistance = _upperArmLength + _forearmLength - safeDistance;
-            float   circleRadius    = 0.0f;
+            Vector3 localArmToCenter = (localHandPos - localArmPos) * t;
+            Vector3 localCenter      = localForearmPos;
+            float   safeDistance     = 0.001f;
+            float   maxHandDistance  = _upperArmLength + _forearmLength - safeDistance;
+            float   circleRadius     = 0.0f;
 
-            if (armToCenter.magnitude + _forearmLength > maxHandDistance)
+            if (localArmToCenter.magnitude + _forearmLength > maxHandDistance)
             {
                 // Too far from shoulder and arm is over-extending. Solve depending on selected mode, but some are applied at the end of this method.
-                armToCenter = armToCenter.normalized * (_upperArmLength - safeDistance * 0.5f);
-                center      = armPosition + armToCenter;
+                localArmToCenter = localArmToCenter.normalized * (_upperArmLength - safeDistance * 0.5f);
+                localCenter      = localArmPos + localArmToCenter;
 
                 if (armOverExtendMode == UxrArmOverExtendMode.LimitHandReach)
                 {
                     // Clamp hand distance
-                    Hand.position = armPosition + armToCenter.normalized * maxHandDistance;
+                    Hand.position = ToWorldPos(localArmPos + localArmToCenter.normalized * maxHandDistance);
                 }
 
-                float angleRadians = Mathf.Acos((center - armPosition).magnitude / _upperArmLength);
+                float angleRadians = Mathf.Acos((localCenter - localArmPos).magnitude / _upperArmLength);
                 circleRadius = Mathf.Sin(angleRadians) * _upperArmLength;
             }
-            else if (armToCenter.magnitude < 0.04f)
+            else if (localArmToCenter.magnitude < 0.04f)
             {
                 // Too close to shoulder: keep current elbow position.
-                armToCenter = Forearm.position - armPosition;
-                center      = Forearm.position;
+                localArmToCenter = localForearmPos - localArmPos;
+                localCenter      = localForearmPos;
             }
             else
             {
-                center = armPosition + armToCenter;
+                localCenter = localArmPos + localArmToCenter;
 
                 // Find the circle radius
-                float angleRadians = Mathf.Acos((center - armPosition).magnitude / _upperArmLength);
+                float angleRadians = Mathf.Acos((localCenter - localArmPos).magnitude / _upperArmLength);
                 circleRadius = Mathf.Sin(angleRadians) * _upperArmLength;
             }
 
-            Vector3    finalHandPosition = Hand.position;
-            Quaternion finalHandRotation = Hand.rotation;
+            Vector3    finalLocalHandPosition = ToLocalAvatarPos(Hand.position);
+            Quaternion finalHandRotation      = Hand.rotation;
 
             // Compute the point inside this circle using the elbowAperture parameter.
             // Possible range is from bottom to exterior (far left or far right for left arm and right arm respectively).
             Vector3 planeNormal = -new Vector3(a, b, c);
-            Vector3 avatarUp    = Avatar != null ? Avatar.transform.up : Vector3.up;
 
-            Quaternion rotToShoulder = Quaternion.LookRotation(Vector3.Cross((armPosition - _otherArm.Arm.position) * (_side == UxrHandSide.Left ? -1.0f : 1.0f), avatarUp).normalized, avatarUp);
-            Vector3    armToHand     = (finalHandPosition - armPosition).normalized;
-            Quaternion rotArmForward = rotToShoulder * Quaternion.LookRotation(Quaternion.Inverse(rotToShoulder) * armToCenter, Quaternion.Inverse(rotToShoulder) * armToHand);
+            Vector3    otherLocalArmPos = ToLocalAvatarPos(_otherArm.Arm.position);
+            Quaternion rotToShoulder    = Quaternion.LookRotation(Vector3.Cross((localArmPos - otherLocalArmPos) * (_side == UxrHandSide.Left ? -1.0f : 1.0f), Vector3.up).normalized, Vector3.up);
+            Vector3    armToHand        = (finalLocalHandPosition - localArmPos).normalized;
+            Quaternion rotArmForward    = rotToShoulder * Quaternion.LookRotation(Quaternion.Inverse(rotToShoulder) * localArmToCenter, Quaternion.Inverse(rotToShoulder) * armToHand);
 
-            Vector3 vectorFromCenterSide = Vector3.Cross(_side == UxrHandSide.Left ? rotArmForward * avatarUp : rotArmForward * -avatarUp, planeNormal);
+            Vector3 vectorFromCenterSide = Vector3.Cross(_side == UxrHandSide.Left ? rotArmForward * Vector3.up : rotArmForward * -Vector3.up, planeNormal);
 
             if (_otherArm != null)
             {
-                bool isBack = Vector3.Cross(armPosition - _otherArm.Arm.position, center - armPosition).y * (_side == UxrHandSide.Left ? -1.0f : 1.0f) > 0.0f;
+                bool isBack = Vector3.Cross(localArmPos - otherLocalArmPos, localCenter - localArmPos).y * (_side == UxrHandSide.Left ? -1.0f : 1.0f) > 0.0f;
 
                 /*
                  * Do stuff with isBack
@@ -237,25 +249,25 @@ namespace UltimateXR.Animation.IK
             // Now compute the elbow position using it
             Vector3 vectorFromCenterBottom = _side == UxrHandSide.Left ? Vector3.Cross(vectorFromCenterSide, planeNormal) : Vector3.Cross(planeNormal, vectorFromCenterSide);
 
-            Vector3 elbowPosition = center + Vector3.Lerp(vectorFromCenterBottom, vectorFromCenterSide, _elbowAperture).normalized * circleRadius;
+            Vector3 elbowPosition = localCenter + Vector3.Lerp(vectorFromCenterBottom, vectorFromCenterSide, _elbowAperture).normalized * circleRadius;
 
             // Compute the desired rotation
-            Vector3 armForward = (elbowPosition - armPosition).normalized;
+            Vector3 armForward = (elbowPosition - localArmPos).normalized;
 
             // Check range of motion of the arm
             if (Arm.parent != null)
             {
-                Vector3 armNeutralForward = Arm.parent.TransformDirection(_armNeutralForwardInParent);
+                Vector3 armNeutralForward = ToLocalAvatarDir(Arm.parent.TransformDirection(_armNeutralForwardInParent));
 
                 if (Vector3.Angle(armForward, armNeutralForward) > _armRangeOfMotionAngle)
                 {
                     armForward    = Vector3.RotateTowards(armNeutralForward, armForward, _armRangeOfMotionAngle * Mathf.Deg2Rad, 0.0f);
-                    elbowPosition = armPosition + armForward * _upperArmLength;
+                    elbowPosition = localArmPos + armForward * _upperArmLength;
                 }
             }
 
             // Compute the position and rotation of the rest
-            Vector3 forearmForward = (Hand.position - elbowPosition).normalized;
+            Vector3 forearmForward = (ToLocalAvatarPos(Hand.position) - elbowPosition).normalized;
             float   elbowAngle     = Vector3.Angle(armForward, forearmForward);
             Vector3 elbowAxis      = elbowAngle > ElbowMinAngleThreshold ? Vector3.Cross(forearmForward, armForward).normalized : Vector3.up;
 
@@ -266,27 +278,26 @@ namespace UltimateXR.Animation.IK
 
             // Transform from top hierarchy to bottom to avoid jitter. Since we consider Z forward and Y the elbow rotation axis, we also
             // need to transform from this "universal" space to the actual axes the model uses.
-            Arm.rotation = armRotationTarget * _armUniversalLocalAxes.UniversalToActualAxesRotation;
+            Arm.rotation = ToWorldRot(armRotationTarget * _armUniversalLocalAxes.UniversalToActualAxesRotation);
 
-            if (Vector3.Distance(finalHandPosition, armPosition) > maxHandDistance)
+            if (Vector3.Distance(finalLocalHandPosition, localArmPos) > maxHandDistance)
             {
                 // Arm over extended: solve if the current mode is one of the remaining 2 to handle:
                 if (armOverExtendMode == UxrArmOverExtendMode.ExtendUpperArm)
                 {
                     // Move the elbow away to reach the hand. This will stretch the arm.
-                    elbowPosition = finalHandPosition - (finalHandPosition - elbowPosition).normalized * _forearmLength;
+                    elbowPosition = finalLocalHandPosition - (finalLocalHandPosition - elbowPosition).normalized * _forearmLength;
                 }
                 else if (armOverExtendMode == UxrArmOverExtendMode.ExtendArm)
                 {
                     // Stretch both the arm and forearm
-                    Vector3 elbowPosition2 = finalHandPosition - (finalHandPosition - elbowPosition).normalized * _forearmLength;
+                    Vector3 elbowPosition2 = finalLocalHandPosition - (finalLocalHandPosition - elbowPosition).normalized * _forearmLength;
                     elbowPosition = (elbowPosition + elbowPosition2) * 0.5f;
                 }
             }
 
-            Forearm.SetPositionAndRotation(elbowPosition, forearmRotationTarget * _forearmUniversalLocalAxes.UniversalToActualAxesRotation);
-
-            Hand.SetPositionAndRotation(finalHandPosition, finalHandRotation);
+            Forearm.SetPositionAndRotation(ToWorldPos(elbowPosition), ToWorldRot(forearmRotationTarget * _forearmUniversalLocalAxes.UniversalToActualAxesRotation));
+            Hand.SetPositionAndRotation(ToWorldPos(finalLocalHandPosition), finalHandRotation);
         }
 
         #endregion
@@ -361,6 +372,56 @@ namespace UltimateXR.Animation.IK
         #endregion
 
         #region Private Methods
+
+        /// <summary>
+        ///     Transforms a point from world space to local avatar space.
+        /// </summary>
+        /// <param name="pos">World space position</param>
+        /// <returns>Avatar space position</returns>
+        private Vector3 ToLocalAvatarPos(Vector3 pos)
+        {
+            return Avatar.transform.InverseTransformPoint(pos);
+        }
+
+        /// <summary>
+        ///     Transforms a point from local avatar space to world space.
+        /// </summary>
+        /// <param name="pos">Avatar space position</param>
+        /// <returns>World space position</returns>
+        private Vector3 ToWorldPos(Vector3 pos)
+        {
+            return Avatar.transform.TransformPoint(pos);
+        }
+
+        /// <summary>
+        ///     Transforms a direction from world space to local avatar space.
+        /// </summary>
+        /// <param name="dir">World space direction</param>
+        /// <returns>Avatar space direction</returns>
+        private Vector3 ToLocalAvatarDir(Vector3 dir)
+        {
+            return Avatar.transform.InverseTransformDirection(dir);
+        }
+
+        /// <summary>
+        ///     Transforms a rotation from world space to local avatar space.
+        /// </summary>
+        /// <param name="rot">World space rotation</param>
+        /// <returns>Avatar space rotation</returns>
+        private Quaternion ToLocalAvatarRot(Quaternion rot)
+        {
+            return Quaternion.Inverse(Avatar.transform.rotation) * rot;
+        }
+
+        /// <summary>
+        ///     Transforms a rotation from local avatar space to world space.
+        /// </summary>
+        /// <param name="rot">Avatar space rotation</param>
+        /// <returns>World space rotation</returns>
+        private Quaternion ToWorldRot(Quaternion rot)
+        {
+            return Avatar.transform.rotation * rot;
+        }
 
         /// <summary>
         ///     Computes the internal parameters for the IK.

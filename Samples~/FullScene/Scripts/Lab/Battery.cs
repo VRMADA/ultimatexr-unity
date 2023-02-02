@@ -83,7 +83,7 @@ namespace UltimateXR.Examples.FullScene.Lab
                         GrabbableObject.TranslationConstraint = UxrTranslationConstraintMode.RestrictLocalOffset;
                         GrabbableObject.RotationConstraint    = UxrRotationConstraintMode.Locked;
 
-                        UxrGrabManager.Instance.PlaceObject(GrabbableObject, batteryAnchor.Anchor, UxrPlacementType.Smooth, false);
+                        UxrGrabManager.Instance.PlaceObject(GrabbableObject, batteryAnchor.Anchor, UxrPlacementOptions.Smooth | UxrPlacementOptions.DontRelease, true);
 
                         if (_manipulationHapticFeedback)
                         {
@@ -112,7 +112,7 @@ namespace UltimateXR.Examples.FullScene.Lab
                     // Battery can only move in a specific axis but if it is grabbed past this distance it becomes free
                     GrabbableObject.TranslationLimitsMax = _batteryOffsetConstraint;
 
-                    if (transform.parent != null && transform.localPosition.z > _batteryInsertOffset)
+                    if (transform.parent != null && UxrGrabManager.Instance.IsBeingGrabbed(GrabbableObject) && transform.localPosition.z > _batteryInsertOffset)
                     {
                         // Free battery
 

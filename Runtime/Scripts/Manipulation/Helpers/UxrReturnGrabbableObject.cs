@@ -57,7 +57,7 @@ namespace UltimateXR.Manipulation.Helpers
 
             if (anchor != null && anchor.CurrentPlacedObject == null)
             {
-                UxrGrabManager.Instance.PlaceObject(grabbableObject, anchor, _smoothTransition ? UxrPlacementType.Smooth : UxrPlacementType.Immediate, propagateEvents);
+                UxrGrabManager.Instance.PlaceObject(grabbableObject, anchor, _smoothTransition ? UxrPlacementOptions.Smooth : UxrPlacementOptions.None, propagateEvents);
             }
 
             _returnCoroutine = null;
@@ -103,7 +103,7 @@ namespace UltimateXR.Manipulation.Helpers
                     if (_returnDelaySeconds <= 0.0f)
                     {
                         // Return to original place
-                        UxrGrabManager.Instance.PlaceObject(e.GrabbableObject, _grabbableObjectAnchor, _smoothTransition ? UxrPlacementType.Smooth : UxrPlacementType.Immediate, true);
+                        UxrGrabManager.Instance.PlaceObject(e.GrabbableObject, _grabbableObjectAnchor, _smoothTransition ? UxrPlacementOptions.Smooth : UxrPlacementOptions.None, true);
                     }
                     else
                     {
