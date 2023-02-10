@@ -262,12 +262,15 @@ namespace UltimateXR.Devices.Integrations
             {
                 if (handSide == UxrHandSide.Left)
                 {
-                    _leftHapticChannel = (_leftHapticChannel + 1) % hapticCapabilities.numChannels;
+                    if(hapticCapabilities.numChannels > 0)
+                        _leftHapticChannel = (_leftHapticChannel + 1) % hapticCapabilities.numChannels;
+
                     channel            = _leftHapticChannel;
                 }
                 else
                 {
-                    _rightHapticChannel = (_rightHapticChannel + 1) % hapticCapabilities.numChannels;
+                    if (hapticCapabilities.numChannels > 0)
+                        _rightHapticChannel = (_rightHapticChannel + 1) % hapticCapabilities.numChannels;
                     channel             = _rightHapticChannel;
                 }
             }
