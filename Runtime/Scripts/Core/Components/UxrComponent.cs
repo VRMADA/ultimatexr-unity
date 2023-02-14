@@ -206,6 +206,7 @@ namespace UltimateXR.Core.Components
 
                 OnUniqueIdChanging(UniqueId, newUniqueId);
                 UniqueId = newUniqueId;
+                s_componentsById.Add(UniqueId, this);
                 OnUniqueIdChanged(UniqueId, newUniqueId);
                 return true;
             }

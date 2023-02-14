@@ -187,7 +187,7 @@ namespace UltimateXR.Devices.Integrations
                 return;
             }
 
-            if (!inputDevice.TryGetHapticCapabilities(out HapticCapabilities hapticCapabilities))
+            if (!inputDevice.TryGetHapticCapabilities(out HapticCapabilities hapticCapabilities) || hapticCapabilities.numChannels == 0)
             {
                 return;
             }
@@ -250,7 +250,7 @@ namespace UltimateXR.Devices.Integrations
                 return;
             }
 
-            if (!inputDevice.TryGetHapticCapabilities(out HapticCapabilities hapticCapabilities))
+            if (!inputDevice.TryGetHapticCapabilities(out HapticCapabilities hapticCapabilities) || hapticCapabilities.numChannels == 0)
             {
                 return;
             }
