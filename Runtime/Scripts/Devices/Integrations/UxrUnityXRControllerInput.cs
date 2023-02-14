@@ -187,7 +187,7 @@ namespace UltimateXR.Devices.Integrations
                 return;
             }
 
-            if (!inputDevice.TryGetHapticCapabilities(out HapticCapabilities hapticCapabilities))
+            if (!inputDevice.TryGetHapticCapabilities(out HapticCapabilities hapticCapabilities) || hapticCapabilities.numChannels == 0)
             {
                 return;
             }
@@ -250,7 +250,7 @@ namespace UltimateXR.Devices.Integrations
                 return;
             }
 
-            if (!inputDevice.TryGetHapticCapabilities(out HapticCapabilities hapticCapabilities))
+            if (!inputDevice.TryGetHapticCapabilities(out HapticCapabilities hapticCapabilities) || hapticCapabilities.numChannels == 0)
             {
                 return;
             }
@@ -262,15 +262,12 @@ namespace UltimateXR.Devices.Integrations
             {
                 if (handSide == UxrHandSide.Left)
                 {
-                    if(hapticCapabilities.numChannels > 0)
-                        _leftHapticChannel = (_leftHapticChannel + 1) % hapticCapabilities.numChannels;
-
+                    _leftHapticChannel = (_leftHapticChannel + 1) % hapticCapabilities.numChannels;
                     channel            = _leftHapticChannel;
                 }
                 else
                 {
-                    if (hapticCapabilities.numChannels > 0)
-                        _rightHapticChannel = (_rightHapticChannel + 1) % hapticCapabilities.numChannels;
+                    _rightHapticChannel = (_rightHapticChannel + 1) % hapticCapabilities.numChannels;
                     channel             = _rightHapticChannel;
                 }
             }
