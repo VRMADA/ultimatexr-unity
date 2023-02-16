@@ -21,11 +21,11 @@ namespace UltimateXR.UI.UnityInputModule
         #region Inspector Properties/Serialized Fields
 
         [SerializeField] protected UxrInteractionType _interactionType;
-        [SerializeField] protected float              _fingerTipMinHoverDistance = UxrFingerTipRaycaster.FingerTipMinHoverDistanceDefault;
-        [SerializeField] protected bool               _autoEnableLaserPointer;
-        [SerializeField] protected float              _autoEnableDistance = 5.0f;
-        [SerializeField] protected bool               _allowLeftHand      = true;
-        [SerializeField] protected bool               _allowRightHand     = true;
+        [SerializeField] protected float _fingerTipMinHoverDistance = UxrFingerTipRaycaster.FingerTipMinHoverDistanceDefault;
+        [SerializeField] protected bool _autoEnableLaserPointer;
+        [SerializeField] protected float _autoEnableDistance = 5.0f;
+        [SerializeField] protected bool _allowLeftHand = true;
+        [SerializeField] protected bool _allowRightHand = true;
 
         #endregion
 
@@ -156,11 +156,17 @@ namespace UltimateXR.UI.UnityInputModule
 
             if (_interactionType == UxrInteractionType.FingerTips)
             {
-                _newRaycasterFingerTips                           = GetOrAddRaycaster<UxrFingerTipRaycaster>(_oldRaycaster);
+                _newRaycasterFingerTips = GetOrAddRaycaster<UxrFingerTipRaycaster>(_oldRaycaster);
                 _newRaycasterFingerTips.FingerTipMinHoverDistance = _fingerTipMinHoverDistance;
             }
             else if (_interactionType == UxrInteractionType.LaserPointers)
             {
+                _newRaycasterLaserPointer = GetOrAddRaycaster<UxrLaserPointerRaycaster>(_oldRaycaster);
+            }
+            else if (_interactionType == UxrInteractionType.LaserPointersAndFingerTips)
+            {
+                _newRaycasterFingerTips = GetOrAddRaycaster<UxrFingerTipRaycaster>(_oldRaycaster);
+                _newRaycasterFingerTips.FingerTipMinHoverDistance = _fingerTipMinHoverDistance;
                 _newRaycasterLaserPointer = GetOrAddRaycaster<UxrLaserPointerRaycaster>(_oldRaycaster);
             }
         }
@@ -174,8 +180,8 @@ namespace UltimateXR.UI.UnityInputModule
         private T GetOrAddRaycaster<T>(GraphicRaycaster oldRaycaster) where T : GraphicRaycaster
         {
             bool copyParameters = UnityCanvas.GetComponent<T>() == null;
-            T    rayCaster      = UnityCanvas.GetOrAddComponent<T>();
-            
+            T rayCaster = UnityCanvas.GetOrAddComponent<T>();
+
             rayCaster.enabled = true;
 
             if (oldRaycaster && rayCaster)
@@ -183,10 +189,10 @@ namespace UltimateXR.UI.UnityInputModule
                 if (copyParameters)
                 {
                     rayCaster.ignoreReversedGraphics = oldRaycaster.ignoreReversedGraphics;
-                    rayCaster.blockingObjects        = GraphicRaycaster.BlockingObjects.All;
-                    rayCaster.blockingMask           = oldRaycaster.blockingMask;
+                    rayCaster.blockingObjects = GraphicRaycaster.BlockingObjects.All;
+                    rayCaster.blockingMask = oldRaycaster.blockingMask;
                 }
-                
+
                 oldRaycaster.enabled = false;
             }
 
@@ -218,8 +224,8 @@ namespace UltimateXR.UI.UnityInputModule
 
         #region Private Types & Data
 
-        private GraphicRaycaster         _oldRaycaster;
-        private UxrFingerTipRaycaster    _newRaycasterFingerTips;
+        private GraphicRaycaster _oldRaycaster;
+        private UxrFingerTipRaycaster _newRaycasterFingerTips;
         private UxrLaserPointerRaycaster _newRaycasterLaserPointer;
 
         #endregion
