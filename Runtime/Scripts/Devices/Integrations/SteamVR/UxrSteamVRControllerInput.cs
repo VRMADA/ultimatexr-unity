@@ -116,7 +116,7 @@ namespace UltimateXR.Devices.Integrations.SteamVR
 
             if (_actionsInput2D.TryGetValue(input2D, out SteamVR_Action_Vector2 action))
             {
-                return action[source].axis;
+                return FilterTwoAxesDeadZone(action[source].axis, JoystickDeadZone);
             }
 
 #endif
