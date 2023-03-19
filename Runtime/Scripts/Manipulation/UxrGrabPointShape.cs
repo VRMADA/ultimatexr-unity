@@ -42,12 +42,16 @@ namespace UltimateXR.Manipulation
         /// </summary>
         /// <param name="grabber">Grabber to compute the distance from</param>
         /// <param name="snapTransform">The <see cref="Transform" /> on the grabbable object that is used to align to the grabber</param>
-        /// <param name="distanceTransform">
+        /// <param name="objectDistanceTransform">
         ///     The <see cref="Transform" /> on the grabbable object that is used to compute the
-        ///     distance to the grabber
+        ///     distance to the <see cref="UxrGrabber" />
+        /// </param>
+        /// <param name="grabberDistanceTransform">
+        ///     The <see cref="Transform" /> on the grabber that is used to compute the distance
+        ///     to the <see cref="UxrGrabbableObject" />
         /// </param>
         /// <returns>Distance value</returns>
-        public abstract float GetDistanceFromGrabber(UxrGrabber grabber, Transform snapTransform, Transform distanceTransform);
+        public abstract float GetDistanceFromGrabber(UxrGrabber grabber, Transform snapTransform, Transform objectDistanceTransform, Transform grabberDistanceTransform);
 
         /// <summary>
         ///     Gets the closest snap position and rotation that should be used when a <see cref="UxrGrabber" /> tries to a grab
@@ -59,10 +63,14 @@ namespace UltimateXR.Manipulation
         ///     The <see cref="Transform" /> on the grabbable object that is used to compute the
         ///     distance to the grabber
         /// </param>
+        /// <param name="grabberDistanceTransform">
+        ///     The <see cref="Transform" /> on the grabber that is used to compute the distance
+        ///     to the <see cref="UxrGrabbableObject" />
+        /// </param>
         /// <param name="position">Snap position</param>
         /// <param name="rotation">Snap rotation</param>
         /// <returns>Distance value</returns>
-        public abstract void GetClosestSnap(UxrGrabber grabber, Transform snapTransform, Transform distanceTransform, out Vector3 position, out Quaternion rotation);
+        public abstract void GetClosestSnap(UxrGrabber grabber, Transform snapTransform, Transform distanceTransform, Transform grabberDistanceTransform, out Vector3 position, out Quaternion rotation);
 
         #endregion
     }

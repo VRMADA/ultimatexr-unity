@@ -437,11 +437,11 @@ namespace UltimateXR.Extensions.Unity.Math
         /// <summary>
         ///     Computes the closest point in a segment to another point.
         /// </summary>
-        /// <param name="point">The point to compute the distance to</param>
+        /// <param name="point">The point to project</param>
         /// <param name="segmentA">Segment start point</param>
         /// <param name="segmentB">Segment end point</param>
         /// <returns>Closest point in the segment</returns>
-        public static Vector3 GetClosestPointFromSegment(this Vector3 point, Vector3 segmentA, Vector3 segmentB)
+        public static Vector3 ProjectOnSegment(this Vector3 point, Vector3 segmentA, Vector3 segmentB)
         {
             Vector3 ab = segmentB - segmentA;
             Vector3 av = point - segmentA;
@@ -459,6 +459,18 @@ namespace UltimateXR.Extensions.Unity.Math
             }
 
             return segmentA + Vector3.Project(av, ab.normalized);
+        }
+
+        /// <summary>
+        ///     Computes the closest point in a line to another point.
+        /// </summary>
+        /// <param name="point">The point to project</param>
+        /// <param name="pointInLine">Point in the line</param>
+        /// <param name="lineDirection">Line direction</param>
+        /// <returns>Point projected on the line</returns>
+        public static Vector3 ProjectOnLine(this Vector3 point, Vector3 pointInLine, Vector3 lineDirection)
+        {
+            return pointInLine + Vector3.Project(point - pointInLine, lineDirection);
         }
 
         /// <summary>

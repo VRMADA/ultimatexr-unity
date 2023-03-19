@@ -38,55 +38,64 @@ namespace UltimateXR.Manipulation
         /// </summary>
         public Transform Center => _center != null ? _center : transform;
 
-        /// <summary>
-        ///     Gets one side of the grabbable segment.
-        /// </summary>
-        public Vector3 SegmentA => Center.position + Center.TransformVector(_centerAxis) * _offsetMin;
-
-        /// <summary>
-        ///     Gets the other side of the grabbable segment.
-        /// </summary>
-        public Vector3 SegmentB => Center.position + Center.TransformVector(_centerAxis) * _offsetMax;
-
         #endregion
 
         #region Public Overrides UxrGrabPointShape
 
         /// <inheritdoc />
-        public override float GetDistanceFromGrabber(UxrGrabber grabber, Transform snapTransform, Transform distanceTransform)
+        public override float GetDistanceFromGrabber(UxrGrabber grabber, Transform snapTransform, Transform objectDistanceTransform, Transform grabberDistanceTransform)
         {
-            return grabber.transform.position.DistanceToSegment(GetSnapSegmentA(distanceTransform), GetSnapSegmentB(distanceTransform));
+            // TODO: Consider rotation difference
+            return grabberDistanceTransform.position.DistanceToSegment(GetSegmentA(objectDistanceTransform.position), GetSegmentB(objectDistanceTransform.position));
         }
 
         /// <inheritdoc />
-        public override void GetClosestSnap(UxrGrabber grabber, Transform snapTransform, Transform distanceTransform, out Vector3 position, out Quaternion rotation)
+        public override void GetClosestSnap(UxrGrabber grabber, Transform snapTransform, Transform distanceTransform, Transform grabberDistanceTransform, out Vector3 position, out Quaternion rotation)
         {
             // Compute best fitting rotation
-            Vector3 worldCenterAxis  = _center.TransformVector(_centerAxis);
-            Vector3 localSnapAxis    = snapTransform.InverseTransformVector(worldCenterAxis);
-            Vector3 worldGrabberAxis = grabber.transform.TransformVector(localSnapAxis);
 
-            Quaternion projection  = Quaternion.FromToRotation(worldGrabberAxis, worldCenterAxis);
-            bool       reverseGrip = false;
+            Vector3 worldAxis        = Center.TransformDirection(_centerAxis);
+            Vector3 localSnapAxis    = snapTransform.InverseTransformDirection(worldAxis);
+            Vector3 worldGrabberAxis = grabber.transform.TransformDirection(localSnapAxis);
+            bool    reverseGrip      = _bidirectional && Vector3.Angle(worldGrabberAxis, -worldAxis) < Vector3.Angle(worldGrabberAxis, worldAxis);
 
-            if (_bidirectional && Vector3.Angle(worldGrabberAxis, -worldCenterAxis) < Vector3.Angle(worldGrabberAxis, worldCenterAxis))
+            // worldGrabberAxis contains the axis in world coordinates if it was being grabbed with the current grabber orientation
+            // projection contains the rotation that the grabber would need to rotate to align to the axis using the closest angle
+
+            Quaternion projection = Quaternion.FromToRotation(worldGrabberAxis, reverseGrip ? -worldAxis : worldAxis);
+/*
+            if (reverseGrip)
             {
-                projection  = Quaternion.FromToRotation(worldGrabberAxis, -worldCenterAxis);
-                reverseGrip = true;
-            }
+                Vector3 right   = projection * Vector3.right;
+                Vector3 up      = projection * Vector3.up;
+                Vector3 forward = projection * Vector3.forward;
+            }*/
+
+            // Compute the rotation required to rotate the grabber to the best suited grip on the axis with the given properties 
 
             rotation = projection * grabber.transform.rotation;
+            
+            // Compute perpendicular vectors to the axis to get the angle from snap rotation to projected snap rotation.
 
-            // Given this rotation, compute position
-            Vector3 worldPerpendicular = _center.TransformVector(_centerAxis.Perpendicular);
-            Vector3 localPerpendicular = snapTransform.InverseTransformVector(worldPerpendicular);
+            Vector3 worldPerpendicular = Center.TransformDirection(_centerAxis.Perpendicular);
+            Vector3 localPerpendicular = snapTransform.InverseTransformDirection(worldPerpendicular);
 
             Quaternion grabberRotation = grabber.transform.rotation;
             grabber.transform.rotation = rotation;
-            float angleDelta = Vector3.SignedAngle(worldPerpendicular, grabber.transform.TransformVector(localPerpendicular), worldCenterAxis);
+            
+            // Compute angle and clamp it.
+            
+            float angle        = Vector3.SignedAngle(worldPerpendicular, grabber.transform.TransformDirection(localPerpendicular), worldAxis);
+            float clampedAngle = Mathf.Clamp(angle, _angleMin, _angleMax);
+            rotation = Quaternion.AngleAxis(clampedAngle - angle, worldAxis) * rotation;
+            
+            // TODO: use _angleInterval
             grabber.transform.rotation = grabberRotation;
 
-            Vector3 fromAxisToSnap = snapTransform.position - snapTransform.position.GetClosestPointFromSegment(SegmentA, SegmentB);
+            // Compute grabber position by rotating the snap position around the axis
+
+            Vector3 projectedSnap  = snapTransform.position.ProjectOnLine(Center.position, worldAxis);
+            Vector3 fromAxisToSnap = snapTransform.position - projectedSnap;
             Vector3 grabberPos     = grabber.transform.position;
 
             if (reverseGrip)
@@ -94,7 +103,7 @@ namespace UltimateXR.Manipulation
                 fromAxisToSnap = Quaternion.AngleAxis(180.0f, worldPerpendicular) * fromAxisToSnap;
             }
 
-            position = grabberPos.GetClosestPointFromSegment(SegmentA, SegmentB) + Quaternion.AngleAxis(angleDelta, worldCenterAxis) * fromAxisToSnap;
+            position = grabberPos.ProjectOnSegment(GetSegmentA(projectedSnap), GetSegmentB(projectedSnap)) + fromAxisToSnap.GetRotationAround(worldAxis, clampedAngle);
         }
 
         #endregion
@@ -110,7 +119,7 @@ namespace UltimateXR.Manipulation
 
             if (_grabPointIndex >= 0 && _grabPointIndex < grabbableObject.GrabPointCount)
             {
-                Gizmos.DrawLine(SegmentA, SegmentB);
+                Gizmos.DrawLine(GetSegmentA(transform.position), GetSegmentB(transform.position));
             }
         }
 
@@ -119,23 +128,21 @@ namespace UltimateXR.Manipulation
         #region Private Methods
 
         /// <summary>
-        ///     Gets the snap point for one side of the grabbable segment.
+        ///     Gets one side of the grabbable segment in world space if it started in <paramref name="center"/>.
         /// </summary>
-        /// <param name="pointTransform"><see cref="Transform" /> describing one side of the grabbable segment</param>
-        /// <returns>Snap point</returns>
-        private Vector3 GetSnapSegmentA(Transform pointTransform)
+        /// <param name="center">Center in world space to consider</param>
+        private Vector3 GetSegmentA(Vector3 center)
         {
-            return pointTransform.position + Center.TransformVector(_centerAxis) * _offsetMin;
+            return center + Center.TransformDirection(_centerAxis) * _offsetMin;
         }
 
         /// <summary>
-        ///     Gets the snap point for the other side of the grabbable segment.
+        ///     Gets the other side of the grabbable segment in world space if it started in <paramref name="center"/>.
         /// </summary>
-        /// <param name="pointTransform"><see cref="Transform" /> describing the other side of the grabbable segment</param>
-        /// <returns>Snap point</returns>
-        private Vector3 GetSnapSegmentB(Transform pointTransform)
+        /// <param name="center">Center in world space to consider</param>
+        private Vector3 GetSegmentB(Vector3 center)
         {
-            return pointTransform.position + Center.TransformVector(_centerAxis) * _offsetMax;
+            return center + Center.TransformDirection(_centerAxis) * _offsetMax;
         }
 
         #endregion
