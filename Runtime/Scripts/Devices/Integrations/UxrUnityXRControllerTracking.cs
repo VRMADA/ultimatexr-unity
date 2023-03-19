@@ -4,6 +4,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
+using UltimateXR.Core;
 using UnityEngine;
 using UnityEngine.XR;
 
@@ -34,19 +35,24 @@ namespace UltimateXR.Devices.Integrations
             {
                 if (nodeState.nodeType == XRNode.LeftHand)
                 {
-                    nodeState.TryGetRotation(out Quaternion localAvatarLeftHandSensorRot);
-                    nodeState.TryGetPosition(out Vector3 localAvatarLeftHandSensorPos);
+                    Vector3    localAvatarLeftHandSensorPos = LocalAvatarLeftHandSensorPos;
+                    Quaternion localAvatarLeftHandSensorRot = LocalAvatarLeftHandSensorRot;
+                    
+                    nodeState.TryGetRotation(out localAvatarLeftHandSensorRot);
+                    nodeState.TryGetPosition(out localAvatarLeftHandSensorPos);
+                    
+                    UpdateSensor(UxrHandSide.Left, localAvatarLeftHandSensorPos, localAvatarLeftHandSensorRot);
 
-                    LocalAvatarLeftHandSensorRot = localAvatarLeftHandSensorRot;
-                    LocalAvatarLeftHandSensorPos = localAvatarLeftHandSensorPos;
                 }
                 else if (nodeState.nodeType == XRNode.RightHand)
                 {
-                    nodeState.TryGetRotation(out Quaternion localAvatarRightHandSensorRot);
-                    nodeState.TryGetPosition(out Vector3 localAvatarRightHandSensorPos);
+                    Vector3    localAvatarRightHandSensorPos = LocalAvatarRightHandSensorPos;
+                    Quaternion localAvatarRightHandSensorRot = LocalAvatarRightHandSensorRot;
 
-                    LocalAvatarRightHandSensorRot = localAvatarRightHandSensorRot;
-                    LocalAvatarRightHandSensorPos = localAvatarRightHandSensorPos;
+                    nodeState.TryGetRotation(out localAvatarRightHandSensorRot);
+                    nodeState.TryGetPosition(out localAvatarRightHandSensorPos);
+
+                    UpdateSensor(UxrHandSide.Right, localAvatarRightHandSensorPos, localAvatarRightHandSensorRot);
                 }
             }
         }

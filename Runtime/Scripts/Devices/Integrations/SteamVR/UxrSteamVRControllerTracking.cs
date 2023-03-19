@@ -80,13 +80,11 @@ namespace UltimateXR.Devices.Integrations.SteamVR
         {
             if (fromSource == SteamVR_Input_Sources.LeftHand)
             {
-                LocalAvatarLeftHandSensorPos = poseAction[fromSource].localPosition;
-                LocalAvatarLeftHandSensorRot = poseAction[fromSource].localRotation;
+                UpdateSensor(UxrHandSide.Left, poseAction[fromSource].localPosition, poseAction[fromSource].localRotation);
             }
             else if (fromSource == SteamVR_Input_Sources.RightHand)
             {
-                LocalAvatarRightHandSensorPos = poseAction[fromSource].localPosition;
-                LocalAvatarRightHandSensorRot = poseAction[fromSource].localRotation;
+                UpdateSensor(UxrHandSide.Right, poseAction[fromSource].localPosition, poseAction[fromSource].localRotation);
             }
         }
 

@@ -6,6 +6,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UltimateXR.Animation.Interpolation;
+using UltimateXR.Core;
 using UltimateXR.Extensions.Unity.Math;
 using UnityEngine;
 using UnityEngine.XR;
@@ -223,6 +225,38 @@ namespace UltimateXR.Devices
 
         #endregion
 
+        #region Protected Methods
+
+        /// <summary>
+        ///     Updates the sensor data of an XR controller, using smoothing if required.
+        /// </summary>
+        /// <param name="side">Which side the sensor belongs to</param>
+        /// <param name="localPos">Controller position in local tracking space</param>
+        /// <param name="localRot">Controller rotation in local tracking space</param>
+        protected void UpdateSensor(UxrHandSide side, Vector3 localPos, Quaternion localRot)
+        {
+            if (side == UxrHandSide.Left)
+            {
+                LocalAvatarLeftHandSensorPos = UxrInterpolator.SmoothDampPosition(_lastLeftSensorLocalPos, localPos, _leftSensorInitialized ? _smoothPosition : 0.0f);
+                LocalAvatarLeftHandSensorRot = UxrInterpolator.SmoothDampRotation(_lastLeftSensorLocalRot, localRot, _leftSensorInitialized ? _smoothRotation : 0.0f);
+
+                _leftSensorInitialized  = true;
+                _lastLeftSensorLocalPos = LocalAvatarLeftHandSensorPos;
+                _lastLeftSensorLocalRot = LocalAvatarLeftHandSensorRot;
+            }
+            else if (side == UxrHandSide.Right)
+            {
+                LocalAvatarRightHandSensorPos = UxrInterpolator.SmoothDampPosition(_lastRightSensorLocalPos, localPos, _rightSensorInitialized ? _smoothPosition : 0.0f);
+                LocalAvatarRightHandSensorRot = UxrInterpolator.SmoothDampRotation(_lastRightSensorLocalRot, localRot, _rightSensorInitialized ? _smoothRotation : 0.0f);
+
+                _rightSensorInitialized  = true;
+                _lastRightSensorLocalPos = LocalAvatarRightHandSensorPos;
+                _lastRightSensorLocalRot = LocalAvatarRightHandSensorRot;
+            }
+        }
+
+        #endregion
+
         #region Private Methods
 
         /// <summary>
@@ -319,22 +353,22 @@ namespace UltimateXR.Devices
         /// <summary>
         ///     The left hand sensor position in local avatar coordinates
         /// </summary>
-        protected Vector3 LocalAvatarLeftHandSensorPos { get; set; }
+        protected Vector3 LocalAvatarLeftHandSensorPos { get; private set; }
 
         /// <summary>
         ///     The left hand sensor rotation in local avatar coordinates
         /// </summary>
-        protected Quaternion LocalAvatarLeftHandSensorRot { get; set; }
+        protected Quaternion LocalAvatarLeftHandSensorRot { get; private set; }
 
         /// <summary>
         ///     The right hand sensor position in local avatar coordinates
         /// </summary>
-        protected Vector3 LocalAvatarRightHandSensorPos { get; set; }
+        protected Vector3 LocalAvatarRightHandSensorPos { get; private set; }
 
         /// <summary>
         ///     The right hand sensor rotation in local avatar coordinates
         /// </summary>
-        protected Quaternion LocalAvatarRightHandSensorRot { get; set; }
+        protected Quaternion LocalAvatarRightHandSensorRot { get; private set; }
 
         #endregion
 
@@ -345,6 +379,13 @@ namespace UltimateXR.Devices
         private Vector3    _localSensorRightHandPos;
         private Quaternion _localSensorLeftHandRot;
         private Quaternion _localSensorRightHandRot;
+
+        private bool       _leftSensorInitialized;
+        private bool       _rightSensorInitialized;
+        private Vector3    _lastLeftSensorLocalPos;
+        private Vector3    _lastRightSensorLocalPos;
+        private Quaternion _lastLeftSensorLocalRot;
+        private Quaternion _lastRightSensorLocalRot;
 
         #endregion
     }
