@@ -2449,7 +2449,7 @@ namespace UltimateXR.Manipulation
                 }
 
                 // Toggle grab mode
-                ReleaseObject(grabber, grabber.GrabbedObject, true);
+                NotifyReleaseGrab(grabber, true);
                 return;
             }
 
@@ -2473,14 +2473,17 @@ namespace UltimateXR.Manipulation
         ///     Releases an object if the given grabber is grabbing any.
         /// </summary>
         /// <param name="grabber">Grabber to release the object from</param>
-        private void NotifyReleaseGrab(UxrGrabber grabber)
+        /// <param name="fromToggle">Whether the release was from a <see cref="UxrGrabMode.GrabToggle"/></param>
+        private void NotifyReleaseGrab(UxrGrabber grabber, bool fromToggle = false)
         {
             // A release gesture has been made. Check for possible object placements / drop
             if (grabber.GrabbedObject != null)
             {
                 // First check if the grabbed point has toggle mode or keep always mode. In that case we should not release the object but keep it in the grabbed list
 
-                if (_currentGrabs.TryGetValue(grabber.GrabbedObject, out RuntimeGrabInfo grabInfo))
+                RuntimeGrabInfo grabInfo = null;
+                
+                if (_currentGrabs.TryGetValue(grabber.GrabbedObject, out grabInfo) && !fromToggle)
                 {
                     for (int i = 0; i < grabInfo.Grabbers.Count; ++i)
                     {

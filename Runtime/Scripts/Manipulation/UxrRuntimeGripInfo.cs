@@ -39,12 +39,20 @@ namespace UltimateXR.Manipulation
         public Vector3 RelativeGrabberPosition { get; set; }
 
         /// <summary>
-        ///     Gets or sets the snap rotation relative to the <see cref="UxrGrabbableObject" /> at the moment it was grabbed.
+        ///     Gets or sets the transform relative to which <see cref="RelativeGrabAlignPosition" /> and
+        ///     <see cref="RelativeGrabAlignRotation" /> are specified.
+        /// </summary>
+        public Transform GrabAlignParentTransformUsed { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the snap rotation relative to the <see cref="GrabAlignParentTransformUsed" /> at the moment it was
+        ///     grabbed.
         /// </summary>
         public Quaternion RelativeGrabAlignRotation { get; set; }
 
         /// <summary>
-        ///     Gets or sets the snap position in local <see cref="UxrGrabbableObject" /> space at the moment it was grabbed.
+        ///     Gets or sets the snap position in local <see cref="GrabAlignParentTransformUsed" /> space at the moment it was
+        ///     grabbed.
         /// </summary>
         public Vector3 RelativeGrabAlignPosition { get; set; }
 
@@ -52,6 +60,20 @@ namespace UltimateXR.Manipulation
         ///     Gets or sets the proximity rotation relative to the <see cref="UxrGrabbableObject" /> at the moment it was grabbed.
         /// </summary>
         public Vector3 RelativeProximityPosition { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the source in local <see cref="UxrGrabber" /> coordinates where the source of leverage will be
+        ///     computed for <see cref="UxrRotationProvider.HandPositionAroundPivot" /> manipulation. This will improve rotation
+        ///     behaviour when the hands are rotated because otherwise the source of leverage is the grabber itself and rotating
+        ///     the hand will keep the grabber more or less stationary.
+        /// </summary>
+        public Vector3 GrabberLocalLeverageSource { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the leverage source <see cref="GrabberLocalLeverageSource" /> in local coordinates of the parent
+        ///     transform of the grabbable at the moment the <see cref="UxrGrabbableObject" /> was grabbed.
+        /// </summary>
+        public Vector3 GrabberLocalParentLeverageSourceOnGrab { get; set; }
 
         // *************************************************************************************************************************
         // For smooth transitions from object to hand or object to target or hand to object where we want to avoid instant snapping.
@@ -76,31 +98,6 @@ namespace UltimateXR.Manipulation
         ///     Gets or sets the world-space snap rotation at the moment the <see cref="UxrGrabbableObject" /> was grabbed.
         /// </summary>
         public Quaternion AlignRotationOnGrab { get; set; }
-
-        /// <summary>
-        ///     Gets or sets the source in local <see cref="UxrGrabber" /> coordinates where the source of leverage will be
-        ///     computed for <see cref="UxrRotationProvider.HandPositionAroundPivot" /> manipulation. This will improve rotation
-        ///     behaviour when the hands are rotated because otherwise the source of leverage is the grabber itself and rotating
-        ///     the hand will keep the grabber more or less stationary.
-        /// </summary>
-        public Vector3 GrabberLocalLeverageSource { get; set; }
-
-        /// <summary>
-        ///     Gets or sets the <see cref="UxrGrabber" /> position in local avatar coordinates at the moment the
-        ///     <see cref="UxrGrabbableObject" /> was grabbed.
-        /// </summary>
-        public Vector3 GrabberLocalAvatarPositionOnGrab { get; set; }
-
-        /// <summary>
-        ///     Gets or sets the <see cref="UxrGrabber" /> rotation in local avatar coordinates at the moment the
-        ///     <see cref="UxrGrabbableObject" /> was grabbed.
-        /// </summary>
-        public Quaternion GrabberLocalAvatarRotationOnGrab { get; set; }
-
-        /// <summary>
-        ///     Gets or sets the leverage source <see cref="GrabberLocalLeverageSource" /> in local avatar coordinates at the moment the <see cref="UxrGrabbableObject" /> was grabbed.
-        /// </summary>
-        public Vector3 GrabberLocalAvatarLeverageSourceOnGrab { get; set; }
 
         /// <summary>
         ///     Gets or sets the hand bone position in local avatar coordinates at the moment the <see cref="UxrGrabbableObject" />

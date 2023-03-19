@@ -872,7 +872,7 @@ namespace UltimateXR.Extensions.Unity
         /// <returns>Rotation in local space or <paramref name="rotation" /> if <paramref name="transform" /> is null</returns>
         public static Quaternion GetLocalRotation(Transform transform, Quaternion rotation)
         {
-            return transform != null ? Quaternion.Inverse(transform.rotation) : rotation;
+            return transform != null ? Quaternion.Inverse(transform.rotation) * rotation : rotation;
         }
 
         /// <summary>
