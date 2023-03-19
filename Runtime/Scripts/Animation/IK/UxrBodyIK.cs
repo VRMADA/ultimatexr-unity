@@ -98,8 +98,8 @@ namespace UltimateXR.Animation.IK
             if (_avatarBodyRoot == null)
             {
                 Debug.LogWarning("No common avatar body root found. If there is an avatar body it will not follow the head position.");
-                _avatarBodyRoot        = new GameObject("Dummy Root").transform;
-                _avatarBodyRoot.parent = _avatarTransform;
+                _avatarBodyRoot = new GameObject("Dummy Root").transform;
+                _avatarBodyRoot.SetParent(_avatarTransform);
                 _avatarBodyRoot.SetPositionAndRotation(_avatarTransform.position, _avatarTransform.rotation);
             }
 
@@ -109,8 +109,8 @@ namespace UltimateXR.Animation.IK
 
             if (_avatarNeck == null)
             {
-                _avatarNeck        = new GameObject("Dummy Neck").transform;
-                _avatarNeck.parent = _avatarBodyRoot;
+                _avatarNeck = new GameObject("Dummy Neck").transform;
+                _avatarNeck.SetParent(_avatarBodyRoot);
                 _avatarNeck.SetPositionAndRotation(_avatarTransform.position + _avatarTransform.up * _settings.NeckBaseHeight + _avatarTransform.forward * _settings.NeckForwardOffset, _avatarTransform.rotation);
 
                 if (avatar.AvatarRig.Head.Head != null)
@@ -128,21 +128,21 @@ namespace UltimateXR.Animation.IK
 
             // Eyes
 
-            _avatarEyes        = new GameObject("Dummy Eyes").transform;
-            _avatarEyes.parent = _avatarHead;
+            _avatarEyes = new GameObject("Dummy Eyes").transform;
+            _avatarEyes.SetParent(_avatarHead);
             _avatarEyes.SetPositionAndRotation(_avatarTransform.position + _avatarTransform.up * _settings.EyesBaseHeight + _avatarTransform.forward * _settings.EyesForwardOffset, _avatarTransform.rotation);
 
             // Avatar Forward
 
-            _avatarForward        = new GameObject("Dummy Forward").transform;
-            _avatarForward.parent = _avatarTransform;
+            _avatarForward = new GameObject("Dummy Forward").transform;
+            _avatarForward.SetParent(_avatarTransform);
             _avatarForward.SetPositionAndRotation(_avatarHead.position - avatar.transform.up * _avatarHead.position.y, _avatarTransform.rotation);
 
-            _avatarBodyRoot.parent = _avatarForward;
+            _avatarBodyRoot.SetParent(_avatarForward);
 
             // Initialize
 
-            _neckPosRelativeToEyes          = _avatarEyes.InverseTransformPoint(_avatarNeck.position);
+            _neckPosRelativeToEyes          = Quaternion.Inverse(_avatarEyes.rotation) * (_avatarNeck.position - _avatarEyes.position);
             _neckRotRelativeToEyes          = Quaternion.Inverse(_avatarEyes.rotation) * _avatarNeck.rotation;
             _avatarForwardPosRelativeToNeck = _avatarForward.position - _avatarNeck.transform.position;
             _avatarForwardTarget            = _avatarForward.forward;
@@ -207,14 +207,14 @@ namespace UltimateXR.Animation.IK
 
             Transform  cameraTransform = _avatar.CameraComponent.transform;
             Vector3    avatarPivotPos  = _avatarForward.position;
-            Vector3    neckPosition    = cameraTransform.TransformPoint(_neckPosRelativeToEyes);
+            Vector3    neckPosition    = GetWorldPosFromOffset(cameraTransform, cameraTransform, _neckPosRelativeToEyes);
             Quaternion neckRotation    = cameraTransform.rotation * _neckRotRelativeToEyes;
 
             _avatarNeck.SetPositionAndRotation(neckPosition, neckRotation);
 
             // Update avatar pivot
 
-            _avatarForward.position = GetAvatarForwardOffset(_avatarForward, _avatarNeck, _avatarForwardPosRelativeToNeck);
+            _avatarForward.position = GetWorldPosFromOffset(_avatarForward, _avatarNeck, _avatarForwardPosRelativeToNeck);
 
             if (Vector3.Angle(cameraTransform.forward, _avatar.transform.up) > CameraUpsideDownAngleThreshold &&
                 Vector3.Angle(cameraTransform.forward, -_avatar.transform.up) > CameraUpsideDownAngleThreshold &&
@@ -469,15 +469,15 @@ namespace UltimateXR.Animation.IK
         #region Private Methods
 
         /// <summary>
-        ///     Computes an offset vector in avatar space.
+        ///     Computes an world position based on an offset from an object.
         /// </summary>
-        /// <param name="avatarForward">The avatar forward transform</param>
-        /// <param name="transform">The offset origin</param>
+        /// <param name="axes">The axes <paramref name="offset"/> refer to</param>
+        /// <param name="transform">The object origin</param>
         /// <param name="offset">The offset components</param>
         /// <returns>Offset vector</returns>
-        private Vector3 GetAvatarForwardOffset(Transform avatarForward, Transform transform, Vector3 offset)
+        private Vector3 GetWorldPosFromOffset(Transform axes, Transform transform, Vector3 offset)
         {
-            return transform.position + avatarForward.right * offset.x + avatarForward.up * offset.y + avatarForward.forward * offset.z;
+            return transform.position + axes.right * offset.x + axes.up * offset.y + axes.forward * offset.z;
         }
 
         /// <summary>

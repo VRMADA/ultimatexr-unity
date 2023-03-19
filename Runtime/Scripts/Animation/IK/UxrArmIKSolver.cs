@@ -3,6 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Avatar.Rig;
 using UltimateXR.Core;
 using UltimateXR.Core.Math;
 using UltimateXR.Extensions.Unity;
@@ -175,7 +176,7 @@ namespace UltimateXR.Animation.IK
             float b = 2.0f * (localHandPos.y - localArmPos.y);
             float c = 2.0f * (localHandPos.z - localArmPos.z);
             float d = localArmPos.x * localArmPos.x - localHandPos.x * localHandPos.x + localArmPos.y * localArmPos.y - localHandPos.y * localHandPos.y +
-                      localArmPos.z * localArmPos.z - localHandPos.z * localHandPos.z - _upperArmLength * _upperArmLength + _forearmLength * _forearmLength;
+                      localArmPos.z * localArmPos.z - localHandPos.z * localHandPos.z - _upperArmLocalLength * _upperArmLocalLength + _forearmLocalLength * _forearmLocalLength;
 
             // Find the center of the circle intersecting the 2 spheres. Check if the intersection exists (hand may be stretched over the limits)
             float t = (localArmPos.x * a + localArmPos.y * b + localArmPos.z * c + d) / (a * (localArmPos.x - localHandPos.x) + b * (localArmPos.y - localHandPos.y) + c * (localArmPos.z - localHandPos.z));
@@ -183,13 +184,13 @@ namespace UltimateXR.Animation.IK
             Vector3 localArmToCenter = (localHandPos - localArmPos) * t;
             Vector3 localCenter      = localForearmPos;
             float   safeDistance     = 0.001f;
-            float   maxHandDistance  = _upperArmLength + _forearmLength - safeDistance;
+            float   maxHandDistance  = _upperArmLocalLength + _forearmLocalLength - safeDistance;
             float   circleRadius     = 0.0f;
 
-            if (localArmToCenter.magnitude + _forearmLength > maxHandDistance)
+            if (localArmToCenter.magnitude + _forearmLocalLength > maxHandDistance)
             {
                 // Too far from shoulder and arm is over-extending. Solve depending on selected mode, but some are applied at the end of this method.
-                localArmToCenter = localArmToCenter.normalized * (_upperArmLength - safeDistance * 0.5f);
+                localArmToCenter = localArmToCenter.normalized * (_upperArmLocalLength - safeDistance * 0.5f);
                 localCenter      = localArmPos + localArmToCenter;
 
                 if (armOverExtendMode == UxrArmOverExtendMode.LimitHandReach)
@@ -198,8 +199,8 @@ namespace UltimateXR.Animation.IK
                     Hand.position = ToWorldPos(localArmPos + localArmToCenter.normalized * maxHandDistance);
                 }
 
-                float angleRadians = Mathf.Acos((localCenter - localArmPos).magnitude / _upperArmLength);
-                circleRadius = Mathf.Sin(angleRadians) * _upperArmLength;
+                float angleRadians = Mathf.Acos((localCenter - localArmPos).magnitude / _upperArmLocalLength);
+                circleRadius = Mathf.Sin(angleRadians) * _upperArmLocalLength;
             }
             else if (localArmToCenter.magnitude < 0.04f)
             {
@@ -212,8 +213,8 @@ namespace UltimateXR.Animation.IK
                 localCenter = localArmPos + localArmToCenter;
 
                 // Find the circle radius
-                float angleRadians = Mathf.Acos((localCenter - localArmPos).magnitude / _upperArmLength);
-                circleRadius = Mathf.Sin(angleRadians) * _upperArmLength;
+                float angleRadians = Mathf.Acos((localCenter - localArmPos).magnitude / _upperArmLocalLength);
+                circleRadius = Mathf.Sin(angleRadians) * _upperArmLocalLength;
             }
 
             Vector3    finalLocalHandPosition = ToLocalAvatarPos(Hand.position);
@@ -262,7 +263,7 @@ namespace UltimateXR.Animation.IK
                 if (Vector3.Angle(armForward, armNeutralForward) > _armRangeOfMotionAngle)
                 {
                     armForward    = Vector3.RotateTowards(armNeutralForward, armForward, _armRangeOfMotionAngle * Mathf.Deg2Rad, 0.0f);
-                    elbowPosition = localArmPos + armForward * _upperArmLength;
+                    elbowPosition = localArmPos + armForward * _upperArmLocalLength;
                 }
             }
 
@@ -286,12 +287,12 @@ namespace UltimateXR.Animation.IK
                 if (armOverExtendMode == UxrArmOverExtendMode.ExtendUpperArm)
                 {
                     // Move the elbow away to reach the hand. This will stretch the arm.
-                    elbowPosition = finalLocalHandPosition - (finalLocalHandPosition - elbowPosition).normalized * _forearmLength;
+                    elbowPosition = finalLocalHandPosition - (finalLocalHandPosition - elbowPosition).normalized * _forearmLocalLength;
                 }
                 else if (armOverExtendMode == UxrArmOverExtendMode.ExtendArm)
                 {
                     // Stretch both the arm and forearm
-                    Vector3 elbowPosition2 = finalLocalHandPosition - (finalLocalHandPosition - elbowPosition).normalized * _forearmLength;
+                    Vector3 elbowPosition2 = finalLocalHandPosition - (finalLocalHandPosition - elbowPosition).normalized * _forearmLocalLength;
                     elbowPosition = (elbowPosition + elbowPosition2) * 0.5f;
                 }
             }
@@ -471,8 +472,19 @@ namespace UltimateXR.Animation.IK
                 Hand = Avatar.GetHandBone(_side);
             }
 
-            _upperArmLength = Avatar.AvatarRigInfo.GetArmInfo(_side).UpperArmLength;
-            _forearmLength  = Avatar.AvatarRigInfo.GetArmInfo(_side).ForearmLength;
+            UxrAvatarArm arm = Avatar.GetArm(_side);
+
+            if (arm != null && arm.UpperArm && arm.Forearm && arm.Hand.Wrist)
+            {
+                // Compute lengths in local avatar coordinates in case avatar has scaling
+                
+                Vector3 localUpperArm = ToLocalAvatarPos(arm.UpperArm.position);
+                Vector3 localForearm  = ToLocalAvatarPos(arm.Forearm.position);
+                Vector3 localHand     = ToLocalAvatarPos(arm.Hand.Wrist.position);
+                
+                _upperArmLocalLength = Vector3.Distance(localUpperArm, localForearm);
+                _forearmLocalLength  = Vector3.Distance(localForearm,  localHand);
+            }
 
             _clavicleUniversalLocalAxes = Avatar.AvatarRigInfo.GetArmInfo(_side).ClavicleUniversalLocalAxes;
             _armUniversalLocalAxes      = Avatar.AvatarRigInfo.GetArmInfo(_side).ArmUniversalLocalAxes;
@@ -517,8 +529,8 @@ namespace UltimateXR.Animation.IK
         private UxrUniversalLocalAxes _clavicleUniversalLocalAxes;
         private UxrUniversalLocalAxes _armUniversalLocalAxes;
         private UxrUniversalLocalAxes _forearmUniversalLocalAxes;
-        private float                 _upperArmLength;
-        private float                 _forearmLength;
+        private float                 _upperArmLocalLength;
+        private float                 _forearmLocalLength;
         private float                 _elbowAperture = -1.0f;
         private float                 _elbowApertureVelocity;
         private Vector3               _armNeutralForwardInParent = Vector3.zero;
