@@ -28,7 +28,7 @@ namespace UltimateXR.Animation.Splines
         /// <returns>Success or failure</returns>
         public override bool Evaluate(float t, out Vector3 position)
         {
-            return Evaluate(t, out position, out float segmentLength);
+            return Evaluate(t, out position, out float _);
         }
 
         #endregion
@@ -58,8 +58,8 @@ namespace UltimateXR.Animation.Splines
         }
 
         /// <summary>
-        ///     Creates a spline. If UsePrecomputedSampleCount > 0 it will also precompute samples in order to evaluate
-        ///     the spline using arc-length parameter.
+        ///     Creates a spline. If <see cref="UxrSpline.UsePrecomputedSampleCount" /> > 0 it will also precompute samples in
+        ///     order to evaluate the spline using arc-length parameter.
         /// </summary>
         /// <param name="inOutMultiplier">
         ///     Magnitude of spline start and end dummy tangent vectors
