@@ -13,7 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the same time.
 - Add new functionality DontRelease to UxrPlacementOptions that keeps the object
   grabbed when UxrManager.Instance.PlaceObject() is called.
+- Add MinSingleRotationDegrees/MaxSingleRotationDegrees to UxrGrabbableObject when
+  constrained to a single degree of freedom.
 - Add new symbol ULTIMATEXR_UNITY_XR_OCULUS when Unity.XR.Oculus is available.
+- Add joystick deadzone filtering in SteamVR.
+- Add support for position/rotation smoothing in all controller tracking components.
+- Add new UxrLinearPath spline type for linear interpolation in paths.
 
 ### Changed
 
@@ -22,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improve Body IK to handle avatars with roll/pitch. Improved precision by
   performing computations in local avatar space.
 - Rename UxrPlacementType to UxrPlacementOptions.
+- Improve support for HandPositionAroundPivot manipulation mode.
 - Disable UxrInputModule component parameter "Disable Other Input Modules" by default
   instead of being enabled.
 - Remove deprecated references to CommonUsages.thumbrest and CommonUsages.thumbTouch
@@ -35,6 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   multiple canvases when close to each other.
 - Fix null reference exception in manipulation system when placing constrained objects
   on anchors and grabbing them again.
+- Fix bug in UxrGrabManager that prevents GrabToggle manipulation mode to place
+  objects on anchors.
+- Fix UxrGrabbableObject manipulation not working correctly when grab points are moved
+  around during grabbing, for example when applying constraints.
+- Fix bug in UxrGrabbableObject.SetGrabPointEnabled not working correctly.
+- Fix UxrGrabPointShapes not computing center of grab correctly in some cases.
+- Fix scaling on root avatar GameObject not working correctly with Body/Arm IK.
 - Fix the following global input events in UxrControllerInput not being called:
   GlobalButtonStateChanged, GlobalInput1DChanged, GlobalInput2DChanged.
 - Fix warnings in example scene when loading ShotgunPump01.mp3 and ShotgunPump02.mp3
