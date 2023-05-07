@@ -21,6 +21,11 @@ namespace UltimateXR.UI.UnityInputModule
         /// <summary>
         ///     Interaction using <see cref="UxrLaserPointer" /> components from a distance.
         /// </summary>
-        LaserPointers
+        LaserPointers,
+
+        /// <summary>
+        ///     Interaction using LaserPointer and FingerTip components.
+        /// </summary>
+        LaserPointersAndFingerTips
     }
 }
