@@ -5,7 +5,9 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using UltimateXR.Avatar;
 using UltimateXR.Core.Components.Composite;
+using UnityEngine;
 using UnityEngine.XR;
 
 namespace UltimateXR.Devices
@@ -15,6 +17,12 @@ namespace UltimateXR.Devices
     /// </summary>
     public abstract class UxrTrackingDevice : UxrAvatarComponent<UxrTrackingDevice>, IUxrTrackingDevice, IUxrTrackingUpdater
     {
+        #region Inspector Properties/Serialized Fields
+
+        [Header("Mixed Reality:")] [SerializeField] private bool _hideAvatarInPassthrough = true;
+
+        #endregion
+
         #region Public Types & Data
 
         /// <summary>
@@ -50,6 +58,7 @@ namespace UltimateXR.Devices
         }
 
         /// <summary>
+        ///     Gets the tracking update order.
         ///     There are cases where more than one tracking device might be active. We use TrackingUpdateOrder
         ///     for cases where there is one that should be applied after the other(s). For example an Oculus Rift
         ///     together with a Leap Motion setup has one tracking component for each. But Leap Motion should
@@ -59,6 +68,11 @@ namespace UltimateXR.Devices
         ///     devices update the avatar in the correct order.
         /// </summary>
         public virtual int TrackingUpdateOrder => OrderStandard;
+
+        /// <summary>
+        ///     Gets whether the device headset renders on top of the real world.
+        /// </summary>
+        public virtual bool IsMixedRealityDevice => false;
 
         #endregion
 
@@ -163,6 +177,13 @@ namespace UltimateXR.Devices
         /// <remarks>Calling the base implementation is required in child classes in order for the event to propagate correctly.</remarks>
         protected virtual void OnDeviceConnected(UxrDeviceConnectEventArgs e)
         {
+            // Hide the avatar renderers in passthrough mode for mixed reality devices?
+            
+            if (e.IsConnected && IsMixedRealityDevice && _hideAvatarInPassthrough)
+            {
+                Avatar.RenderMode = UxrAvatarRenderModes.None;
+            }
+            
             DeviceConnected?.Invoke(this, e);
         }
 

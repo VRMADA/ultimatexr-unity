@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add support for Magic Leap 2.
 - Add support for Unity UI input on the screen and UltimateXR UI input in VR at
   the same time.
 - Add new functionality DontRelease to UxrPlacementOptions that keeps the object
@@ -50,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix scaling on root avatar GameObject not working correctly with Body/Arm IK.
 - Fix the following global input events in UxrControllerInput not being called:
   GlobalButtonStateChanged, GlobalInput1DChanged, GlobalInput2DChanged.
+- Fix UxrUnityXRControllerInput components not getting haptic capabilities correctly.
 - Fix warnings in example scene when loading ShotgunPump01.mp3 and ShotgunPump02.mp3
 
 ## [0.9.6] - 2023-01-18

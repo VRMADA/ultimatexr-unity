@@ -133,19 +133,19 @@ namespace UltimateXR.Locomotion
 
             if (IsArcVisible || _arcCancelledByAngle)
             {
-                if (joystickValue != Vector2.zero)
+                // To support both touchpads and joysticks, we need to check in the case of touchpads that it is also pressed.
+                
+                if (Avatar.ControllerInput.MainJoystickIsTouchpad)
                 {
-                    // To support both touchpads and joysticks, we need to check in the case of touchpads that it is also pressed.
-
-                    if (Avatar.ControllerInput.MainJoystickIsTouchpad)
+                    if (Avatar.ControllerInput.GetButtonsPress(HandSide, UxrInputButtons.Joystick))
                     {
-                        if (Avatar.ControllerInput.GetButtonsPress(HandSide, UxrInputButtons.Joystick))
-                        {
-                            teleportArcActive    = true;
-                            _arcCancelledByAngle = false;
-                        }
+                        teleportArcActive    = true;
+                        _arcCancelledByAngle = false;
                     }
-                    else
+                }
+                else
+                {
+                    if (joystickValue != Vector2.zero)
                     {
                         teleportArcActive    = true;
                         _arcCancelledByAngle = false;

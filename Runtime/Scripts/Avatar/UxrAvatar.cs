@@ -438,8 +438,11 @@ namespace UltimateXR.Avatar
                     {
                         // In single setups there is only one device for both hands.
 
-                        controllerInput.LeftController3DModel.IsControllerVisible = (leftControllerEnabled && showControllerLeft) || (rightControllerEnabled && showControllerRight);
-                        controllerInput.LeftController3DModel.IsHandVisible       = _showControllerHands;
+                        if (controllerInput.LeftController3DModel)
+                        {
+                            controllerInput.LeftController3DModel.IsControllerVisible = (leftControllerEnabled && showControllerLeft) || (rightControllerEnabled && showControllerRight);
+                            controllerInput.LeftController3DModel.IsHandVisible       = _showControllerHands;
+                        }
 
                         controllerInput.EnableObjectListSingle((leftControllerEnabled || rightControllerEnabled) && showAvatar);
                     }

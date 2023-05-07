@@ -12,7 +12,7 @@ namespace UltimateXR.Devices.Integrations
         /// <summary>
         ///     Types of button contact.
         /// </summary>
-        private enum ButtonContact
+        protected enum ButtonContact
         {
             /// <summary>
             ///     Button press.
