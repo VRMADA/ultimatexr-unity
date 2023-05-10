@@ -1250,7 +1250,7 @@ namespace UltimateXR.Avatar
             // Cache hand poses by name
 
             CreateHandPoseCache();
-
+            
 #if ULTIMATEXR_UNITY_XR_MANAGEMENT
 
             // New Unity XR requires TrackedPoseDriver component in cameras
@@ -1261,9 +1261,14 @@ namespace UltimateXR.Avatar
 
                 foreach (Camera camera in avatarCameras)
                 {
+                    bool hasInputSystemPoseDriver = false;
+            
+#if ULTIMATEXR_USE_UNITYINPUTSYSTEM_SDK
+                    hasInputSystemPoseDriver = camera.GetComponent<UnityEngine.InputSystem.XR.TrackedPoseDriver>() != null;
+#endif
                     TrackedPoseDriver trackedPoseDriver = camera.GetComponent<TrackedPoseDriver>();
-
-                    if (trackedPoseDriver == null)
+                    
+                    if (trackedPoseDriver == null && !hasInputSystemPoseDriver)
                     {
                         trackedPoseDriver = camera.gameObject.AddComponent<TrackedPoseDriver>();
 
