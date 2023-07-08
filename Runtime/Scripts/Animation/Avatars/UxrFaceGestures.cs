@@ -64,11 +64,12 @@ namespace UltimateXR.Animation.Avatars
 
             StartCoroutine(BlinkCoroutine());
             StartCoroutine(SwitchLookCoroutine());
-
+#if UNITY_EDITOR || !UNITY_WEBGL
             if (_moveMouthUsingMic && Microphone.devices.Length > 0)
             {
                 _microphoneClipRecord = Microphone.Start(null, true, 10, 44100);
             }
+#endif
         }
 
         /// <summary>
@@ -77,11 +78,12 @@ namespace UltimateXR.Animation.Avatars
         protected override void OnDisable()
         {
             base.OnDisable();
-
+#if UNITY_EDITOR || !UNITY_WEBGL
             if (Microphone.IsRecording(null) && _moveMouthUsingMic)
             {
                 Microphone.End(null);
             }
+#endif
         }
 
         /// <summary>
@@ -128,6 +130,7 @@ namespace UltimateXR.Animation.Avatars
         /// </summary>
         private void Update()
         {
+#if UNITY_EDITOR || !UNITY_WEBGL
             if (Microphone.IsRecording(null) && _mouthOpenTransform && _moveMouthUsingMic)
             {
                 _mouthAngle                       = Mathf.SmoothDampAngle(_mouthAngle, Mathf.LerpAngle(_mouthClosedAngle, _mouthMaxOpenAngle, GetMicrophoneMaxLevel()), ref _mouthAngleDampSpeed, _mouthRotationDamp);
@@ -137,11 +140,12 @@ namespace UltimateXR.Animation.Avatars
             {
                 _mouthOpenTransform.localRotation = _localRotMouth;
             }
+#endif
         }
 
-        #endregion
+#endregion
 
-        #region Coroutines
+#region Coroutines
 
         /// <summary>
         ///     Blinking coroutine.
@@ -330,9 +334,9 @@ namespace UltimateXR.Animation.Avatars
             }
         }
 
-        #endregion
+#endregion
 
-        #region Private Methods
+#region Private Methods
 
         /// <summary>
         ///     Tries to get the current microphone output level.
@@ -345,8 +349,11 @@ namespace UltimateXR.Animation.Avatars
         {
             float   maxLevel    = 0;
             float[] waveData    = new float[MicrophoneSampleWindow];
-            int     micPosition = Microphone.GetPosition(null) - (MicrophoneSampleWindow + 1);
-
+#if UNITY_EDITOR || !UNITY_WEBGL
+            int micPosition = Microphone.GetPosition(null) - (MicrophoneSampleWindow + 1);
+#else
+            int micPosition = 0;
+#endif
             if (micPosition < 0)
             {
                 return 0.0f;
@@ -367,9 +374,9 @@ namespace UltimateXR.Animation.Avatars
             return maxLevel * 1024.0f * _microphoneAmplification;
         }
 
-        #endregion
+#endregion
 
-        #region Private Types & Data
+#region Private Types & Data
 
         private const int MicrophoneSampleWindow = 128;
 
@@ -386,6 +393,6 @@ namespace UltimateXR.Animation.Avatars
         private float      _mouthAngleDampSpeed;
         private AudioClip  _microphoneClipRecord;
 
-        #endregion
+#endregion
     }
 }
