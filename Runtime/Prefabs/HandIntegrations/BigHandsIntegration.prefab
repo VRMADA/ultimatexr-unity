@@ -9,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 13641323739920568}
-  - component: {fileID: 3017544222436130267}
   - component: {fileID: 1391661356892510987}
   - component: {fileID: 5998469207155917039}
   m_Layer: 0
@@ -30,26 +29,10 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 291271087821866836}
-  - {fileID: 3942811879384728279}
+  m_Children: []
   m_Father: {fileID: 2932619053151338739}
   m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3017544222436130267
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 373908519003592595}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01d1bf38471dfb24ca6f86be1bd0751e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cameraMain: {fileID: 0}
-  cameraFollower: {fileID: 0}
 --- !u!114 &1391661356892510987
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -68,8 +51,6 @@ MonoBehaviour:
   _enableObjectListLeft: []
   _enableObjectListRight: []
   _enableObjectList: []
-  leftWebXRController: {fileID: 3385310932987856685}
-  rightWebXRController: {fileID: 4742318706218427620}
 --- !u!114 &5998469207155917039
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -88,8 +69,7 @@ MonoBehaviour:
   _updateAvatarRightHand: 1
   _smoothPosition: 0
   _smoothRotation: 0
-  leftWebXRController: {fileID: 3385310932987856685}
-  rightWebXRController: {fileID: 4742318706218427620}
+  cameraFollower: {fileID: 0}
 --- !u!1 &442630333915253209
 GameObject:
   m_ObjectHideFlags: 0
@@ -203,7 +183,7 @@ Transform:
   - {fileID: 530971291940345404}
   - {fileID: 6332531002992653792}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
+  m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1086213888100230209
 GameObject:
@@ -785,52 +765,6 @@ Transform:
   m_Father: {fileID: 4171102772956879574}
   m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 169.169, y: 155.83301, z: 96.324}
---- !u!1 &3190927526095015191
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3942811879384728279}
-  - component: {fileID: 4742318706218427620}
-  m_Layer: 0
-  m_Name: RightWebXRController
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3942811879384728279
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3190927526095015191}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 13641323739920568}
-  m_RootOrder: -1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4742318706218427620
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3190927526095015191}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 74bfe9c8d313cf9458117129f19cd7af, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hand: 2
-  alwaysUseGrip: 0
 --- !u!1 &3446316109495972681
 GameObject:
   m_ObjectHideFlags: 0
@@ -2146,52 +2080,6 @@ Transform:
   m_Father: {fileID: 2690326291321492927}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7062452898485907254
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 291271087821866836}
-  - component: {fileID: 3385310932987856685}
-  m_Layer: 0
-  m_Name: LeftWebXRController
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &291271087821866836
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7062452898485907254}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 13641323739920568}
-  m_RootOrder: -1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3385310932987856685
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7062452898485907254}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 74bfe9c8d313cf9458117129f19cd7af, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hand: 1
-  alwaysUseGrip: 0
 --- !u!1 &7312139014399454060
 GameObject:
   m_ObjectHideFlags: 0

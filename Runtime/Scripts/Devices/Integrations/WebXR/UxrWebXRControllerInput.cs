@@ -27,14 +27,35 @@ namespace UltimateXR.Devices.Integrations.WebXR
         #endregion
         #region Inspector Properties/Serialized Fields
 #if ULTIMATEXR_USE_WEBXR_SDK
-        [SerializeField] private WebXRController leftWebXRController;
-        [SerializeField] private WebXRController rightWebXRController;
+        /// <summary>
+        /// The controller left, have the control behavior like buttons pressed, vibration, touch, etc.
+        /// </summary>
+        private WebXRController leftWebXRController;
+
+        /// <summary>
+        /// The controller right, have the control behavior like buttons pressed, vibration, touch, etc.
+        /// </summary>
+        private WebXRController rightWebXRController;
 #endif
         #endregion
         #region Unity
         protected override void Awake()
         {
             base.Awake();
+
+            // Create the necessary WebXRManager and WebXRControllers objects
+            if (WebXRManager.Instance == null)
+            {
+                new GameObject("WebXRManager", typeof(WebXRManager));
+            }
+            Type[] types = { typeof(WebXRController) };
+            leftWebXRController = new GameObject("WebXRControllerLeft", typeof(WebXRController)).GetComponent<WebXRController>();
+            leftWebXRController.transform.parent = transform;
+            leftWebXRController.hand = WebXRControllerHand.LEFT;
+
+            rightWebXRController = new GameObject("WebXRControllerRight", typeof(WebXRController)).GetComponent<WebXRController>();
+            rightWebXRController.transform.parent = transform;
+            rightWebXRController.hand = WebXRControllerHand.RIGHT;
         }
         #endregion
         #region Public Overrides UxrControllerInput
@@ -42,7 +63,7 @@ namespace UltimateXR.Devices.Integrations.WebXR
         public override bool IsHandednessSupported => true;
 
         /// <summary>
-        ///     WebXR child classes will require SteamVR SDK to access functionality.
+        /// Require WebXR SDK to access functionality.
         /// </summary>
         public override string SDKDependency => "WebXR";
 
@@ -56,6 +77,7 @@ namespace UltimateXR.Devices.Integrations.WebXR
             return false;
 #endif
         }
+        /// <inheritdoc />
         public override float GetInput1D(UxrHandSide handSide, UxrInput1D input1D, bool getIgnoredInput = false)
         {
             if (ShouldIgnoreInput(handSide, getIgnoredInput))
@@ -117,7 +139,7 @@ namespace UltimateXR.Devices.Integrations.WebXR
         {
 #if ULTIMATEXR_USE_WEBXR_SDK
             WebXRController source = handSide == UxrHandSide.Left ? leftWebXRController : rightWebXRController;
-            source.Pulse(amplitude, durationSeconds);
+            source.Pulse(frequency, durationSeconds);
 #endif
         }
 
@@ -129,10 +151,10 @@ namespace UltimateXR.Devices.Integrations.WebXR
 
         #endregion
         #region Protected Overrides UxrControllerInput
+        /// <inheritdoc />
         protected override void UpdateInput()
         {
-            base.UpdateInput();
-#if ULTIMATEXR_USE_WEBXR_SDK
+#if ULTIMATEXR_USE_WEBXR_SDK && (UNITY_WEBGL && !UNITY_EDITOR)
             bool buttonPressTriggerLeft = leftWebXRController.GetButton(WebXRController.ButtonTypes.Trigger);
             bool buttonPressTriggerRight = rightWebXRController.GetButton(WebXRController.ButtonTypes.Trigger);
             bool buttonPressJoystickLeft = leftWebXRController.GetButton(WebXRController.ButtonTypes.Thumbstick);
@@ -250,6 +272,9 @@ namespace UltimateXR.Devices.Integrations.WebXR
                 SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.DPadUp, false);
                 SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.DPadDown, false);
             }
+#else
+            //If it is running on Editor it will use the base behavior!
+            base.UpdateInput();
 #endif
         }
         #endregion

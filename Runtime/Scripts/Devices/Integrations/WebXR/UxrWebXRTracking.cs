@@ -1,8 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using UltimateXR.Devices.Integrations.Valve;
-using UnityEngine;
 
 namespace UltimateXR.Devices.Integrations.WebXR
 {
