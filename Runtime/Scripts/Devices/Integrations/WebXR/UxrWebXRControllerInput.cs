@@ -48,14 +48,9 @@ namespace UltimateXR.Devices.Integrations.WebXR
             {
                 new GameObject("WebXRManager", typeof(WebXRManager));
             }
-            Type[] types = { typeof(WebXRController) };
-            leftWebXRController = new GameObject("WebXRControllerLeft", typeof(WebXRController)).GetComponent<WebXRController>();
-            leftWebXRController.transform.parent = transform;
-            leftWebXRController.hand = WebXRControllerHand.LEFT;
 
-            rightWebXRController = new GameObject("WebXRControllerRight", typeof(WebXRController)).GetComponent<WebXRController>();
-            rightWebXRController.transform.parent = transform;
-            rightWebXRController.hand = WebXRControllerHand.RIGHT;
+            InstantiateWebXRController(WebXRControllerHand.LEFT, ref leftWebXRController);
+            InstantiateWebXRController(WebXRControllerHand.RIGHT, ref rightWebXRController);
         }
         #endregion
         #region Public Overrides UxrControllerInput
@@ -87,11 +82,11 @@ namespace UltimateXR.Devices.Integrations.WebXR
 
 #if ULTIMATEXR_USE_WEBXR_SDK
             WebXRController source = handSide == UxrHandSide.Left ? leftWebXRController : rightWebXRController;
-            if(input1D == UxrInput1D.Grip)
+            if (input1D == UxrInput1D.Grip)
             {
                 return source.GetAxis(WebXRController.AxisTypes.Grip);
             }
-            else if(input1D == UxrInput1D.Trigger)
+            else if (input1D == UxrInput1D.Trigger)
             {
                 return source.GetAxis(WebXRController.AxisTypes.Trigger);
             }
@@ -113,7 +108,7 @@ namespace UltimateXR.Devices.Integrations.WebXR
             {
                 return source.GetAxis2D(WebXRController.Axis2DTypes.Thumbstick);
             }
-            else if(input2D == UxrInput2D.Joystick2)
+            else if (input2D == UxrInput2D.Joystick2)
             {
                 return source.GetAxis2D(WebXRController.Axis2DTypes.Touchpad);
             }
@@ -148,13 +143,37 @@ namespace UltimateXR.Devices.Integrations.WebXR
         {
             // TODO. Doesn't seem to be supported.
         }
+        /// <summary>
+        /// Instantiates a WebXRController object based on the provided hand type.
+        /// Assigns the instantiated object to the ref parameter 'webXRController'.
+        /// </summary>
+        /// <param name="webXRControllerHand">The hand side configuration</param>
+        /// <param name="webXRController">The instantiated WebXRController</param>
+        private void InstantiateWebXRController(WebXRControllerHand webXRControllerHand, ref WebXRController webXRController)
+        {
+            // Create a new game object with a name based on the hand type (left or right).
+            webXRController = new GameObject($"WebXRController_{(webXRControllerHand == WebXRControllerHand.LEFT ? "Left" : "Right")}")
+                .AddComponent<WebXRController>();
+
+            // Set the parent of the instantiated object to the current object's transform.
+            webXRController.transform.parent = transform;
+
+            // Deactivate the new WebXRController game object to configure it before activation.
+            webXRController.gameObject.SetActive(false);
+
+            // Set the hand property of the WebXRController to the provided hand type.
+            webXRController.hand = webXRControllerHand;
+
+            // Activate the WebXRController game object.
+            webXRController.gameObject.SetActive(true);
+        }
 
         #endregion
         #region Protected Overrides UxrControllerInput
         /// <inheritdoc />
         protected override void UpdateInput()
         {
-#if ULTIMATEXR_USE_WEBXR_SDK && (UNITY_WEBGL && !UNITY_EDITOR)
+#if ULTIMATEXR_USE_WEBXR_SDK
             bool buttonPressTriggerLeft = leftWebXRController.GetButton(WebXRController.ButtonTypes.Trigger);
             bool buttonPressTriggerRight = rightWebXRController.GetButton(WebXRController.ButtonTypes.Trigger);
             bool buttonPressJoystickLeft = leftWebXRController.GetButton(WebXRController.ButtonTypes.Thumbstick);
@@ -272,9 +291,6 @@ namespace UltimateXR.Devices.Integrations.WebXR
                 SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.DPadUp, false);
                 SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.DPadDown, false);
             }
-#else
-            //If it is running on Editor it will use the base behavior!
-            base.UpdateInput();
 #endif
         }
         #endregion
