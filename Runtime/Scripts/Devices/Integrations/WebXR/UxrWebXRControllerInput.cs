@@ -42,7 +42,7 @@ namespace UltimateXR.Devices.Integrations.WebXR
         protected override void Awake()
         {
             base.Awake();
-
+#if ULTIMATEXR_USE_WEBXR_SDK
             // Create the necessary WebXRManager and WebXRControllers objects
             if (WebXRManager.Instance == null)
             {
@@ -51,6 +51,7 @@ namespace UltimateXR.Devices.Integrations.WebXR
 
             InstantiateWebXRController(WebXRControllerHand.LEFT, ref leftWebXRController);
             InstantiateWebXRController(WebXRControllerHand.RIGHT, ref rightWebXRController);
+#endif
         }
         #endregion
         #region Public Overrides UxrControllerInput
@@ -143,6 +144,7 @@ namespace UltimateXR.Devices.Integrations.WebXR
         {
             // TODO. Doesn't seem to be supported.
         }
+#if ULTIMATEXR_USE_WEBXR_SDK
         /// <summary>
         /// Instantiates a WebXRController object based on the provided hand type.
         /// Assigns the instantiated object to the ref parameter 'webXRController'.
@@ -167,6 +169,7 @@ namespace UltimateXR.Devices.Integrations.WebXR
             // Activate the WebXRController game object.
             webXRController.gameObject.SetActive(true);
         }
+#endif
 
         #endregion
         #region Protected Overrides UxrControllerInput
