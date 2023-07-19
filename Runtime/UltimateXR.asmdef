@@ -11,7 +11,8 @@
         "Oculus.VR",
         "Wave.Essence.CompositorLayer",
         "Unity.XR.PicoXR",
-        "Unity.XR.Oculus"
+        "Unity.XR.Oculus",
+        "WebXR"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -65,6 +66,11 @@
             "name": "com.unity.xr.oculus",
             "expression": "",
             "define": "ULTIMATEXR_UNITY_XR_OCULUS"
+        },
+        {
+            "name": "com.de-panther.webxr",
+            "expression": "",
+            "define": "ULTIMATEXR_USE_WEBXR_SDK"
         }
     ],
     "noEngineReferences": false
