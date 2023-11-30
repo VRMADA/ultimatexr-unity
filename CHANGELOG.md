@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add support for Meta Quest 3.
 - Add support for Magic Leap 2.
 - Add support for Unity UI input on the screen and UltimateXR UI input in VR at
   the same time.
