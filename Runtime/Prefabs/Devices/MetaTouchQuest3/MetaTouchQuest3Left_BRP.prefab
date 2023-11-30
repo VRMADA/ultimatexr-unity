@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &539128993004112985
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 966369222676206241, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: de886fbb3e6af5142a06b01553c61d13, type: 2}
+    - target: {fileID: 1188802913679534755, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: de886fbb3e6af5142a06b01553c61d13, type: 2}
+    - target: {fileID: 1594966257726824121, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_RootOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1594966257726824121, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1594966257726824121, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1594966257726824121, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1594966257726824121, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1594966257726824121, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1594966257726824121, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1594966257726824121, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1594966257726824121, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1594966257726824121, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1594966257726824121, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2230841170513511138, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: de886fbb3e6af5142a06b01553c61d13, type: 2}
+    - target: {fileID: 2433576852887608440, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: de886fbb3e6af5142a06b01553c61d13, type: 2}
+    - target: {fileID: 4680093838270318522, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: de886fbb3e6af5142a06b01553c61d13, type: 2}
+    - target: {fileID: 5385756840750099578, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: de886fbb3e6af5142a06b01553c61d13, type: 2}
+    - target: {fileID: 6870409173723787014, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: de886fbb3e6af5142a06b01553c61d13, type: 2}
+    - target: {fileID: 7850569591709463420, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}
+      propertyPath: m_Name
+      value: MetaTouchQuest2Left_BRP
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 26e99b1cbf818624f85b4832cb2b6dff, type: 3}

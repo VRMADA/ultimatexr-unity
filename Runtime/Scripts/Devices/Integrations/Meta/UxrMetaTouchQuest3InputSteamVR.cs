@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="UxrMetaTouchQuest2InputSteamVR.cs" company="VRMADA">
+// <copyright file="UxrMetaTouchQuest3InputSteamVR.cs" company="VRMADA">
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
@@ -12,7 +12,7 @@ namespace UltimateXR.Devices.Integrations.Meta
     /// <summary>
     ///     Oculus Touch controllers input using SteamVR.
     /// </summary>
-    public class UxrMetaTouchQuest2InputSteamVR : UxrSteamVRControllerInput
+    public class UxrMetaTouchQuest3InputSteamVR : UxrSteamVRControllerInput
     {
         #region Public Overrides UxrSteamVRControllerInput
 
@@ -21,8 +21,10 @@ namespace UltimateXR.Devices.Integrations.Meta
         {
             get
             {
-                yield return "Oculus Quest2 (Left Controller)";
-                yield return "Oculus Quest2 (Right Controller)";
+                yield return "Oculus Quest3 (Left Controller)";
+                yield return "Oculus Quest3 (Right Controller)";
+                yield return "Meta Quest 3 (Left Controller)";
+                yield return "Meta Quest 3 (Right Controller)";
             }
         }
 
