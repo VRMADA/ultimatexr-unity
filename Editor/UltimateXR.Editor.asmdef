@@ -30,6 +30,11 @@
             "name": "com.unity.xr.picoxr",
             "expression": "",
             "define": "ULTIMATEXR_USE_PICOXR_SDK"
+        },
+        {
+            "name": "com.magicleap.unitysdk",
+            "expression": "",
+            "define": "ULTIMATEXR_USE_MAGICLEAP_SDK"
         }
     ],
     "noEngineReferences": false

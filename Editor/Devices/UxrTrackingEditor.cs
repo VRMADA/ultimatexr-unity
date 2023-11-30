@@ -17,6 +17,12 @@ namespace UltimateXR.Editor.Devices
     [CustomEditor(typeof(UxrTrackingDevice), true)]
     public class UxrTrackingEditor : UnityEditor.Editor
     {
+        #region Public Types & Data
+
+        public const string PropertyHideAvatarInPassthrough = "_hideAvatarInPassthrough";
+
+        #endregion
+
         #region Unity
 
         /// <summary>
@@ -44,7 +50,14 @@ namespace UltimateXR.Editor.Devices
                 }
             }
 
-            DrawPropertiesExcluding(serializedObject, "m_Script");
+            if (tracking.IsMixedRealityDevice)
+            {
+                DrawPropertiesExcluding(serializedObject, "m_Script");   
+            }
+            else
+            {
+                DrawPropertiesExcluding(serializedObject, "m_Script", PropertyHideAvatarInPassthrough);
+            }
 
             serializedObject.ApplyModifiedProperties();
         }

@@ -14,7 +14,9 @@ namespace UltimateXR.Avatar
     public enum UxrAvatarRenderModes
     {
         /// <summary>
-        ///     Avatar isn't rendered.
+        ///     Avatar isn't rendered. All components will still work, which means the avatar can still interact with the
+        ///     environment. It can be used in mixed reality for example to let the hand colliders interact with
+        ///     the scenario even though the hands aren't rendered.
         /// </summary>
         None,
 

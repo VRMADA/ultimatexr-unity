@@ -74,6 +74,7 @@ namespace UltimateXR.Core
         public const string SdkUltraleap           = "Ultraleap";
         public const string SdkWaveXR              = "WaveXR";
         public const string SdkPicoXR              = "PicoXR";
+        public const string SdkMagicLeap           = "Magic Leap";
 
         // Events
 
