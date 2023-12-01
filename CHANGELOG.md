@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix UxrLaserPointer hit quad position using controller forward.
 - Fix Pico controllers not working after using home button.
 - Fix Valve Index controllers' forward vectors.
 - Fix laser pointers not working correctly when mixing UI with 2D/3D objects.
