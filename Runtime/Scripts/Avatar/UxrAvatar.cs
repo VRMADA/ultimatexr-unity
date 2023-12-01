@@ -175,8 +175,16 @@ namespace UltimateXR.Avatar
         {
             get
             {
-                UxrControllerInput controllerInput = UxrControllerInput.GetComponents(this).FirstOrDefault(i => i.GetType() != typeof(UxrDummyControllerInput));
+                // First look for a controller that is not dummy nor gamepad:
+                UxrControllerInput controllerInput = UxrControllerInput.GetComponents(this).FirstOrDefault(i => i.GetType() != typeof(UxrDummyControllerInput) && i.GetType() != typeof(UxrGamepadInput));
 
+                // No controllers found? Try gamepad
+                if (controllerInput == null)
+                {
+                    controllerInput = UxrControllerInput.GetComponents(this).FirstOrDefault(i => i.GetType() == typeof(UxrGamepadInput));    
+                }
+
+                // No controllers found? Return dummy to avoid null reference exceptions.
                 if (controllerInput == null)
                 {
                     UxrDummyControllerInput inputDummy = gameObject.GetOrAddComponent<UxrDummyControllerInput>();
