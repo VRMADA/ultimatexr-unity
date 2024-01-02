@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add support for Meta Quest 3.
 - Add support for Magic Leap 2.
+- Add support for Virtual Desktop controller naming.
 - Add support for Unity UI input on the screen and UltimateXR UI input in VR at
   the same time.
 - Add new functionality DontRelease to UxrPlacementOptions that keeps the object

@@ -460,6 +460,18 @@ namespace UltimateXR.Devices.Integrations.SteamVR
         #endregion
 
 #if ULTIMATEXR_USE_STEAMVR_SDK
+
+        /// <summary>
+        ///     Given a controller name, gets a list of controller names using the Virtual Desktop controller naming convention.  
+        /// </summary>
+        /// <param name="controllerName">Controller name to get the virtual desktop controller names for</param>
+        /// <returns>List of virtual desktop controller names</returns>
+        private static IEnumerable<string> GetVirtualDesktopWrappedControllerNames(string controllerName)
+        {
+            yield return $"OpenVR Controller({controllerName}) - Left";
+            yield return $"OpenVR Controller({controllerName}) - Right";
+        }
+
         /// <summary>
         ///     Called when a SteamVR device is connected
         /// </summary>
@@ -496,7 +508,8 @@ namespace UltimateXR.Devices.Integrations.SteamVR
 
             IEnumerable<UxrSteamVRControllerInput> inputsSteamVR = AllComponents.Where(i => i is UxrSteamVRControllerInput).Cast<UxrSteamVRControllerInput>();
 
-            UxrSteamVRControllerInput inputSteamVR = inputsSteamVR.FirstOrDefault(i => i.ControllerNames.Any(n => string.Equals(n, modelNameString)));
+            UxrSteamVRControllerInput inputSteamVR = inputsSteamVR.FirstOrDefault(i =>
+                        i.ControllerNames.Any(n => string.Equals(n, modelNameString)) ||  i.ControllerNames.SelectMany(GetVirtualDesktopWrappedControllerNames).Any(n => string.Equals(n, modelNameString)));
 
             if (inputSteamVR != null)
             {
