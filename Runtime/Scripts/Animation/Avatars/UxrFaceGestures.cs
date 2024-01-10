@@ -53,6 +53,8 @@ namespace UltimateXR.Animation.Avatars
 
         #endregion
 
+#if !UNITY_WEBGL
+
         #region Unity
 
         /// <summary>
@@ -387,5 +389,7 @@ namespace UltimateXR.Animation.Avatars
         private AudioClip  _microphoneClipRecord;
 
         #endregion
+
+#endif
     }
 }
