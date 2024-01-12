@@ -17,6 +17,11 @@ Main features:
 - Clean code; fully documented using standard XML format.
 - Lots of tools, methods and extensions to make development easier.
 
+Soon! (v1.0.0)
+- Full multiplayer support with many networking integrations.
+- Serialization.
+- New improved manipulation mechanics.
+
 ## Installation
 
 We provide the following ways to install **UltimateXR**:

@@ -1,6 +1,6 @@
 {
   "name": "com.vrmada.ultimatexr-unity",
-  "version": "0.9.6",
+  "version": "0.9.7",
   "displayName": "UltimateXR",
   "description": "UltimateXR is a free, open source XR framework and toolkit for Unity that includes powerful features such as:\n  \u25AA Cross-device compatibility\n  \u25AA State-of-the-art grab and manipulation mechanics\n  \u25AA Advanced hand pose editor\n  \u25AA Inclusion through a library of gender- and race-agnostic hands\n  \u25AA Customizable full body avatar representation\n  \u25AA Advanced UI components\n  \u25AA Locomotion mechanics\n  \u25AA Fully documented API\n  \u25AA High-quality assets\n...And much more!\n\nDon't forget to install the samples for a nice showcase of all features.",
   "unity": "2021.2",
@@ -14,6 +14,7 @@
   },
   "keywords": [
     "XR",
+	"spatial",
     "virtual",
     "augmented",
     "reality",

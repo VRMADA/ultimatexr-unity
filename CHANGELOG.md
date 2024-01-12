@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Soon v1.0.0 with full multiplayer support and tons of new features.
+
+## [0.9.7] - 2024-01-10
+
 ### Added
 
 - Add support for Meta Quest 3.
@@ -333,7 +337,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First public release!
 
-[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.9.6...HEAD
+[Unreleased]: https://github.com/VRMADA/ultimatexr-unity/compare/v0.9.7...HEAD
+[0.9.7]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.7
 [0.9.6]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.6
 [0.9.5]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.5
 [0.9.4]: https://github.com/VRMADA/ultimatexr-unity/releases/tag/v0.9.4
