@@ -10,6 +10,7 @@ using UltimateXR.Avatar;
 using UltimateXR.Core;
 using UltimateXR.Devices.Visualization;
 using UltimateXR.Extensions.System.Collections;
+using UltimateXR.Extensions.System.IO;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Manipulation;
 using UnityEditor;
@@ -165,7 +166,7 @@ namespace UltimateXR.Editor.Avatar
 
                 if (!_handIntegration.TryToMatchHand())
                 {
-                    EditorUtility.DisplayDialog("Missing required bone references", $"The hand integration could not find an {nameof(UxrAvatar)} component up in the hierarchy or the {nameof(UxrAvatar)} is missing finger bone references in the rig section. The finger bones are required to try to align the hand integration with the avatar's hand.", "OK");
+                    EditorUtility.DisplayDialog("Missing required bone references", $"The hand integration could not find an {nameof(UxrAvatar)} component up in the hierarchy or the {nameof(UxrAvatar)} is missing finger bone references in the rig section. The finger bones are required to try to align the hand integration with the avatar's hand.", UxrConstants.Editor.Ok);
                 }
             }
 
@@ -341,14 +342,14 @@ namespace UltimateXR.Editor.Avatar
             {
                 if (materialName.Contains(MaterialUrp))
                 {
-                    return AssetDatabase.LoadAssetAtPath<Material>(Path.Combine(directory, materialName.Replace(MaterialUrp, MaterialBrp)) + ".mat");
+                    return AssetDatabase.LoadAssetAtPath<Material>(PathExt.Combine(directory, materialName.Replace(MaterialUrp, MaterialBrp)) + ".mat");
                 }
             }
             else if (renderPipeline == RenderPipeline.Urp)
             {
                 if (materialName.Contains(MaterialBrp))
                 {
-                    return AssetDatabase.LoadAssetAtPath<Material>(Path.Combine(directory, materialName.Replace(MaterialBrp, MaterialUrp)) + ".mat");
+                    return AssetDatabase.LoadAssetAtPath<Material>(PathExt.Combine(directory, materialName.Replace(MaterialBrp, MaterialUrp)) + ".mat");
                 }
             }
 

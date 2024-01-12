@@ -78,6 +78,8 @@ namespace UltimateXR.Examples.FullScene.Lab
             ParticleSystem.EmissionModule emission = _laserBurnParticles.emission;
             emission.enabled = false;
 
+            _laserHaptics.enabled = false;
+
             _createBurnTimer = _laserBurnDelaySeconds;
         }
 
@@ -114,38 +116,42 @@ namespace UltimateXR.Examples.FullScene.Lab
 
             if (UxrGrabManager.Instance.GetGrabbingHand(_triggerGrabbable, 0, out UxrGrabber grabber))
             {
-                // There is! see which hand to check for a trigger squeeze
+                // Check if it's the local avatar, because the local avatar will drive the state changes (IsLaserEnabled is network synchronized).
 
-                float trigger = UxrAvatar.LocalAvatarInput.GetInput1D(grabber.Side, UxrInput1D.Trigger);
-
-                _trigger.localPosition = _triggerInitialOffset + _triggerOffset * trigger;
-
-                _triggerGrabbable.GetGrabPoint(0).GetGripPoseInfo(grabber.Avatar).PoseBlendValue = trigger;
-
-                if (UxrAvatar.LocalAvatarInput.GetButtonsPress(grabber.Side, UxrInputButtons.Trigger))
+                if (grabber.Avatar.AvatarMode == UxrAvatarMode.Local)
                 {
-                    // Trigger is squeezed
+                    // It is! see which hand to check for a trigger squeeze
 
-                    if (_laserLineRenderer.enabled == false)
+                    float trigger = UxrAvatar.LocalAvatarInput.GetInput1D(grabber.Side, UxrInput1D.Trigger);
+
+                    _trigger.localPosition = _triggerInitialOffset + _triggerOffset * trigger;
+
+                    _triggerGrabbable.GetGrabPoint(0).GetGripPoseInfo(grabber.Avatar).PoseBlendValue = trigger;
+
+                    if (UxrAvatar.LocalAvatarInput.GetButtonsPress(grabber.Side, UxrInputButtons.Trigger))
                     {
-                        // Start a new empty laser burn (it will be setup later, we use null to force to set up a new one)
-                        _laserBurns.Add(null);
-                        _laserLineRenderer.enabled = true;
+                        // Trigger is squeezed
+
+                        if (IsLaserEnabled == false)
+                        {
+                            IsLaserEnabled = true;
+                        }
                     }
-                }
-                else
-                {
-                    _laserLineRenderer.enabled = false;
+                    else
+                    {
+                        IsLaserEnabled = false;
+                    }
                 }
             }
             else
             {
+                // If there are no grabs, we don't need to sync using IsLaserEnabled because it can be solved locally.
                 _laserLineRenderer.enabled = false;
             }
 
             // Check laser raycast
 
-            if (_laserLineRenderer.enabled)
+            if (IsLaserEnabled)
             {
                 float currentRayLength = _laserRayLength;
 
@@ -278,21 +284,21 @@ namespace UltimateXR.Examples.FullScene.Lab
                 UpdateLaserBurns(0, _laserBurns.Count);
             }
 
-            if (_laserHaptics)
+            if (_laserHaptics && grabber != null && grabber.Avatar.AvatarMode == UxrAvatarMode.Local)
             {
-                _laserHaptics.enabled = _laserLineRenderer.enabled;
-
-                if (grabber)
-                {
-                    _laserHaptics.HandSide = grabber.Side;
-                }
+                _laserHaptics.enabled  = IsLaserEnabled;
+                _laserHaptics.HandSide = grabber.Side;
+            }
+            else
+            {
+                _laserHaptics.enabled = false;
             }
 
-            if (_enableWhenLaserActive && !_enableWhenLaserActive.activeSelf && _laserLineRenderer.enabled)
+            if (_enableWhenLaserActive && !_enableWhenLaserActive.activeSelf && IsLaserEnabled)
             {
                 _enableWhenLaserActive.SetActive(true);
             }
-            else if (_enableWhenLaserActive && _enableWhenLaserActive.activeSelf && !_laserLineRenderer.enabled)
+            else if (_enableWhenLaserActive && _enableWhenLaserActive.activeSelf && !IsLaserEnabled)
             {
                 _enableWhenLaserActive.SetActive(false);
             }
@@ -340,8 +346,8 @@ namespace UltimateXR.Examples.FullScene.Lab
             colorGradient.alphaKeys = new[]
                                       {
                                                   new GradientAlphaKey(0.0f, 0.0f),
-                                                  new GradientAlphaKey(1.0f, rayLength > LaserGradientLength ? LaserGradientLength / rayLength : 0.3f),
-                                                  new GradientAlphaKey(1.0f, rayLength < LaserGradientLength * 2.0f ? 0.66f : 1.0f - LaserGradientLength / rayLength),
+                                                  new GradientAlphaKey(_laserColor.a, rayLength > LaserGradientLength ? LaserGradientLength / rayLength : 0.3f),
+                                                  new GradientAlphaKey(_laserColor.a, rayLength < LaserGradientLength * 2.0f ? 0.66f : 1.0f - LaserGradientLength / rayLength),
                                                   new GradientAlphaKey(0.0f, 1.0f)
                                       };
 
@@ -531,8 +537,32 @@ namespace UltimateXR.Examples.FullScene.Lab
         }
 
         #endregion
-
+        
         #region Private Types & Data
+
+        /// <summary>
+        ///     Gets or sets whether the laser is enabled.
+        /// </summary>
+        private bool IsLaserEnabled
+        {
+            get => _laserLineRenderer.enabled;
+            set
+            {
+                if (_laserLineRenderer.enabled != value)
+                {
+                    BeginSync();
+
+                    if (value)
+                    {
+                        // Start a new empty laser burn (it will be setup later, we use null to force to set up a new one)
+                        _laserBurns.Add(null);
+                    }
+                    
+                    _laserLineRenderer.enabled = value;
+                    EndSyncProperty(value);
+                }
+            }
+        }
 
         /// <summary>
         ///     Gets the current laser burn being generated.

@@ -3,11 +3,12 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Core;
 using UltimateXR.Extensions.Unity;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Editor.Utilities
+namespace UltimateXR.Editor.Utilities.TransformUtils
 {
     /// <summary>
     ///     Custom tool window that will reposition/reorient an object so that the source transform would match the target
@@ -32,7 +33,7 @@ namespace UltimateXR.Editor.Utilities
                 if (EditorUtility.IsPersistent(_objectToAlign))
                 {
                     _objectToAlign = objectToAlign;
-                    EditorUtility.DisplayDialog("Error", "The object to align needs to be in the scene", "OK");
+                    EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "The object to align needs to be in the scene", UxrConstants.Editor.Ok);
                 }
             }
 
@@ -47,7 +48,7 @@ namespace UltimateXR.Editor.Utilities
             if (UxrEditorUtils.CenteredButton(new GUIContent("Align")))
             {
                 Undo.RegisterCompleteObjectUndo(_objectToAlign.transform, "Align object");
-                _objectToAlign.ApplyAlignment(_referenceSource, _referenceTarget, _reorient, _reposition);
+                _objectToAlign.ApplyAlignment(_referenceSource, _referenceTarget, UxrUtils.BuildTransformations(_reposition, _reorient));
             }
 
             GUI.enabled = true;
@@ -60,7 +61,7 @@ namespace UltimateXR.Editor.Utilities
         /// <summary>
         ///     Menu entry that invokes the tool.
         /// </summary>
-        [MenuItem("Tools/UltimateXR/Utils/Align Object")]
+        [MenuItem(UxrConstants.Editor.MenuPathUtils + "Align Object", priority = UxrConstants.Editor.PriorityMenuPathUtils + 1)]
         private static void Init()
         {
             AlignWindow window = (AlignWindow)GetWindow(typeof(AlignWindow), true, "Align Object");

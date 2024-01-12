@@ -15,7 +15,6 @@ using UltimateXR.Avatar.Rig;
 using UltimateXR.Core;
 using UltimateXR.Core.Math;
 using UltimateXR.Editor.Avatar;
-using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Manipulation;
@@ -24,6 +23,9 @@ using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
 using Random = UnityEngine.Random;
+#if ULTIMATEXR_PACKAGE
+using UltimateXR.Extensions.System.IO;
+#endif
 
 namespace UltimateXR.Editor.Manipulation.HandPoses
 {
@@ -88,7 +90,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
         /// <summary>
         ///     Shows the hand pose editor menu item.
         /// </summary>
-        [MenuItem("Tools/UltimateXR/Hand Pose Editor")]
+        [MenuItem(UxrConstants.Editor.MenuPathAvatar + "Hand Pose Editor", priority = UxrConstants.Editor.PriorityMenuPathAvatar)]
         public static void ShowWindow()
         {
             EditorWindow handPoseWindow = GetWindow(typeof(UxrHandPoseEditorWindow), true, "UltimateXR Hand Pose Editor");
@@ -136,7 +138,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
         /// <param name="handPose">Optional hand pose to start editing or null to load the default pose</param>
         public static void Open(UxrAvatar avatar, UxrHandPoseAsset handPose = null)
         {
-            if (avatar == null || avatar.gameObject.IsPrefab())
+            if (avatar == null || avatar.IsInPrefab())
             {
                 return;
             }
@@ -289,7 +291,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                     }
                     else if (newAvatar.GetAvatarPrefab() == null)
                     {
-                        EditorUtility.DisplayDialog("Avatar must have prefab", "The avatar must be a prefab in order to store poses. Please create a prefab from the avatar first.", "OK");
+                        EditorUtility.DisplayDialog("Avatar must have prefab", "The avatar must be a prefab in order to store poses. Please create a prefab from the avatar first.", UxrConstants.Editor.Ok);
                         isValidAvatar = false;
                     }
 
@@ -306,7 +308,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                             {
                                 EditorUtility.DisplayDialog("Avatar must be in the scene",
                                                             "Please drop the prefab into the scene in order to preview/edit poses.\nThe poses will be saved in the prefab, making them available to all avatar instances and prefab variants",
-                                                            "OK");
+                                                            UxrConstants.Editor.Ok);
                             }
                             else
                             {
@@ -393,7 +395,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
 
                 if (GUI.Button(GetPosesMenuButtonRect(PosesMenuColumnDelete, lastY), new GUIContent("Delete Current Pose...", "Deletes the currently selected pose")))
                 {
-                    if (EditorUtility.DisplayDialog("Delete Pose?", "Delete pose " + _currentPoseNames[_poseIndex] + "?", "Yes", "Cancel"))
+                    if (EditorUtility.DisplayDialog("Delete Pose?", "Delete pose " + _currentPoseNames[_poseIndex] + "?", UxrConstants.Editor.Yes, UxrConstants.Editor.Cancel))
                     {
                         DeletePose(_avatar, _currentPoseNames[_poseIndex], true);
                         LoadDefaultPoseData();
@@ -446,7 +448,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                 {
                     string message = _avatar.IsPrefabVariant ? $"Delete all poses in {_avatar.GetAvatarPrefab().name}? Inherited poses from parent prefabs are read-only and will not be deleted." : "Delete all poses?";
 
-                    if (EditorUtility.DisplayDialog("Confirm", message, "Yes", "Cancel"))
+                    if (EditorUtility.DisplayDialog(UxrConstants.Editor.Confirm, message, UxrConstants.Editor.Yes, UxrConstants.Editor.Cancel))
                     {
                         foreach (string poseName in _avatar.GetHandPoses().Select(p => p.name))
                         {
@@ -483,11 +485,11 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                         {
                             if (!UxrEditorUtils.CanLoadUsingAssetDatabase(path))
                             {
-                                EditorUtility.DisplayDialog("Error", "Asset must be in the current project.", "OK");
+                                UxrEditorUtils.ShowFolderNotInProjectError();
                             }
                             else
                             {
-                                EditorUtility.DisplayDialog("Error", "Could not load asset " + path + " as pose.", "OK");   
+                                EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "Could not load asset " + path + " as pose.", UxrConstants.Editor.Ok);   
                             }
                         }
                         else
@@ -505,7 +507,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                             }
                             else if (string.Equals(sourceFile, path))
                             {
-                                EditorUtility.DisplayDialog("Error", "Source and destination files cannot be the same.", "OK");
+                                EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "Source and destination files cannot be the same.", UxrConstants.Editor.Ok);
                             }
                             else
                             {
@@ -549,7 +551,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                     }
                     else if (!UxrEditorUtils.CanLoadUsingAssetDatabase(pathSrc))
                     {
-                        EditorUtility.DisplayDialog("Error", "Path needs to belong to the same Unity project", "OK");
+                        UxrEditorUtils.ShowFolderNotInProjectError();
                     }
                     else
                     {
@@ -574,7 +576,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
 
                         if (handPosesToAdd.Count == 0)
                         {
-                            EditorUtility.DisplayDialog("No hand poses", "Source folder doesn't contain any hand pose assets.", "OK");
+                            EditorUtility.DisplayDialog("No hand poses", "Source folder doesn't contain any hand pose assets.", UxrConstants.Editor.Ok);
                         }
                         else
                         {
@@ -585,7 +587,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                             }
                             else if (string.Equals(pathSrc, pathDst))
                             {
-                                EditorUtility.DisplayDialog("Path error", "Hand pose source and destination paths cannot be the same.", "OK");
+                                EditorUtility.DisplayDialog("Path error", "Hand pose source and destination paths cannot be the same.", UxrConstants.Editor.Ok);
                             }
                             else if (!UxrEditorUtils.PathIsInCurrentProject(pathDst))
                             {
@@ -975,7 +977,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
 
                 if (GUI.Button(GetLeftHandButtonRect(lastY), new GUIContent(resetButtonString, "Resets the left hand's finger transforms to their default position/orientation")))
                 {
-                    if (EditorUtility.DisplayDialog("Override data", "Override current with default pose?", "Yes", "Cancel"))
+                    if (EditorUtility.DisplayDialog("Override data", "Override current with default pose?", UxrConstants.Editor.Yes, UxrConstants.Editor.Cancel))
                     {
                         RegisterHandsUndo("Load Default Hand");
                         ResetHandTransforms(_avatar, UxrHandSide.Left);
@@ -984,7 +986,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
 
                 if (GUI.Button(GetRightHandButtonRect(lastY), new GUIContent(resetButtonString, "Resets the right hand's finger transforms to their default position/orientation")))
                 {
-                    if (EditorUtility.DisplayDialog("Override data", "Override current with default pose?", "Yes", "Cancel"))
+                    if (EditorUtility.DisplayDialog("Override data", "Override current with default pose?", UxrConstants.Editor.Yes, UxrConstants.Editor.Cancel))
                     {
                         RegisterHandsUndo("Load Default Hand");
                         ResetHandTransforms(_avatar, UxrHandSide.Right);
@@ -1291,11 +1293,11 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
 
                             if (GUILayout.Button(new GUIContent(_handPosePresets[index].Pose.name + poseSuffix, tooltip), GUILayout.Width(presetWidth), GUILayout.Height(presetHeight)))
                             {
-                                if (EditorUtility.DisplayDialog("Override data", "Override current pose with preset " + _handPosePresets[index].Pose.name + "?", "Yes", "Cancel"))
+                                if (EditorUtility.DisplayDialog("Override data", "Override current pose with preset " + _handPosePresets[index].Pose.name + "?", UxrConstants.Editor.Yes, UxrConstants.Editor.Cancel))
                                 {
                                     if (_handPosePresets[index].Pose.Version > UxrHandPoseAsset.CurrentVersion)
                                     {
-                                        EditorUtility.DisplayDialog("Warning", "File was saved using a newer version of the Hand Pose Editor. Pose may not be loaded correctly.", "OK");
+                                        EditorUtility.DisplayDialog(UxrConstants.Editor.Warning, "File was saved using a newer version of the Hand Pose Editor. Pose may not be loaded correctly.", UxrConstants.Editor.Ok);
                                     }
 
                                     RegisterHandsUndo("Load Preset " + _handPosePresets[index].Pose.name);
@@ -1449,7 +1451,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
         /// <param name="path">Path that doesn't belong to the current project</param>
         private static void DisplayPathNotFromThisProjectError(string path)
         {
-            EditorUtility.DisplayDialog("Error", "Path " + path + " cannot be outside the project's Assets folder", "OK");
+            EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "Path " + path + " cannot be outside the project's Assets folder", UxrConstants.Editor.Ok);
         }
 
         // Initialization
@@ -1470,7 +1472,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                     if (!avatar.AvatarRig.HasFingerData())
                     {
                         _fingerSpinners = new List<UxrFingerSpinner>();
-                        EditorUtility.DisplayDialog("Warning", $"Avatar hands and finger nodes could not be resolved correctly. Please try setting them up manually in the {nameof(UxrAvatar)} Rig component", "OK");
+                        EditorUtility.DisplayDialog(UxrConstants.Editor.Warning, $"Avatar hands and finger nodes could not be resolved correctly. Please try setting them up manually in the {nameof(UxrAvatar)} Rig component", UxrConstants.Editor.Ok);
                     }
                     else
                     {
@@ -1756,7 +1758,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                 int option = EditorUtility.DisplayDialogComplex("Unsaved Changes",
                                                                 "Do you want to save the pose changes you made before continuing?",
                                                                 "Save",
-                                                                "Cancel",
+                                                                UxrConstants.Editor.Cancel,
                                                                 "Don't Save");
 
                 switch (option)
@@ -1878,7 +1880,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                 return true;
             }
 
-            EditorUtility.DisplayDialog("Error", "Asset could not be renamed. Error: " + errorMessage, "OK");
+            EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "Asset could not be renamed. Error: " + errorMessage, UxrConstants.Editor.Ok);
             return false;
         }
 
@@ -1951,7 +1953,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                 {
                     // Already exists in the parent prefab
 
-                    EditorUtility.DisplayDialog("Error", "Pose " + poseName + " already exists in the Avatar", "OK");
+                    EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "Pose " + poseName + " already exists in the Avatar", UxrConstants.Editor.Ok);
                     return null;
                 }
 
@@ -1959,8 +1961,8 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
 
                 if (parentPrefab && !EditorUtility.DisplayDialog("Use new pose?",
                                                                  $"A pose with the name {poseName} is already present in parent prefab {parentPrefab.name}. The new pose will not delete the old one, but will override it when using this avatar prefab ({avatar.GetAvatarPrefab().name}).",
-                                                                 "Yes",
-                                                                 "Cancel"))
+                                                                 UxrConstants.Editor.Yes,
+                                                                 UxrConstants.Editor.Cancel))
                 {
                     return null;
                 }
@@ -2051,18 +2053,18 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                 {
                     if (!UxrEditorUtils.CanLoadUsingAssetDatabase(path))
                     {
-                        EditorUtility.DisplayDialog("Error", "Asset must be in the current project.", "OK");
+                        EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "Asset must be in the current project.", UxrConstants.Editor.Ok);
                     }
                     else
                     {
-                        EditorUtility.DisplayDialog("Error", "Could not load asset " + path + " as pose.", "OK");
+                        EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "Could not load asset " + path + " as pose.", UxrConstants.Editor.Ok);
                     }
                 }
                 else
                 {
                     if (externalPose.Version > UxrHandPoseAsset.CurrentVersion)
                     {
-                        if (!EditorUtility.DisplayDialog("Warning", "File was saved using a newer version of the Hand Pose Editor. Load anyway?", "Yes", "Cancel"))
+                        if (!EditorUtility.DisplayDialog(UxrConstants.Editor.Warning, "File was saved using a newer version of the Hand Pose Editor. Load anyway?", UxrConstants.Editor.Yes, UxrConstants.Editor.Cancel))
                         {
                             load = false;
                         }
@@ -2072,7 +2074,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                     {
                         EditorUtility.DisplayDialog("Pose type mismatch",
                                                     "Current pose type is " + _currentHandPose.PoseType + " and external pose type is " + externalPose.PoseType + ". To load the external pose please change the current pose type first.",
-                                                    "OK");
+                                                    UxrConstants.Editor.Ok);
                         load = false;
                     }
 
@@ -2684,11 +2686,11 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
             {
                 EditorUtility.DisplayDialog($"No {nameof(UxrGrabbableObject)} selected",
                                             $"A GameObject with an {nameof(UxrGrabbableObject)} component needs to be selected in the Hierarchy Window",
-                                            "OK");
+                                            UxrConstants.Editor.Ok);
             }
             else if (EditorUtility.IsPersistent(grabbableObjectSelected.gameObject))
             {
-                EditorUtility.DisplayDialog("Object is not in scene", "The selected grabbable object needs to be in the scene, it cannot be a prefab", "OK");
+                EditorUtility.DisplayDialog("Object is not in scene", "The selected grabbable object needs to be in the scene, it cannot be a prefab", UxrConstants.Editor.Ok);
             }
             else
             {
@@ -2698,7 +2700,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                 {
                     if (grabbers[i].Side == UxrHandSide.Left)
                     {
-                        if (EditorUtility.DisplayDialog("Create snap transform?", "Create snap transform on " + grabbableObjectSelected.name + " for pose " + poseName + "?", "Yes", "Cancel"))
+                        if (EditorUtility.DisplayDialog("Create snap transform?", "Create snap transform on " + grabbableObjectSelected.name + " for pose " + poseName + "?", UxrConstants.Editor.Yes, UxrConstants.Editor.Cancel))
                         {
                             GameObject                      snapObject              = new GameObject(poseName + (handSide == UxrHandSide.Left ? "Left" : "Right"));
                             UxrGrabbableObjectSnapTransform alignTransformComponent = snapObject.AddComponent<UxrGrabbableObjectSnapTransform>();
@@ -2714,7 +2716,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
 
                 EditorUtility.DisplayDialog($"{nameof(UxrGrabber)} not found",
                                             $"The avatar needs to have a GameObject with an {nameof(UxrGrabber)} component for this hand. This will tell where the object will be snapped to the hand when it is being grabbed.",
-                                            "OK");
+                                            UxrConstants.Editor.Ok);
             }
         }
 
@@ -2777,7 +2779,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                 }
                 
 #if ULTIMATEXR_PACKAGE
-                if (s_currentLoadFolder.IsSubDirectoryOf(UxrEditorUtils.FullInstallationPath))
+                if (PathExt.IsSubDirectoryOf(s_currentLoadFolder, UxrEditorUtils.FullInstallationPath))
                 {
                     return Path.GetFullPath(s_currentLoadFolder);;
                 }

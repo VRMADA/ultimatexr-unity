@@ -23,7 +23,7 @@ namespace UltimateXR.Devices.Integrations.Pico
         #region Public Overrides UxrTrackingDevice
 
         /// <inheritdoc />
-        public override string SDKDependency => UxrManager.SdkPicoXR + "";
+        public override string SDKDependency => UxrConstants.SdkPicoXR + "";
 
         #endregion
     }

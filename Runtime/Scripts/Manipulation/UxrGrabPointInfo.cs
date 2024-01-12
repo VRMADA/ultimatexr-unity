@@ -281,15 +281,6 @@ namespace UltimateXR.Manipulation
 
         #endregion
 
-        #region Internal Types & Data
-
-        /// <summary>
-        ///     Gets or sets the runtime grab info dictionary.
-        /// </summary>
-        internal Dictionary<UxrGrabber, UxrRuntimeGripInfo> RuntimeGrabs { get; set; } = new Dictionary<UxrGrabber, UxrRuntimeGripInfo>();
-
-        #endregion
-
         #region Public Methods
 
         /// <summary>

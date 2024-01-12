@@ -349,12 +349,14 @@ namespace UltimateXR.Guides
 
             // Scale visible icon based on size
 
+            _rootOnScreenIcons.transform.localScale = Vector3.one * _iconScale;
+
             foreach (KeyValuePair<MeshRenderer, Vector3> iconScale in _initialIconScales)
             {
                 if (iconScale.Key.gameObject.activeInHierarchy)
                 {
                     float distance = Vector3.Distance(iconScale.Key.transform.position, UxrAvatar.LocalAvatar.CameraPosition);
-                    iconScale.Key.transform.localScale = Vector3.Max(iconScale.Value * _iconScale, (distance * 0.3f) * _iconScale * iconScale.Value);
+                    iconScale.Key.transform.localScale = Vector3.Max(iconScale.Value, (distance * 0.3f) * iconScale.Value);
                 }
             }
         }

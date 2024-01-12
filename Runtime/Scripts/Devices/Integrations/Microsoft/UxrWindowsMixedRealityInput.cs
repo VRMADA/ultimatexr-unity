@@ -25,7 +25,7 @@ namespace UltimateXR.Devices.Integrations.Microsoft
         /// <summary>
         ///     Requires WMR SDK using OpenXR.
         /// </summary>
-        public override string SDKDependency => UxrManager.SdkWindowsMixedReality;
+        public override string SDKDependency => UxrConstants.SdkWindowsMixedReality;
 
         /// <inheritdoc />
         public override UxrControllerSetupType SetupType => UxrControllerSetupType.Dual;

@@ -4176,6 +4176,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93a4d280a4a0ede4bbbb04b782945354, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 50db2076-bfbf-4e6e-8fd4-604b3dc04864
+  __prefabGuid: 7cdca04fb7f947c44b42b91437f51918
+  __isInPrefab: 1
   _forceClearSkyBox: 0
   _mirrorTransform: {fileID: 2396996497223925660}
   _mirrorRenderer: {fileID: 7795739744077657740}

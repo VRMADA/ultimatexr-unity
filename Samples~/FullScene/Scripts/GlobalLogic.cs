@@ -50,8 +50,9 @@ namespace UltimateXR.Examples.FullScene
         protected override void OnEnable()
         {
             base.OnEnable();
-            UxrManager.AvatarMoved    += UxrManager_AvatarMoved;
-            UxrManager.AvatarsUpdated += UxrManager_AvatarsUpdated;
+            UxrAvatar.LocalAvatarStarted += UxrAvatar_LocalAvatarStarted;
+            UxrAvatar.GlobalAvatarMoved  += UxrAvatar_GlobalAvatarMoved;
+            UxrManager.AvatarsUpdated    += UxrManager_AvatarsUpdated;
         }
 
         /// <summary>
@@ -60,19 +61,9 @@ namespace UltimateXR.Examples.FullScene
         protected override void OnDisable()
         {
             base.OnDisable();
-            UxrManager.AvatarMoved    -= UxrManager_AvatarMoved;
-            UxrManager.AvatarsUpdated -= UxrManager_AvatarsUpdated;
-        }
-
-        /// <summary>
-        ///     Initializes the visible elements.
-        /// </summary>
-        protected override void Start()
-        {
-            base.Start();
-
-            UxrManager.Instance.MoveAvatarTo(UxrAvatar.LocalAvatar, _spawnMain);
-            UpdateVisibility();
+            UxrAvatar.LocalAvatarStarted -= UxrAvatar_LocalAvatarStarted;
+            UxrAvatar.GlobalAvatarMoved  -= UxrAvatar_GlobalAvatarMoved;
+            UxrManager.AvatarsUpdated    -= UxrManager_AvatarsUpdated;
         }
 
         /// <summary>
@@ -112,13 +103,28 @@ namespace UltimateXR.Examples.FullScene
         #region Event Handling Methods
 
         /// <summary>
+        ///     Called when the local avatar called its Start(). Moves the avatar to the spawn point and initializes the visible
+        ///     elements.
+        /// </summary>
+        /// <param name="sender">Event sender</param>
+        /// <param name="e">Event parameters</param>
+        private void UxrAvatar_LocalAvatarStarted(object sender, UxrAvatarStartedEventArgs e)
+        {
+            UxrManager.Instance.MoveAvatarTo(UxrAvatar.LocalAvatar, _spawnMain);
+            UpdateVisibility();
+        }
+
+        /// <summary>
         ///     Called when the avatar moved/teleported. We use it to enable/disable objects based on potential visibility.
         /// </summary>
         /// <param name="sender">Sender</param>
         /// <param name="e">Event parameters</param>
-        private void UxrManager_AvatarMoved(object sender, UxrAvatarMoveEventArgs e)
+        private void UxrAvatar_GlobalAvatarMoved(object sender, UxrAvatarMoveEventArgs e)
         {
-            UpdateVisibility();
+            if (ReferenceEquals(sender, UxrAvatar.LocalAvatar))
+            {
+                UpdateVisibility();
+            }
         }
 
         /// <summary>

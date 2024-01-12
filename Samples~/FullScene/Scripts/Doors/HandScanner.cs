@@ -134,59 +134,62 @@ namespace UltimateXR.Examples.FullScene.Doors
 
                     if (UxrAvatar.LocalAvatar.GetHandBone(UxrHandSide.Left).position.IsInsideBox(_handBoxValidPos))
                     {
-                        _scanTimer = 0.0f;
-                        _handSide  = UxrHandSide.Left;
-                        _audioScan.Play(transform.position);
+                        StartScan(UxrAvatar.LocalAvatar, UxrHandSide.Left);
                     }
                     else if (UxrAvatar.LocalAvatar.GetHandBone(UxrHandSide.Right).position.IsInsideBox(_handBoxValidPos))
                     {
-                        _scanTimer = 0.0f;
-                        _handSide  = UxrHandSide.Right;
-                        _audioScan.Play(transform.position);
+                        StartScan(UxrAvatar.LocalAvatar, UxrHandSide.Right);
                     }
                 }
             }
             else
             {
-                if (UxrAvatar.LocalAvatar.GetHandBone(_handSide).position.IsInsideBox(_handBoxValidPos))
+                // Hand is scanning
+
+                _scanTimer += Time.deltaTime;
+                EnableBeams(true);
+
+                for (int i = 0; i < _beams.Count; ++i)
                 {
-                    if (!UxrAvatar.LocalAvatar.GetHandBone(UxrUtils.GetOppositeSide(_handSide)).position.IsInsideBox(_handBoxValidPos))
+                    float beamStartTime = i / (_beams.Count == 1 ? 1.0f : _beams.Count - 1.0f) * _beamTrailDelay * _scanSeconds;
+                    float beamDuration  = _scanSeconds - _beamTrailDelay;
+                    float t             = Mathf.Clamp01((_scanTimer - beamStartTime) / beamDuration);
+                    float tScale        = 1.0f - Mathf.Abs(t - 0.5f) * 2.0f;
+                    _beams[i].transform.localPosition = Vector3.Lerp(_scannerBeamTopLocalPos, _scannerBeamBottomLocalPos, UxrInterpolator.GetInterpolationFactor(t, _beamEeasing));
+                    _beams[i].transform.localScale    = Vector3.Lerp(_beamScale,              _beamMaxScale,              Mathf.Pow(tScale, 8.0f));
+                }
+                
+                // Check for conditions
+
+                if (_avatarScanning == UxrAvatar.LocalAvatar)
+                {
+                    if (UxrAvatar.LocalAvatar.GetHandBone(_handSide).position.IsInsideBox(_handBoxValidPos))
                     {
-                        // Hand is scanning
-
-                        _scanTimer += Time.deltaTime;
-                        EnableBeams(true);
-
-                        for (int i = 0; i < _beams.Count; ++i)
+                        if (!UxrAvatar.LocalAvatar.GetHandBone(UxrUtils.GetOppositeSide(_handSide)).position.IsInsideBox(_handBoxValidPos))
                         {
-                            float beamStartTime = i / (_beams.Count == 1 ? 1.0f : _beams.Count - 1.0f) * _beamTrailDelay * _scanSeconds;
-                            float beamDuration  = _scanSeconds - _beamTrailDelay;
-                            float t             = Mathf.Clamp01((_scanTimer - beamStartTime) / beamDuration);
-                            float tScale        = 1.0f - Mathf.Abs(t - 0.5f) * 2.0f;
-                            _beams[i].transform.localPosition = Vector3.Lerp(_scannerBeamTopLocalPos, _scannerBeamBottomLocalPos, UxrInterpolator.GetInterpolationFactor(t, _beamEeasing));
-                            _beams[i].transform.localScale    = Vector3.Lerp(_beamScale,              _beamMaxScale,              Mathf.Pow(tScale, 8.0f));
-                        }
+                            // Keep scanning
 
-                        if (_scanTimer > _scanSeconds)
-                        {
-                            ProcessScanResult(UxrAvatar.LocalAvatar, _handSide, true);
-
-                            if (_armoredDoor != null)
+                            if (_scanTimer > _scanSeconds)
                             {
-                                _armoredDoor.OpenDoor();
+                                ProcessScanResult(UxrAvatar.LocalAvatar, _handSide, true);
+
+                                if (_armoredDoor != null)
+                                {
+                                    _armoredDoor.OpenDoor(false);
+                                }
                             }
+                        }
+                        else
+                        {
+                            // Opposite hand got in. Aborting.
+                            ProcessScanResult(UxrAvatar.LocalAvatar, _handSide, false);
                         }
                     }
                     else
                     {
-                        // Opposite hand got in. Aborting.
+                        // Scanning hand got out. Aborting.
                         ProcessScanResult(UxrAvatar.LocalAvatar, _handSide, false);
                     }
-                }
-                else
-                {
-                    // Scanning hand got out. Aborting.
-                    ProcessScanResult(UxrAvatar.LocalAvatar, _handSide, false);
                 }
             }
 
@@ -239,6 +242,23 @@ namespace UltimateXR.Examples.FullScene.Doors
         #region Private Methods
 
         /// <summary>
+        ///     Starts scanning a hand.
+        /// </summary>
+        /// <param name="avatarScanning">The avatar that started scanning</param>
+        /// <param name="handSide">The side of the hand being scanned</param>
+        private void StartScan(UxrAvatar avatarScanning, UxrHandSide handSide)
+        {
+            BeginSync();
+
+            _scanTimer      = 0.0f;
+            _handSide       = handSide;
+            _avatarScanning = avatarScanning;
+            _audioScan.Play(transform.position);
+
+            EndSyncMethod(new object[] { avatarScanning, handSide });
+        }
+
+        /// <summary>
         ///     Enables/disables the scanning beams.
         /// </summary>
         /// <param name="enable">Whether the beams should be enabled</param>
@@ -255,6 +275,8 @@ namespace UltimateXR.Examples.FullScene.Doors
         /// <param name="isValid">Whether the access was granted</param>
         private void ProcessScanResult(UxrAvatar avatar, UxrHandSide handSide, bool isValid)
         {
+            BeginSync();
+            
             EnableBeams(false);
 
             _scanReady = false;
@@ -296,6 +318,8 @@ namespace UltimateXR.Examples.FullScene.Doors
             }
 
             HandScanned?.Invoke(avatar, handSide, isValid);
+
+            EndSyncMethod(new object[] { avatar, handSide, isValid });
         }
 
         #endregion
@@ -313,6 +337,7 @@ namespace UltimateXR.Examples.FullScene.Doors
         private bool        _scanReady = true;
         private float       _scanTimer = -1.0f;
         private Vector3     _beamScale;
+        private UxrAvatar   _avatarScanning;
         private UxrHandSide _handSide;
         private Color       _colorValid;
         private Color       _colorInvalid;

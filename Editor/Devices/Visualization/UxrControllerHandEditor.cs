@@ -14,7 +14,7 @@ using UnityEngine;
 
 namespace UltimateXR.Editor.Devices.Visualization
 {
-    [CustomEditor(typeof(UxrControllerHand))]
+    [CustomEditor(typeof(UxrControllerHand)), CanEditMultipleObjects]
     public class UxrControllerHandEditor : UnityEditor.Editor
     {
         #region Unity

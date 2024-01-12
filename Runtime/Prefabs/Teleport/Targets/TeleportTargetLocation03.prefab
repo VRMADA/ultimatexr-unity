@@ -144,6 +144,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7a14046e346a1a4a80bc53b1c296bb0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: a7873ebc-e9b0-4d30-968a-4f2939c7fca3
+  __prefabGuid: eea592ce61d97f9439dabfa8bc2b90fa
+  __isInPrefab: 1
   _reorientArrowRoot: {fileID: 1616041640809118}
   _validColorStateIgnoreList: []
 --- !u!1 &1616041640809118
@@ -290,6 +293,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ac1f3fc45c4bd145acc5e43c81e68a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 957cfd46-05e4-4bf7-b959-661e24781200
+  __prefabGuid: eea592ce61d97f9439dabfa8bc2b90fa
+  __isInPrefab: 1
   _allowRotateAroundY: 1
   _allowRotateAroundX: 0
   _invertedForwardAxis: 0
@@ -306,6 +312,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: da9d699c-ed7f-4fdb-b066-9c332c3e9702
+  __prefabGuid: eea592ce61d97f9439dabfa8bc2b90fa
+  __isInPrefab: 1
   _translationMode: 2
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}

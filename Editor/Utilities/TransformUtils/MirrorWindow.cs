@@ -3,13 +3,14 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Core;
 using UltimateXR.Core.Math;
 using UltimateXR.Editor.Core.Math;
 using UltimateXR.Extensions.Unity;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Editor.Utilities
+namespace UltimateXR.Editor.Utilities.TransformUtils
 {
     /// <summary>
     ///     Custom tool window that will mirror an object's position/orientation with reference to another.
@@ -27,14 +28,14 @@ namespace UltimateXR.Editor.Utilities
                                     MessageType.Info);
 
             EditorGUI.BeginChangeCheck();
-            Transform objectToAlign = _objectToMirror;
-            _objectToMirror = EditorGUILayout.ObjectField(new GUIContent("Object to Mirror", "The object that will be mirrored"), _objectToMirror, typeof(Transform), true) as Transform;
+            UnityEngine.Transform objectToAlign = _objectToMirror;
+            _objectToMirror = EditorGUILayout.ObjectField(new GUIContent("Object to Mirror", "The object that will be mirrored"), _objectToMirror, typeof(UnityEngine.Transform), true) as UnityEngine.Transform;
             if (EditorGUI.EndChangeCheck())
             {
                 if (EditorUtility.IsPersistent(_objectToMirror))
                 {
                     _objectToMirror = objectToAlign;
-                    EditorUtility.DisplayDialog("Error", "The object to mirror needs to be in the scene", "OK");
+                    EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "The object to mirror needs to be in the scene", UxrConstants.Editor.Ok);
                 }
             }
 
@@ -42,10 +43,10 @@ namespace UltimateXR.Editor.Utilities
 
             if (!_useSelfSourceTransform)
             {
-                _sourceTransform = EditorGUILayout.ObjectField(new GUIContent("Source Reference", "The transform that will be used as reference for the start position/orientation"), _sourceTransform, typeof(Transform), true) as Transform;
+                _sourceTransform = EditorGUILayout.ObjectField(new GUIContent("Source Reference", "The transform that will be used as reference for the start position/orientation"), _sourceTransform, typeof(UnityEngine.Transform), true) as UnityEngine.Transform;
             }
 
-            _mirrorPlane = EditorGUILayout.ObjectField(new GUIContent("Mirror Plane", "A point where the mirror plane lies"), _mirrorPlane, typeof(Transform), true) as Transform;
+            _mirrorPlane = EditorGUILayout.ObjectField(new GUIContent("Mirror Plane", "A point where the mirror plane lies"), _mirrorPlane, typeof(UnityEngine.Transform), true) as UnityEngine.Transform;
             _mirrorAxis  = UxrAxisPropertyDrawer.EditorGuiLayout(new GUIContent("Mirror Axis", "The normal of the axis plane"), _mirrorAxis);
             _reposition  = EditorGUILayout.Toggle(new GUIContent("Reposition",                 "Change position?"),    _reposition);
             _reorient    = EditorGUILayout.Toggle(new GUIContent("Reorient",                   "Change orientation?"), _reorient);
@@ -78,7 +79,7 @@ namespace UltimateXR.Editor.Utilities
         /// <summary>
         ///     Menu entry that invokes the tool.
         /// </summary>
-        [MenuItem("Tools/UltimateXR/Utils/Mirror Object")]
+        [MenuItem(UxrConstants.Editor.MenuPathUtils + "Mirror Object", priority = UxrConstants.Editor.PriorityMenuPathUtils + 3)]
         private static void Init()
         {
             MirrorWindow window = (MirrorWindow)GetWindow(typeof(MirrorWindow), true, "Mirror Object");
@@ -89,10 +90,10 @@ namespace UltimateXR.Editor.Utilities
 
         #region Private Types & Data
 
-        private Transform               _objectToMirror;
+        private UnityEngine.Transform   _objectToMirror;
         private bool                    _useSelfSourceTransform = true;
-        private Transform               _sourceTransform;
-        private Transform               _mirrorPlane;
+        private UnityEngine.Transform   _sourceTransform;
+        private UnityEngine.Transform   _mirrorPlane;
         private UxrAxis                 _mirrorAxis = UxrAxis.Z;
         private TransformExt.MirrorType _mirrorType = TransformExt.MirrorType.MirrorYZ;
         private bool                    _reposition = true;

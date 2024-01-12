@@ -16,7 +16,8 @@ namespace UltimateXR.Manipulation
     public enum UxrGrabbableModifierFlags
     {
         None                  = 0,
-        ParentControl         = 1 << 0,
+        DummyParentGrabbable  = 1 << 0,
+        ParentControl         = 1 << 1,
         Priority              = 1 << 2,
         MultiGrab             = 1 << 3,
         TranslationConstraint = 1 << 8,

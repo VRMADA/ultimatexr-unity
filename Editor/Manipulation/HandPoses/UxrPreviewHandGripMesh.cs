@@ -105,7 +105,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
                     skinnedMeshRenderer.BakeMesh(previewMesh.UnityMesh);
                     previewMesh.CreateMesh(avatar, skinnedMeshRenderer, handSide);
                     previewMesh.CreateBoneList(avatar, skinnedMeshRenderer, avatarHandPose, handSide);
-                    previewMesh.UnityMesh.name = UxrGrabPointIndex.GetIndexDisplayName(grabbableObject, grabPoint) + (handSide == UxrHandSide.Left ? UxrGrabbableObject.LeftGrabPoseMeshSuffix : UxrGrabbableObject.RightGrabPoseMeshSuffix);
+                    previewMesh.UnityMesh.name = UxrGrabPointIndex.GetIndexDisplayName(grabbableObject, grabPoint) + (handSide == UxrHandSide.Left ? UxrConstants.LeftGrabPoseMeshSuffix : UxrConstants.RightGrabPoseMeshSuffix);
 
                     if (avatarHandPose.PoseType == UxrHandPoseType.Fixed)
                     {

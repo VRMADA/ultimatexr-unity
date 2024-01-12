@@ -3,7 +3,6 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +11,7 @@ using UltimateXR.Avatar.Rig;
 using UltimateXR.CameraUtils;
 using UltimateXR.Core;
 using UltimateXR.Core.Components;
-using UltimateXR.Core.StateSync;
+using UltimateXR.Core.Settings;
 using UltimateXR.Devices;
 using UltimateXR.Devices.Integrations;
 using UltimateXR.Devices.Visualization;
@@ -66,7 +65,7 @@ namespace UltimateXR.Avatar
     ///     </para>
     /// </summary>
     [DisallowMultipleComponent]
-    public partial class UxrAvatar : UxrComponent<UxrAvatar>, IUxrStateSync
+    public partial class UxrAvatar : UxrComponent<UxrAvatar>
     {
         #region Inspector Properties/Serialized Fields
 
@@ -94,6 +93,16 @@ namespace UltimateXR.Avatar
         ///     in a deferred way, such as a networking environment, and the avatar isn't ready during Awake()/OnEnable()/Start().
         /// </summary>
         public static event EventHandler<UxrAvatarStartedEventArgs> LocalAvatarStarted;
+
+        /// <summary>
+        ///     Called right before an <see cref="UxrAvatar" /> is about to be moved.
+        /// </summary>
+        public static event EventHandler<UxrAvatarMoveEventArgs> GlobalAvatarMoving;
+
+        /// <summary>
+        ///     Called right after an <see cref="UxrAvatar" /> was moved.
+        /// </summary>
+        public static event EventHandler<UxrAvatarMoveEventArgs> GlobalAvatarMoved;
 
         /// <summary>
         ///     Event called right before the avatar is about to change a hand's pose.
@@ -407,9 +416,32 @@ namespace UltimateXR.Avatar
             {
                 _avatarMode = value;
 
+                // We do this instead of SetActive(false) on the CameraController because the camera
+                // drives the body IK and some network components can be added to the camera GameObject
+                // which would be ignored in that case.
+                // TODO: Check if there are other components that should be looked for and disabled
+
+                bool isLocalAvatar = value == UxrAvatarMode.Local;
+
                 if (CameraController)
                 {
-                    CameraController.gameObject.SetActive(value == UxrAvatarMode.Local);
+                    Camera[] avatarCameras = CameraController.GetComponentsInChildren<Camera>();
+
+                    foreach (Camera camera in avatarCameras)
+                    {
+                        camera.enabled = isLocalAvatar;
+
+#if ULTIMATEXR_UNITY_XR_MANAGEMENT
+                        if (camera.TryGetComponent(out TrackedPoseDriver trackedPoseDriver))
+                        {
+                            trackedPoseDriver.enabled = isLocalAvatar;
+                        }
+#endif
+                        if (camera.TryGetComponent(out AudioListener audioListener))
+                        {
+                            audioListener.enabled = isLocalAvatar;
+                        }
+                    }
                 }
             }
         }
@@ -508,33 +540,6 @@ namespace UltimateXR.Avatar
         {
             get => GetDefaultPoseInHierarchy();
             set => _defaultHandPose = value;
-        }
-
-        #endregion
-
-        #region Implicit IUxrStateSync
-
-        /// <inheritdoc />
-        public event EventHandler<UxrStateSyncEventArgs> StateChanged;
-
-        /// <inheritdoc />
-        public void SyncState(UxrStateSyncEventArgs e, bool propagateEvents)
-        {
-            if (!(e is UxrAvatarSyncEventArgs syncArgs))
-            {
-                return;
-            }
-
-            switch (syncArgs.EventType)
-            {
-                case UxrAvatarSyncEventType.AvatarMove:
-                    UxrManager.Instance.MoveAvatarTo(this, syncArgs.AvatarMoveEventArgs.NewPosition, syncArgs.AvatarMoveEventArgs.NewForward, propagateEvents);
-                    break;
-
-                case UxrAvatarSyncEventType.HandPose:
-                    SetCurrentHandPose(syncArgs.HandPoseChangeEventArgs.HandSide, syncArgs.HandPoseChangeEventArgs.PoseName, syncArgs.HandPoseChangeEventArgs.BlendValue, propagateEvents);
-                    break;
-            }
         }
 
         #endregion
@@ -1008,6 +1013,17 @@ namespace UltimateXR.Avatar
         }
 
         /// <summary>
+        ///     Gets the current hand pose blend value, which is the interpolation value in a blend pose type.
+        /// </summary>
+        /// <param name="handSide">Which side to retrieve</param>
+        /// <returns>Blend value [0.0, 1.0]</returns>
+        public float GetCurrentHandPoseBlendValue(UxrHandSide handSide)
+        {
+            HandState handState = handSide == UxrHandSide.Left ? _leftHandState : _rightHandState;
+            return handState.CurrentBlendValue;
+        }
+
+        /// <summary>
         ///     Sets the currently active pose for a given hand in the avatar at runtime. Blending is used to transition between
         ///     poses smoothly, which means the pose is not immediately adopted. To adopt a pose immediately at a given instant use
         ///     <see cref="SetCurrentHandPoseImmediately" /> instead.
@@ -1031,17 +1047,24 @@ namespace UltimateXR.Avatar
 
             if (handPose == null)
             {
-                Debug.LogWarning($"Pose {poseName} was not found in avatar {name}");
+                if (UxrGlobalSettings.Instance.LogLevelAvatar >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.AvatarModule} Pose {poseName} was not found in avatar {name}");
+                }
+
                 return false;
             }
 
             HandState                        handState                = handSide == UxrHandSide.Left ? _leftHandState : _rightHandState;
-            UxrAvatarHandPoseChangeEventArgs avatarHandPoseChangeArgs = new UxrAvatarHandPoseChangeEventArgs(this, handSide, poseName, blendValue);
+            UxrAvatarHandPoseChangeEventArgs avatarHandPoseChangeArgs = new UxrAvatarHandPoseChangeEventArgs(handSide, poseName, blendValue);
 
             if (!handState.IsChange(avatarHandPoseChangeArgs))
             {
                 return true;
             }
+
+            // This method will be synchronized through network
+            BeginSync();
 
             if (propagateEvents)
             {
@@ -1054,6 +1077,8 @@ namespace UltimateXR.Avatar
             {
                 OnHandPoseChanged(avatarHandPoseChangeArgs);
             }
+
+            EndSyncMethod(new object[] { handSide, poseName, blendValue, propagateEvents });
 
             return true;
         }
@@ -1070,7 +1095,7 @@ namespace UltimateXR.Avatar
         public void SetCurrentHandPoseBlendValue(UxrHandSide handSide, float blendValue, bool propagateEvents = true)
         {
             HandState                        handState                = handSide == UxrHandSide.Left ? _leftHandState : _rightHandState;
-            UxrAvatarHandPoseChangeEventArgs avatarHandPoseChangeArgs = new UxrAvatarHandPoseChangeEventArgs(this, handSide, handState.CurrentHandPoseName, blendValue);
+            UxrAvatarHandPoseChangeEventArgs avatarHandPoseChangeArgs = new UxrAvatarHandPoseChangeEventArgs(handSide, handState.CurrentHandPoseName, blendValue);
 
             if (!handState.IsChange(avatarHandPoseChangeArgs))
             {
@@ -1142,15 +1167,6 @@ namespace UltimateXR.Avatar
         #region Internal Methods
 
         /// <summary>
-        ///     Called whenever the avatar was moved.
-        /// </summary>
-        /// <param name="e">Event parameters</param>
-        internal void NotifyAvatarMoved(UxrAvatarMoveEventArgs e)
-        {
-            StateChanged?.Invoke(this, new UxrAvatarSyncEventArgs(e));
-        }
-
-        /// <summary>
         ///     Updates the hand transforms using their current pose information using smooth blending.
         /// </summary>
         internal void UpdateHandPoseTransforms()
@@ -1189,7 +1205,10 @@ namespace UltimateXR.Avatar
 
             if (CameraController.parent != transform)
             {
-                Debug.LogWarning("Error finding Camera Controller. Camera Controller is a GameObject that needs to be child of the avatar and have the avatar camera as a child");
+                if (UxrGlobalSettings.Instance.LogLevelAvatar >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.AvatarModule} Error finding Camera Controller. Camera Controller is a GameObject that needs to be child of the avatar and have the avatar camera as a child");
+                }
             }
 
             if (_camera != null)
@@ -1258,7 +1277,7 @@ namespace UltimateXR.Avatar
             // Cache hand poses by name
 
             CreateHandPoseCache();
-            
+
 #if ULTIMATEXR_UNITY_XR_MANAGEMENT
 
             // New Unity XR requires TrackedPoseDriver component in cameras
@@ -1270,12 +1289,12 @@ namespace UltimateXR.Avatar
                 foreach (Camera camera in avatarCameras)
                 {
                     bool hasInputSystemPoseDriver = false;
-            
+
 #if ULTIMATEXR_USE_UNITYINPUTSYSTEM_SDK
                     hasInputSystemPoseDriver = camera.GetComponent<UnityEngine.InputSystem.XR.TrackedPoseDriver>() != null;
 #endif
                     TrackedPoseDriver trackedPoseDriver = camera.GetComponent<TrackedPoseDriver>();
-                    
+
                     if (trackedPoseDriver == null && !hasInputSystemPoseDriver)
                     {
                         trackedPoseDriver = camera.gameObject.AddComponent<TrackedPoseDriver>();
@@ -1286,7 +1305,6 @@ namespace UltimateXR.Avatar
                     }
                 }
             }
-
 #endif
         }
 
@@ -1377,7 +1395,24 @@ namespace UltimateXR.Avatar
         protected virtual void OnHandPoseChanged(UxrAvatarHandPoseChangeEventArgs e)
         {
             HandPoseChanged?.Invoke(this, e);
-            StateChanged?.Invoke(this, new UxrAvatarSyncEventArgs(e));
+        }
+
+        /// <summary>
+        ///     Called whenever the avatar is about to be moved.
+        /// </summary>
+        /// <param name="e">Event parameters</param>
+        internal void RaiseAvatarMoving(UxrAvatarMoveEventArgs e)
+        {
+            GlobalAvatarMoving?.Invoke(this, e);
+        }
+
+        /// <summary>
+        ///     Called whenever the avatar was moved.
+        /// </summary>
+        /// <param name="e">Event parameters</param>
+        internal void RaiseAvatarMoved(UxrAvatarMoveEventArgs e)
+        {
+            GlobalAvatarMoved?.Invoke(this, e);
         }
 
         /// <summary>

@@ -26,7 +26,7 @@ namespace UltimateXR.Devices.Integrations.MagicLeap
         public override bool IsMixedRealityDevice => true;
 
         /// <inheritdoc />
-        public override string SDKDependency => UxrManager.SdkMagicLeap;
+        public override string SDKDependency => UxrConstants.SdkMagicLeap;
 
         #endregion
     }

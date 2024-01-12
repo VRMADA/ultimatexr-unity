@@ -6,9 +6,12 @@
 using System;
 using System.Collections.Generic;
 using UltimateXR.Avatar;
+using UltimateXR.Core;
+using UltimateXR.Core.Settings;
 using UltimateXR.Extensions.Unity;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 #pragma warning disable 67 // Disable warnings due to unused events
@@ -22,16 +25,16 @@ namespace UltimateXR.UI.UnityInputModule.Controls
     {
         #region Inspector Properties/Serialized Fields
 
-        [SerializeField]               private bool                  _initialStateIsSelected;
-        [SerializeField]               private bool                  _canToggleOnlyOnce;
-        [SerializeField]               private Text                  _text;
-        [SerializeField]               private List<GameObject>      _enableWhenSelected;
-        [SerializeField]               private List<GameObject>      _enableWhenNotSelected;
-        [SerializeField]               private List<TextColorChange> _textColorChanges;
-        [SerializeField]               private AudioClip             _audioToggleOn;
-        [SerializeField]               private AudioClip             _audioToggleOff;
-        [SerializeField] [Range(0, 1)] private float                 _audioToggleOnVolume  = 1.0f;
-        [SerializeField] [Range(0, 1)] private float                 _audioToggleOffVolume = 1.0f;
+        [FormerlySerializedAs("_initialStateIsSelected")] [SerializeField] private InitState             _initialState = InitState.DontChange;
+        [SerializeField]                                                   private bool                  _canToggleOnlyOnce;
+        [SerializeField]                                                   private Text                  _text;
+        [SerializeField]                                                   private List<GameObject>      _enableWhenSelected;
+        [SerializeField]                                                   private List<GameObject>      _enableWhenNotSelected;
+        [SerializeField]                                                   private List<TextColorChange> _textColorChanges;
+        [SerializeField]                                                   private AudioClip             _audioToggleOn;
+        [SerializeField]                                                   private AudioClip             _audioToggleOff;
+        [SerializeField] [Range(0, 1)]                                     private float                 _audioToggleOnVolume  = 1.0f;
+        [SerializeField] [Range(0, 1)]                                     private float                 _audioToggleOffVolume = 1.0f;
 
         #endregion
 
@@ -44,12 +47,18 @@ namespace UltimateXR.UI.UnityInputModule.Controls
 
         /// <summary>
         ///     Gets or sets whether the current toggled state.
+        ///     To set the state of the control without triggering any events, use <see cref="SetIsSelected" /> instead.
         /// </summary>
         public bool IsSelected
         {
             get => _isSelected;
-            set => SetIsSelected(value);
+            set => SetIsSelected(value, true);
         }
+
+        /// <summary>
+        ///     Gets or sets whether the control can be toggled or not.
+        /// </summary>
+        public bool CanBeToggled { get; set; } = true;
 
         /// <summary>
         ///     Gets or sets the text value. If no <see cref="Text" /> component is configured it will return
@@ -69,6 +78,68 @@ namespace UltimateXR.UI.UnityInputModule.Controls
 
         #endregion
 
+        #region Public Methods
+
+        /// <summary>
+        ///     Changes the current state of the control like <see cref="IsSelected" /> but allowing to control whether
+        ///     <see cref="Toggled" /> events are propagated or not.
+        /// </summary>
+        /// <param name="value">State (selected/not-selected)</param>
+        /// <param name="propagateEvents">Whether to propagate events</param>
+        public void SetIsSelected(bool value, bool propagateEvents)
+        {
+            if (_isSelected == value && _isInitialized)
+            {
+                return;
+            }
+
+            _isSelected = value;
+
+            foreach (GameObject goToEnable in _enableWhenSelected)
+            {
+                if (goToEnable == null)
+                {
+                    if (UxrGlobalSettings.Instance.LogLevelUI >= UxrLogLevel.Warnings)
+                    {
+                        Debug.LogWarning($"{UxrConstants.UiModule} {transform.GetPathUnderScene()} has null enableWhenSelected entry");
+                    }
+                }
+                else
+                {
+                    goToEnable.SetActive(_isSelected);
+                }
+            }
+
+            foreach (GameObject goToEnable in _enableWhenNotSelected)
+            {
+                if (goToEnable == null)
+                {
+                    if (UxrGlobalSettings.Instance.LogLevelUI >= UxrLogLevel.Warnings)
+                    {
+                        Debug.LogWarning($"{UxrConstants.UiModule} {transform.GetPathUnderScene()} has null enableWhenNotSelected entry");
+                    }
+                }
+                else
+                {
+                    goToEnable.SetActive(!_isSelected);
+                }
+            }
+
+            foreach (TextColorChange textEntry in _textColorChanges)
+            {
+                textEntry.TextComponent.color = _isSelected ? textEntry.ColorSelected : textEntry.ColorNotSelected;
+            }
+
+            _isInitialized = true;
+
+            if (propagateEvents)
+            {
+                Toggled?.Invoke(this);
+            }
+        }
+
+        #endregion
+
         #region Unity
 
         /// <summary>
@@ -78,9 +149,9 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         {
             base.Awake();
 
-            if (!_isInitialized)
+            if (!_isInitialized && _initialState != InitState.DontChange)
             {
-                SetIsSelected(_initialStateIsSelected);
+                SetIsSelected(_initialState == InitState.ToggledOn, true);
             }
 
             _alreadyToggled = false;
@@ -100,11 +171,18 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         }
 
         /// <summary>
-        ///     Resets the component.
+        ///     Checks for a <see cref="UxrToggleGroup" /> in any parent object to refresh the content.
         /// </summary>
-        protected override void Reset()
+        protected override void OnEnable()
         {
-            base.Reset();
+            base.OnEnable();
+
+            UxrToggleGroup group = GetComponentInParent<UxrToggleGroup>();
+
+            if (group != null)
+            {
+                group.RefreshToggleChildrenList();
+            }
         }
 
         #endregion
@@ -119,14 +197,13 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         {
             base.OnClicked(eventData);
 
-            if (_alreadyToggled && _canToggleOnlyOnce)
+            if (!CanBeToggled || (_alreadyToggled && _canToggleOnlyOnce))
             {
                 return;
             }
 
             if (Interactable)
             {
-                SetIsSelected(!_isSelected);
                 _alreadyToggled = true;
 
                 if (_canToggleOnlyOnce)
@@ -144,58 +221,9 @@ namespace UltimateXR.UI.UnityInputModule.Controls
                 {
                     AudioSource.PlayClipAtPoint(_audioToggleOn, audioPosition, _audioToggleOnVolume);
                 }
+
+                SetIsSelected(!_isSelected, true);
             }
-
-            Toggled?.Invoke(this);
-        }
-
-        #endregion
-
-        #region Private Methods
-
-        /// <summary>
-        ///     Changes the current state of the control.
-        /// </summary>
-        /// <param name="value">State (selected/not-selected)</param>
-        private void SetIsSelected(bool value)
-        {
-            if (_isSelected == value && _isInitialized)
-            {
-                return;
-            }
-
-            _isSelected = value;
-
-            foreach (GameObject goToEnable in _enableWhenSelected)
-            {
-                if (goToEnable == null)
-                {
-                    Debug.LogWarning($"{transform.GetPathUnderScene()} has null enableWhenSelected entry");
-                }
-                else
-                {
-                    goToEnable.SetActive(_isSelected);
-                }
-            }
-
-            foreach (GameObject goToEnable in _enableWhenNotSelected)
-            {
-                if (goToEnable == null)
-                {
-                    Debug.LogWarning($"{transform.GetPathUnderScene()} has null enableWhenNotSelected entry");
-                }
-                else
-                {
-                    goToEnable.SetActive(!_isSelected);
-                }
-            }
-
-            foreach (TextColorChange textEntry in _textColorChanges)
-            {
-                textEntry.TextComponent.color = _isSelected ? textEntry.ColorSelected : textEntry.ColorNotSelected;
-            }
-
-            _isInitialized = true;
         }
 
         #endregion

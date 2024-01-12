@@ -3,6 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System;
 using UltimateXR.Core;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ namespace UltimateXR.Avatar
     ///     <list type="bullet">
     ///         <item>
     ///             <see
-    ///                 cref="UxrManager.MoveAvatarTo(UltimateXR.Avatar.UxrAvatar,UnityEngine.Vector3,UnityEngine.Vector3,bool)">
+    ///                 cref="UxrManager.MoveAvatarTo(UxrAvatar,UnityEngine.Vector3,UnityEngine.Vector3,bool)">
     ///                 UxrManager.Instance.MoveAvatarTo
     ///             </see>
     ///         </item>
@@ -30,10 +31,9 @@ namespace UltimateXR.Avatar
     ///     </list>
     ///     These methods will move/rotate the root transform of the avatar. If a user moves or rotates in the real-world, the
     ///     camera transform will be updated but the root avatar transform will remain fixed. Only moving or teleporting the
-    ///     avatar
-    ///     will generate <see cref="UxrAvatarMoveEventArgs" /> events.
+    ///     avatar will generate <see cref="UxrAvatarMoveEventArgs" /> events.
     /// </summary>
-    public class UxrAvatarMoveEventArgs : UxrAvatarEventArgs
+    public class UxrAvatarMoveEventArgs : EventArgs
     {
         #region Public Types & Data
 
@@ -60,32 +60,32 @@ namespace UltimateXR.Avatar
         /// <summary>
         ///     Gets the old <see cref="UxrAvatar" /> forward vector.
         /// </summary>
-        public Vector3 OldForward { get; }
+        public Vector3 OldForward { get; private set; }
 
         /// <summary>
         ///     Gets the new <see cref="UxrAvatar" /> forward vector.
         /// </summary>
-        public Vector3 NewForward { get; }
+        public Vector3 NewForward { get; private set; }
 
         /// <summary>
         ///     Gets the old <see cref="UxrAvatar" /> local to world matrix.
         /// </summary>
-        public Matrix4x4 OldWorldMatrix { get; }
+        public Matrix4x4 OldWorldMatrix { get; private set; }
 
         /// <summary>
         ///     Gets the new <see cref="UxrAvatar" /> local to world matrix.
         /// </summary>
-        public Matrix4x4 NewWorldMatrix { get; }
+        public Matrix4x4 NewWorldMatrix { get; private set; }
 
         /// <summary>
         ///     Gets whether the avatar has changed its position.
         /// </summary>
-        public bool HasTranslation { get; }
+        public bool HasTranslation { get; private set; }
 
         /// <summary>
         ///     Gets whether the avatar has changed its rotation.
         /// </summary>
-        public bool HasRotation { get; }
+        public bool HasRotation { get; private set; }
 
         #endregion
 
@@ -94,28 +94,38 @@ namespace UltimateXR.Avatar
         /// <summary>
         ///     Constructor.
         /// </summary>
-        /// <param name="avatar">Avatar that moved</param>
         /// <param name="oldPosition">Old <see cref="UxrAvatar" /> position</param>
         /// <param name="oldRotation">Old <see cref="UxrAvatar" /> rotation</param>
         /// <param name="newPosition">New <see cref="UxrAvatar" /> position</param>
         /// <param name="newRotation">New <see cref="UxrAvatar" /> rotation</param>
-        public UxrAvatarMoveEventArgs(UxrAvatar avatar, Vector3 oldPosition, Quaternion oldRotation, Vector3 newPosition, Quaternion newRotation) : base(avatar)
+        public UxrAvatarMoveEventArgs(Vector3 oldPosition, Quaternion oldRotation, Vector3 newPosition, Quaternion newRotation)
         {
             OldPosition = oldPosition;
             OldRotation = oldRotation;
             NewPosition = newPosition;
             NewRotation = newRotation;
 
-            OldForward     = OldRotation * Vector3.forward;
-            NewForward     = NewRotation * Vector3.forward;
-            OldWorldMatrix = Matrix4x4.TRS(oldPosition, oldRotation, Vector3.one);
-            NewWorldMatrix = Matrix4x4.TRS(NewPosition, NewRotation, Vector3.one);
+            ComputeInternalData();
+        }
 
-            _oldWorldMatrixInverse = OldWorldMatrix.inverse;
-            _oldRotationInverse    = Quaternion.Inverse(oldRotation);
+        #endregion
 
-            HasTranslation = OldPosition != NewPosition;
-            HasRotation    = OldRotation != NewRotation;
+        #region Public Overrides object
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            if (HasTranslation && HasRotation)
+            {
+                return $"Avatar moved (OldPosition={OldPosition}, OldRotation={OldRotation}, NewPosition={NewPosition}, NewRotation={NewRotation})";
+            }
+
+            if (HasTranslation)
+            {
+                return $"Avatar moved (OldPosition={OldPosition}, NewPosition={NewPosition})";
+            }
+
+            return $"Avatar moved (OldRotation={OldPosition}, NewRotation={NewPosition})";
         }
 
         #endregion
@@ -137,10 +147,31 @@ namespace UltimateXR.Avatar
 
         #endregion
 
+        #region Private Methods
+
+        /// <summary>
+        ///     Computes the helper properties and internal variables.
+        /// </summary>
+        private void ComputeInternalData()
+        {
+            OldForward     = OldRotation * Vector3.forward;
+            NewForward     = NewRotation * Vector3.forward;
+            OldWorldMatrix = Matrix4x4.TRS(OldPosition, OldRotation, Vector3.one);
+            NewWorldMatrix = Matrix4x4.TRS(NewPosition, NewRotation, Vector3.one);
+
+            _oldWorldMatrixInverse = OldWorldMatrix.inverse;
+            _oldRotationInverse    = Quaternion.Inverse(OldRotation);
+
+            HasTranslation = OldPosition != NewPosition;
+            HasRotation    = OldRotation != NewRotation;
+        }
+
+        #endregion
+
         #region Private Types & Data
 
-        private readonly Matrix4x4  _oldWorldMatrixInverse;
-        private readonly Quaternion _oldRotationInverse;
+        private Matrix4x4  _oldWorldMatrixInverse;
+        private Quaternion _oldRotationInverse;
 
         #endregion
     }

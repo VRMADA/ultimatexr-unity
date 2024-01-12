@@ -96,6 +96,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 6d226124-b803-47f1-8980-71ebe4fab072
+  __prefabGuid: e13d8b3dafd96d042914cad3585c749d
+  __isInPrefab: 1
   _translationMode: 0
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}
@@ -233,6 +236,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 81ee6063-4eec-4583-867d-8058b3bbb4bf
+  __prefabGuid: e13d8b3dafd96d042914cad3585c749d
+  __isInPrefab: 1
   _translationMode: 0
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}
@@ -410,6 +416,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 47e2bf2d-632e-4a89-a663-46f9296fa828
+  __prefabGuid: e13d8b3dafd96d042914cad3585c749d
+  __isInPrefab: 1
   _translationMode: 0
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}
@@ -547,6 +556,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: ec52333a-66aa-4058-98fa-3bfed8ea2685
+  __prefabGuid: e13d8b3dafd96d042914cad3585c749d
+  __isInPrefab: 1
   _translationMode: 0
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}
@@ -684,6 +696,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 225a7cb0-828f-4174-bd8e-baea75fa54fe
+  __prefabGuid: e13d8b3dafd96d042914cad3585c749d
+  __isInPrefab: 1
   _translationMode: 0
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}
@@ -772,6 +787,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7a14046e346a1a4a80bc53b1c296bb0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 142cd97a-ae44-4e0d-9339-04dbe33ef9ea
+  __prefabGuid: e13d8b3dafd96d042914cad3585c749d
+  __isInPrefab: 1
   _reorientArrowRoot: {fileID: 1818227995334958}
   _validColorStateIgnoreList:
   - {fileID: 1746584748505004}
@@ -955,6 +973,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: ccc0db0c-115a-4748-9944-eb96080bd673
+  __prefabGuid: e13d8b3dafd96d042914cad3585c749d
+  __isInPrefab: 1
   _translationMode: 0
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}
@@ -6083,6 +6104,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 0514e565-649e-4fb0-9e9e-1207a5e55a35
+  __prefabGuid: e13d8b3dafd96d042914cad3585c749d
+  __isInPrefab: 1
   _translationMode: 0
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}

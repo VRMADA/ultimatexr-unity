@@ -45,6 +45,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2285bc0022316448ac5c40fd488b38a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: e5b738d9-4bcc-4438-a7c4-b8c8520b855d
+  __prefabGuid: 829a78814902e734baf523f5584385ef
+  __isInPrefab: 1
   _needsBothHands: 0
   _handSide: 0
   _controllerHand: {fileID: 0}
@@ -81,5 +84,5 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2256169275208995370}
-  m_RootOrder: -1
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

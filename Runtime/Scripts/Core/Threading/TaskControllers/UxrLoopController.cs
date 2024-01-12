@@ -23,27 +23,19 @@ namespace UltimateXR.Core.Threading.TaskControllers
         ///     A cancelable and loopable action that will be executing repeatedly until
         ///     <see cref="UxrCancellableController.Stop" /> is called.
         /// </param>
-        /// <param name="autoStartDelay">
+        /// <param name="autoStartDelayMilliseconds">
         ///     <list type="bullet">
         ///         <item>
-        ///             If set, <paramref name="loopAction" /> starts looping after <paramref name="autoStartDelay" />
+        ///             If set, <paramref name="loopAction" /> starts looping after <paramref name="autoStartDelayMilliseconds" />
         ///             milliseconds.
         ///         </item>
         ///         <item>If not set, <paramref name="loopAction" /> starts looping immediately.</item>
         ///     </list>
         /// </param>
-        public UxrLoopController(Action<CancellationToken> loopAction, int autoStartDelay = -1)
+        public UxrLoopController(Action<CancellationToken> loopAction, int autoStartDelayMilliseconds = -1)
         {
             _loopAction = loopAction;
-
-            if (autoStartDelay == 0)
-            {
-                Start();
-            }
-            else if (autoStartDelay > 0)
-            {
-                StartAfter(autoStartDelay);
-            }
+            StartAfterMilliseconds(autoStartDelayMilliseconds);
         }
 
         #endregion

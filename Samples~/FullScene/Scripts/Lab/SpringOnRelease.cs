@@ -45,10 +45,10 @@ namespace UltimateXR.Examples.FullScene.Lab
                 else
                 {
                     float   t     = (_springDuration - _timer) / _springDuration;
-                    Vector3 delta = _filteredVelocity * Mathf.Sin(-(_springDuration - _timer) * Mathf.PI * 2.0f * _springFrequency) * (1.0f - t);
+                    Vector3 delta = _filteredVelocity * (Mathf.Sin(-(_springDuration - _timer) * Mathf.PI * 2.0f * _springFrequency) * (1.0f - t));
                     transform.position = _releasePosition + delta;
 
-                    Vector3 deltaEuler = _filteredAngularVelocity * Mathf.Sin(-(_springDuration - _timer) * Mathf.PI * 2.0f * _springFrequency) * (1.0f - t);
+                    Vector3 deltaEuler = _filteredAngularVelocity * (Mathf.Sin(-(_springDuration - _timer) * Mathf.PI * 2.0f * _springFrequency) * (1.0f - t));
                     transform.eulerAngles = _releaseEuler + deltaEuler;
                 }
             }
@@ -73,7 +73,7 @@ namespace UltimateXR.Examples.FullScene.Lab
         /// <param name="e">Event parameters</param>
         protected override void OnObjectReleased(UxrManipulationEventArgs e)
         {
-            if (e.IsOwnershipChanged)
+            if (e.IsGrabbedStateChanged)
             {
                 _releasePosition        = transform.position;
                 _releaseEuler           = transform.eulerAngles;

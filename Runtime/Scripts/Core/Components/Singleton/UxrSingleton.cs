@@ -5,7 +5,9 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System.IO;
 using System.Threading;
+using UltimateXR.Core.Settings;
 using UltimateXR.Core.Threading;
+using UltimateXR.Extensions.System.IO;
 using UnityEngine;
 
 namespace UltimateXR.Core.Components.Singleton
@@ -136,13 +138,19 @@ namespace UltimateXR.Core.Components.Singleton
 
             if (prefab != null)
             {
-                Debug.Log($"{typeof(T).Name} was able to load prefab from Resources folder: {ResourcesPrefabPath}");
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Relevant)
+                {
+                    Debug.Log($"{UxrConstants.CoreModule} {typeof(T).Name} was able to load prefab from Resources folder: {ResourcesPrefabPath}");
+                }
 
                 instance = Instantiate(prefab);
 
                 if (instance == null)
                 {
-                    Debug.LogError($"[{typeof(T).Name}] Unable to instantiate prefab. Instance is null. Path is {ResourcesPrefabPath}", prefab);
+                    if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+                    {
+                        Debug.LogError($"{UxrConstants.CoreModule} {typeof(T).Name}: Unable to instantiate prefab. Instance is null. Path is {ResourcesPrefabPath}", prefab);
+                    }
                 }
             }
 
@@ -157,7 +165,10 @@ namespace UltimateXR.Core.Components.Singleton
 
             if (!TrySetInstance(instance))
             {
-                Debug.LogError($"[{typeof(T).Name}] singleton failed to initialize", instance);
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+                {
+                    Debug.LogError($"{UxrConstants.CoreModule} {typeof(T).Name} singleton failed to initialize", instance);
+                }
             }
         }
 
@@ -165,7 +176,7 @@ namespace UltimateXR.Core.Components.Singleton
 
         #region Private Types & Data
 
-        private static string ResourcesPrefabPath => Path.Combine(UxrConstants.Paths.SingletonResources, typeof(T).Name);
+        private static string ResourcesPrefabPath => PathExt.Combine(UxrConstants.Paths.SingletonResources, typeof(T).Name);
 
         #endregion
     }

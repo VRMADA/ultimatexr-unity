@@ -129,6 +129,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: daa942b3dd922ad4ca6eada519005e7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 89208b91-466f-42fb-adec-ecab5f396c6f
+  __prefabGuid: 0547a520e0c95a844aba4027db45681e
+  __isInPrefab: 1
   _material: {fileID: 2100000, guid: 83eb18d3f0499124e8413289239ce25e, type: 2}
   _textureColumns: 2
   _textureRows: 2

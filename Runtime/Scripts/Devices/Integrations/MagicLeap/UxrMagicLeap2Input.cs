@@ -18,7 +18,7 @@ namespace UltimateXR.Devices.Integrations.MagicLeap
         /// <summary>
         ///     Gets the SDK dependency: Magic Leap 2.
         /// </summary>
-        public override string SDKDependency => UxrManager.SdkMagicLeap;
+        public override string SDKDependency => UxrConstants.SdkMagicLeap;
 
         /// <inheritdoc />
         public override UxrControllerSetupType SetupType => UxrControllerSetupType.Dual;

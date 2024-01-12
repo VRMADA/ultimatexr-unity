@@ -47,7 +47,7 @@ namespace UltimateXR.Mechanics.Weapons
         {
             base.OnObjectGrabbed(e);
 
-            if (e.IsOwnershipChanged && UxrGrabManager.Instance.GetGrabbingHand(e.GrabbableObject, e.GrabPointIndex, out UxrGrabber grabber))
+            if (e.IsGrabbedStateChanged && UxrGrabManager.Instance.GetGrabbingHand(e.GrabbableObject, e.GrabPointIndex, out UxrGrabber grabber))
             {
                 Owner = grabber.Avatar.GetComponentInChildren<UxrActor>();
             }

@@ -4,7 +4,9 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
+using UltimateXR.Core;
 using UltimateXR.Core.Components;
+using UltimateXR.Core.Settings;
 using UltimateXR.UI.UnityInputModule.Controls;
 using UnityEngine;
 using UnityEngine.UI;
@@ -252,14 +254,20 @@ namespace UltimateXR.UI.Helpers.Keyboard
 
             if (_keyboard == null && !Application.isEditor)
             {
-                Debug.LogWarning($"{nameof(UxrKeyboardUI)} component not found in parent hierarchy of key " + name);
+                if (UxrGlobalSettings.Instance.LogLevelUI >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.UiModule} {nameof(UxrKeyboardUI)} component not found in parent hierarchy of key " + name);
+                }
             }
 
             ControlInput = GetComponent<UxrControlInput>();
 
             if (ControlInput == null)
             {
-                Debug.LogError($"Keyboard key {name} has no control input");
+                if (UxrGlobalSettings.Instance.LogLevelUI >= UxrLogLevel.Errors)
+                {
+                    Debug.LogError($"{UxrConstants.UiModule} Keyboard key {name} has no control input");
+                }
             }
 
             SetupKeyLabels();

@@ -8,7 +8,10 @@ using System.Collections;
 using System.Threading;
 using System.Threading.Tasks;
 using UltimateXR.Animation.Interpolation;
+using UltimateXR.Avatar;
+using UltimateXR.Core;
 using UltimateXR.Core.Components.Composite;
+using UltimateXR.Core.Settings;
 using UltimateXR.Extensions.System.Threading;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Extensions.Unity.Render;
@@ -128,7 +131,10 @@ namespace UltimateXR.CameraUtils
         {
             if (DrawFade)
             {
-                Debug.LogWarning("A fade was requested while one already being active. Some callbacks may not be called correctly. ");
+                if (UxrGlobalSettings.Instance.LogLevelAvatar >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.AvatarModule} A fade was requested while one already being active. Some callbacks may not be called correctly. ");
+                }
             }
 
             _fadeColor = fadeColor;
@@ -215,10 +221,77 @@ namespace UltimateXR.CameraUtils
         }
 
         /// <summary>
+        ///     Subscribes to events.
+        /// </summary>
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            UxrManager.AvatarsUpdated += UxrManager_AvatarsUpdated;
+        }
+
+        /// <summary>
+        ///     Unsubscribes from events.
+        /// </summary>
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+
+            UxrManager.AvatarsUpdated -= UxrManager_AvatarsUpdated;
+
+            DrawFade = false;
+        }
+
+        #endregion
+
+        #region Coroutines
+
+        /// <summary>
+        ///     Coroutine that fades the screen over time. It can be used to be yielded externally from another coroutine.
+        ///     <see cref="FadeAsync" /> is provided as the async alternative.
+        /// </summary>
+        /// <param name="fadeSeconds">Seconds it will take to execute the fade</param>
+        /// <param name="startColor">Start color value</param>
+        /// <param name="endColor">End color value</param>
+        /// <returns>Coroutine IEnumerator</returns>
+        public IEnumerator StartFadeCoroutine(float fadeSeconds, Color startColor, Color endColor)
+        {
+            if (DrawFade)
+            {
+                // Debug.LogWarning($"{UxrConstants.AvatarModule} A fade coroutine was requested while a fade already being active");
+            }
+
+            yield return this.LoopCoroutine(fadeSeconds,
+                                            t =>
+                                            {
+                                                DrawFade           = true;
+                                                _fadeCurrentColor  = Color.Lerp(startColor, endColor, t);
+                                                FadeMaterial.color = _fadeCurrentColor;
+                                            },
+                                            UxrEasing.Linear,
+                                            true);
+
+            if (Mathf.Approximately(endColor.a, 0.0f))
+            {
+                DrawFade = false;
+            }
+        }
+
+        #endregion
+
+        #region Event Handling Methods
+
+        /// <summary>
         ///     Updates the fade (StartFade version) and calls all callbacks when they need to be triggered.
         /// </summary>
-        private void Update()
+        private void UxrManager_AvatarsUpdated()
         {
+            if (Avatar.AvatarMode == UxrAvatarMode.UpdateExternally)
+            {
+                DrawFade = false;
+                return;
+            }
+            
             if (_fadeTimer > 0.0f)
             {
                 _fadeTimer -= Time.deltaTime;
@@ -249,41 +322,6 @@ namespace UltimateXR.CameraUtils
                 }
 
                 FadeMaterial.color = _fadeCurrentColor;
-            }
-        }
-
-        #endregion
-
-        #region Coroutines
-
-        /// <summary>
-        ///     Coroutine that fades the screen over time. It can be used to be yielded externally from another coroutine.
-        ///     <see cref="FadeAsync" /> is provided as the async alternative.
-        /// </summary>
-        /// <param name="fadeSeconds">Seconds it will take to execute the fade</param>
-        /// <param name="startColor">Start color value</param>
-        /// <param name="endColor">End color value</param>
-        /// <returns>Coroutine IEnumerator</returns>
-        public IEnumerator StartFadeCoroutine(float fadeSeconds, Color startColor, Color endColor)
-        {
-            if (DrawFade)
-            {
-                // Debug.LogWarning("A fade coroutine was requested while a fade already being active");
-            }
-
-            yield return this.LoopCoroutine(fadeSeconds,
-                                            t =>
-                                            {
-                                                DrawFade           = true;
-                                                _fadeCurrentColor  = Color.Lerp(startColor, endColor, t);
-                                                FadeMaterial.color = _fadeCurrentColor;
-                                            },
-                                            UxrEasing.Linear,
-                                            true);
-
-            if (Mathf.Approximately(endColor.a, 0.0f))
-            {
-                DrawFade = false;
             }
         }
 

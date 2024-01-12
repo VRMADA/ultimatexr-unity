@@ -343,6 +343,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b8190b6241a8e44b82f8b0d6e2de329, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 2aa892be-3d19-4e24-9af7-5bd643dd7111
+  __prefabGuid: c260c52bb1b13764d9ad6e5e22b1eff9
+  __isInPrefab: 1
   _blinkButtonsOnInput: 0
   _textDeviceName: {fileID: 114463880601798792}
   _textControllerNames: {fileID: 4407300049124000835}
@@ -350,9 +353,12 @@ MonoBehaviour:
   _panelInput1D: {fileID: 1706664683000588}
   _panelInput2D: {fileID: 1257978839704226}
   _panelInputButtons: {fileID: 1850776547802694}
-  _prefabWidget1D: {fileID: 1725001667999790, guid: f814923dbf429b24f8c68045a9fedf59, type: 3}
-  _prefabWidget2D: {fileID: 1821742916359370, guid: a177e9aa58dec8c4bbf93e28c848e454, type: 3}
-  _prefabWidgetButton: {fileID: 1974432816083124, guid: 2e8c0e273611cf44fb0a13aa0664634b, type: 3}
+  _prefabWidget1D: {fileID: 1725001667999790, guid: f814923dbf429b24f8c68045a9fedf59,
+    type: 3}
+  _prefabWidget2D: {fileID: 1821742916359370, guid: a177e9aa58dec8c4bbf93e28c848e454,
+    type: 3}
+  _prefabWidgetButton: {fileID: 1974432816083124, guid: 2e8c0e273611cf44fb0a13aa0664634b,
+    type: 3}
 --- !u!1 &1706664683000588
 GameObject:
   m_ObjectHideFlags: 0

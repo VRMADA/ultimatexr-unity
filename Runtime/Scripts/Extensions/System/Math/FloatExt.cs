@@ -106,6 +106,28 @@ namespace UltimateXR.Extensions.System.Math
             return Mathf.Clamp01(self);
         }
 
+        /// <summary>
+        ///     Returns the value from the set with the maximum absolute value, but keeping the sign.
+        /// </summary>
+        /// <param name="values">Set of values</param>
+        /// <returns>Value with the maximum absolute value keeping the sign</returns>
+        public static float SignedAbsMax(params float[] values)
+        {
+            float signedAbsoluteMax = 0.0f;
+            bool  initialized       = false;
+
+            foreach (float value in values)
+            {
+                if (!initialized || Mathf.Abs(value) > Mathf.Abs(signedAbsoluteMax))
+                {
+                    initialized       = true;
+                    signedAbsoluteMax = value;
+                }
+            }
+
+            return signedAbsoluteMax;
+        }
+
         #endregion
     }
 }

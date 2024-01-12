@@ -49,18 +49,32 @@ namespace UltimateXR.Editor.Manipulation
         /// <returns>New preview GameObject</returns>
         public static GameObject CreateAndSetupPreviewMeshObject(Transform parent, UxrPreviewHandGripMesh previewMesh, Mesh mesh, Material[] sharedMaterials)
         {
+            // Create child that the proxy will have to follow
+
             GameObject grabPose = EditorUtility.CreateGameObjectWithHideFlags("GrabPose",
                                                                               HideFlags.HideAndDontSave,
-                                                                              typeof(UxrGrabbableObjectPreviewMesh),
-                                                                              typeof(MeshFilter),
-                                                                              typeof(MeshRenderer));
+                                                                              typeof(UxrGrabbableObjectPreviewMesh));
 
-            grabPose.transform.parent                                          = parent;
-            grabPose.transform.localPosition                                   = Vector3.zero;
-            grabPose.transform.localRotation                                   = Quaternion.identity;
-            grabPose.GetComponent<MeshFilter>().sharedMesh                     = mesh;
-            grabPose.GetComponent<MeshRenderer>().sharedMaterials              = sharedMaterials;
-            grabPose.GetComponent<UxrGrabbableObjectPreviewMesh>().PreviewMesh = previewMesh;
+            grabPose.transform.position = parent.position;
+            grabPose.transform.rotation = parent.rotation;
+            grabPose.transform.SetParent(parent);
+
+            // Create proxy at root level that avoids non-uniform scaling problems
+
+            GameObject grabPoseProxy = EditorUtility.CreateGameObjectWithHideFlags("GrabPoseProxy",
+                                                                                   HideFlags.HideAndDontSave,
+                                                                                   typeof(UxrGrabbableObjectPreviewMeshProxy),
+                                                                                   typeof(MeshFilter),
+                                                                                   typeof(MeshRenderer));
+
+            grabPoseProxy.transform.position                                                      = parent.position;
+            grabPoseProxy.transform.rotation                                                      = parent.rotation;
+            grabPoseProxy.GetComponent<MeshFilter>().sharedMesh                                   = mesh;
+            grabPoseProxy.GetComponent<MeshRenderer>().sharedMaterials                            = sharedMaterials;
+            grabPoseProxy.GetComponent<UxrGrabbableObjectPreviewMeshProxy>().PreviewMesh          = previewMesh;
+            grabPoseProxy.GetComponent<UxrGrabbableObjectPreviewMeshProxy>().PreviewMeshComponent = grabPose.GetComponent<UxrGrabbableObjectPreviewMesh>();
+
+            grabPose.GetComponent<UxrGrabbableObjectPreviewMesh>().PreviewMeshProxy = grabPoseProxy.GetComponent<UxrGrabbableObjectPreviewMeshProxy>();
 
             return grabPose;
         }

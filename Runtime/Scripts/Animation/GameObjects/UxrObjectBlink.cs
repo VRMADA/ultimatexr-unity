@@ -18,6 +18,7 @@ namespace UltimateXR.Animation.GameObjects
         #region Inspector Properties/Serialized Fields
 
         [SerializeField] private MeshRenderer _renderer;
+        [SerializeField] private int          _materialSlot    = -1;
         [SerializeField] private Color        _colorNormal     = Color.black;
         [SerializeField] private Color        _colorHighlight  = Color.white;
         [SerializeField] private float        _blinksPerSec    = 4.0f;
@@ -44,12 +45,16 @@ namespace UltimateXR.Animation.GameObjects
         /// <param name="emissionColor">The emission color</param>
         /// <param name="blinksPerSec">The blink frequency</param>
         /// <param name="durationSeconds">Total duration of the blinking animation</param>
+        /// <param name="materialSlot">
+        ///     -1 to target all renderer materials if there is more than one. An index between [0, materialCount
+        ///     - 1] to target a specific material only.
+        /// </param>
         /// <param name="useUnscaledTime">
         ///     Whether to use unscaled time (<see cref="Time.unscaledTime" />) or not (
-        ///     <see cref="Time.time" />)
+        ///     <see cref="Time.time" />).
         /// </param>
         /// <returns>Animation component</returns>
-        public static UxrObjectBlink StartBlinking(GameObject gameObject, Color emissionColor, float blinksPerSec, float durationSeconds, bool useUnscaledTime = false)
+        public static UxrObjectBlink StartBlinking(GameObject gameObject, Color emissionColor, float blinksPerSec, float durationSeconds, int materialSlot = -1, bool useUnscaledTime = false)
         {
             if (gameObject == null)
             {
@@ -59,7 +64,7 @@ namespace UltimateXR.Animation.GameObjects
             UxrObjectBlink blinkComponent = gameObject.GetOrAddComponent<UxrObjectBlink>();
 
             blinkComponent.CheckInitialize();
-            blinkComponent.StartBlinkingInternal(emissionColor, blinksPerSec, durationSeconds, useUnscaledTime);
+            blinkComponent.StartBlinkingInternal(emissionColor, blinksPerSec, durationSeconds, materialSlot, useUnscaledTime);
 
             return blinkComponent;
         }
@@ -74,10 +79,10 @@ namespace UltimateXR.Animation.GameObjects
             {
                 return;
             }
-            
+
             if (gameObject.TryGetComponent<UxrObjectBlink>(out var blinkComponent))
             {
-                blinkComponent.StopBlinkingInternal();
+                blinkComponent.enabled = false;
             }
         }
 
@@ -106,13 +111,23 @@ namespace UltimateXR.Animation.GameObjects
         /// <param name="colorHighlight">The fully blinking color</param>
         /// <param name="blinksPerSec">The blinking frequency</param>
         /// <param name="durationSeconds">The total duration of the animation in seconds</param>
-        public void Setup(MeshRenderer renderer, Color colorNormal, Color colorHighlight, float blinksPerSec = 4.0f, float durationSeconds = -1.0f)
+        /// <param name="materialSlot">
+        ///     -1 to target all renderer materials if there is more than one. An index between [0, materialCount
+        ///     - 1] to target a specific material only.
+        /// </param>
+        /// <param name="useUnscaledTime">
+        ///     Whether to use unscaled time (<see cref="Time.unscaledTime" />) or not (
+        ///     <see cref="Time.time" />).
+        /// </param>
+        public void Setup(MeshRenderer renderer, Color colorNormal, Color colorHighlight, float blinksPerSec = 4.0f, float durationSeconds = -1.0f, int materialSlot = -1, bool useUnscaledTime = false)
         {
             _renderer        = renderer;
             _colorNormal     = colorNormal;
             _colorHighlight  = colorHighlight;
             _blinksPerSec    = blinksPerSec;
             _durationSeconds = durationSeconds;
+            _materialSlot    = materialSlot;
+            _useUnscaledTime = useUnscaledTime;
             IsBlinking       = false;
             IsInitialized    = false;
             CheckInitialize();
@@ -124,7 +139,7 @@ namespace UltimateXR.Animation.GameObjects
         public void StartBlinkingWithCurrentParameters()
         {
             CheckInitialize();
-            StartBlinkingInternal(_colorHighlight, _blinksPerSec, _durationSeconds, _useUnscaledTime);
+            StartBlinkingInternal(_colorHighlight, _blinksPerSec, _durationSeconds, _materialSlot, _useUnscaledTime);
         }
 
         #endregion
@@ -177,7 +192,18 @@ namespace UltimateXR.Animation.GameObjects
                 else
                 {
                     float blend = (Mathf.Sin(timer * Mathf.PI * _blinksPerSec * 2.0f) + 1.0f) * 0.5f;
-                    _renderer.material.SetColor(UxrConstants.Shaders.EmissionColorVarName, Color.Lerp(_colorNormal, _colorHighlight, blend));
+
+                    Material[] materials = _renderer.materials;
+
+                    for (var i = 0; i < materials.Length; i++)
+                    {
+                        if (i == _materialSlot || _materialSlot < 0)
+                        {
+                            materials[i].SetColor(UxrConstants.Shaders.EmissionColorVarName, Color.Lerp(_colorNormal, _colorHighlight, blend));
+                        }
+                    }
+
+                    _renderer.materials = materials;
                 }
             }
         }
@@ -200,7 +226,7 @@ namespace UltimateXR.Animation.GameObjects
 
                 if (_renderer != null)
                 {
-                    _originalMaterial = _renderer.sharedMaterial;
+                    _originalMaterials = _renderer.sharedMaterials;
                 }
 
                 IsInitialized = true;
@@ -213,8 +239,9 @@ namespace UltimateXR.Animation.GameObjects
         /// <param name="emissionColor">Emission color</param>
         /// <param name="blinksPerSec">Blinking frequency</param>
         /// <param name="durationSeconds">Total duration in seconds</param>
+        /// <param name="materialSlot">The material(s) to target</param>
         /// <param name="useUnscaledTime">Whether to use unscaled time or not</param>
-        private void StartBlinkingInternal(Color emissionColor, float blinksPerSec, float durationSeconds, bool useUnscaledTime)
+        private void StartBlinkingInternal(Color emissionColor, float blinksPerSec, float durationSeconds, int materialSlot, bool useUnscaledTime)
         {
             if (_renderer == null)
             {
@@ -226,10 +253,22 @@ namespace UltimateXR.Animation.GameObjects
             _colorHighlight  = emissionColor;
             _blinksPerSec    = blinksPerSec;
             _durationSeconds = durationSeconds;
+            _materialSlot    = materialSlot;
 
-            _renderer.material.EnableKeyword(UxrConstants.Shaders.EmissionKeyword);
+            Material[] materials = _renderer.materials;
 
-            IsBlinking = true;
+            for (var i = 0; i < materials.Length; i++)
+            {
+                if (i == _materialSlot || _materialSlot < 0)
+                {
+                    materials[i].EnableKeyword(UxrConstants.Shaders.EmissionKeyword);
+                }
+            }
+            
+            _renderer.materials = materials;
+            IsBlinking          = true;
+
+            enabled = true;
         }
 
         /// <summary>
@@ -243,9 +282,19 @@ namespace UltimateXR.Animation.GameObjects
             }
 
             IsBlinking = false;
-            _renderer.material.SetColor(UxrConstants.Shaders.EmissionColorVarName, _colorNormal);
-            _renderer.material.DisableKeyword(UxrConstants.Shaders.EmissionKeyword);
-            _renderer.sharedMaterial = _originalMaterial;
+            
+            RestoreOriginalSharedMaterial();
+        }
+
+        /// <summary>
+        ///     Restores the original (shared) material.
+        /// </summary>
+        private void RestoreOriginalSharedMaterial()
+        {
+            if (_renderer)
+            {
+                _renderer.sharedMaterials = _originalMaterials;
+            }
         }
 
         #endregion
@@ -256,8 +305,8 @@ namespace UltimateXR.Animation.GameObjects
 
         private bool IsInitialized { get; set; }
 
-        private float    _blinkStartTime;
-        private Material _originalMaterial;
+        private float      _blinkStartTime;
+        private Material[] _originalMaterials;
 
         #endregion
     }

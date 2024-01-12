@@ -224,6 +224,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75af3a4860c324a4f8873ef035f52bec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 0ed6bc99-7b3e-414f-a01e-28dd45292900
+  __prefabGuid: b7ffcb81ce78b3a4c946ece2068ef9bc
+  __isInPrefab: 1
   _poseName: Wave
   _leftHand: 1
   _rightHand: 1
@@ -452,6 +455,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48bb21b6c6a28c64bb55c8b2c38283b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 7e097fbc-6bcd-448e-ab5f-74ec22152ecc
+  __prefabGuid: b7ffcb81ce78b3a4c946ece2068ef9bc
+  __isInPrefab: 1
   _armoredDoor: {fileID: 0}
   _validLight: {fileID: 2731261351338543030}
   _invalidLight: {fileID: 9122062720205915918}

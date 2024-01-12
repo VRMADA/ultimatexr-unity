@@ -630,6 +630,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29e64a41519e9de4096778ead33f9a7d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: e5eac6b0-fc54-49c9-b10b-1c8c11f5fc17
+  __prefabGuid: 2e8c0e273611cf44fb0a13aa0664634b
+  __isInPrefab: 1
   _controllerInput: {fileID: 0}
   _hand: 0
   _button: 262144

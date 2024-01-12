@@ -6,6 +6,7 @@
 using UltimateXR.Animation.IK;
 using UltimateXR.Avatar;
 using UltimateXR.Avatar.Controllers;
+using UltimateXR.Core;
 using UnityEditor;
 using UnityEngine;
 
@@ -66,6 +67,8 @@ namespace UltimateXR.Editor.Animation.IK
         /// <param name="label">UI label</param>
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            EditorGUI.BeginProperty(position, label, property);
+            
             int line = 0;
 
             UxrAvatar avatar = ((MonoBehaviour)property.serializedObject.targetObject).GetComponent<UxrAvatar>();
@@ -94,28 +97,36 @@ namespace UltimateXR.Editor.Animation.IK
 
             EditorGUILayout.BeginHorizontal();
             EditorGUI.PropertyField(GetRect(position, line, 0), property.FindPropertyRelative(PropertyEyesBaseHeight), ContentEyesBaseHeight);
-            if (GUI.Button(GetRect(position, line, 1), "Use Avatar Eyes"))
+            bool useAvatarEyesPressedBaseHeight = GUI.Button(GetRect(position, line, 1), new GUIContent("Use Avatar Eyes"));
+            EditorGUILayout.EndHorizontal();
+            
+            if (useAvatarEyesPressedBaseHeight)
             {
                 if (avatar.AvatarRig.Head.LeftEye == null || avatar.AvatarRig.Head.RightEye == null)
                 {
-                    EditorUtility.DisplayDialog("Assign field first", "The avatar component Rig field has eye(s) missing. Try to assign the value manually and use the eye gizmos for guidance.", "OK");
+                    EditorUtility.DisplayDialog("Assign field first", "The avatar component Rig field has eye(s) missing. Try to assign the value manually and use the eye gizmos for guidance.", UxrConstants.Editor.Ok);
+                    GUIUtility.ExitGUI();
                 }
                 else
                 {
                     property.FindPropertyRelative(PropertyEyesBaseHeight).floatValue = (avatar.AvatarRig.Head.LeftEye.position.y + avatar.AvatarRig.Head.RightEye.position.y) * 0.5f - avatar.transform.position.y;
                 }
             }
-            EditorGUILayout.EndHorizontal();
 
             line++;
 
             EditorGUILayout.BeginHorizontal();
             EditorGUI.PropertyField(GetRect(position, line, 0), property.FindPropertyRelative(PropertyEyesForwardOffset), ContentEyesForwardOffset);
-            if (GUI.Button(GetRect(position, line, 1), new GUIContent("Use Avatar Eyes")))
+            EditorGUILayout.EndHorizontal();
+
+            bool useAvatarEyesPressedForwardOffset = GUI.Button(GetRect(position, line, 1), new GUIContent("Use Avatar Eyes"));
+            
+            if (useAvatarEyesPressedForwardOffset)
             {
                 if (avatar.AvatarRig.Head.LeftEye == null || avatar.AvatarRig.Head.RightEye == null)
                 {
-                    EditorUtility.DisplayDialog("Assign field first", "The avatar component Rig field has eye(s) missing. Try to assign the value manually and use the eye gizmos for guidance.", "OK");
+                    EditorUtility.DisplayDialog("Assign field first", "The avatar component Rig field has eye(s) missing. Try to assign the value manually and use the eye gizmos for guidance.", UxrConstants.Editor.Ok);
+                    GUIUtility.ExitGUI();
                 }
                 else
                 {
@@ -124,7 +135,8 @@ namespace UltimateXR.Editor.Animation.IK
                     property.FindPropertyRelative(PropertyEyesForwardOffset).floatValue = (eyeLeft.z + eyeRight.z) * 0.5f + 0.02f;
                 }
             }
-            EditorGUILayout.EndHorizontal();
+
+            EditorGUI.EndProperty();
         }
 
         #endregion
@@ -177,21 +189,21 @@ namespace UltimateXR.Editor.Animation.IK
 
         #region Private Types & Data
 
-        private GUIContent ContentLockBodyPivot          { get; } = new GUIContent("Lock Body Pivot",           "");
-        private GUIContent ContentBodyPivotRotationSpeed { get; } = new GUIContent("Body Pivot Rotation Speed", "");
-        private GUIContent ContentHeadFreeRangeBend      { get; } = new GUIContent("Head Free Range Bend",      "");
-        private GUIContent ContentHeadFreeRangeTorsion   { get; } = new GUIContent("Head Free Range Torsion",   "");
-        private GUIContent ContentNeckHeadBalance        { get; } = new GUIContent("Neck-Head Balance",         "");
-        private GUIContent ContentSpineBend              { get; } = new GUIContent("Spine Bend",                "");
-        private GUIContent ContentSpineTorsion           { get; } = new GUIContent("Spine Torsion",             "");
-        private GUIContent ContentChestBend              { get; } = new GUIContent("Chest Bend",                "");
-        private GUIContent ContentChestTorsion           { get; } = new GUIContent("Chest Torsion",             "");
-        private GUIContent ContentUpperChestBend         { get; } = new GUIContent("Upper Chest Bend",          "");
-        private GUIContent ContentUpperChestTorsion      { get; } = new GUIContent("Upper Chest Torsion",       "");
-        private GUIContent ContentNeckBaseHeight         { get; } = new GUIContent("Neck Base Height",          "");
-        private GUIContent ContentNeckForwardOffset      { get; } = new GUIContent("Neck Forward Offset",       "");
-        private GUIContent ContentEyesBaseHeight         { get; } = new GUIContent("Eyes Base Height",          "");
-        private GUIContent ContentEyesForwardOffset      { get; } = new GUIContent("Eyes Forward Offset",       "");
+        private GUIContent ContentLockBodyPivot          { get; } = new GUIContent("Lock Body Pivot",           "For applications that require the avatar to remain in a fixed position");
+        private GUIContent ContentBodyPivotRotationSpeed { get; } = new GUIContent("Body Pivot Rotation Speed", "The speed the body will twist to keep up with the head orientation");
+        private GUIContent ContentHeadFreeRangeBend      { get; } = new GUIContent("Head Free Range Bend",      "The amount of degrees the head can rotate up and down without requiring support from the neck and bones below");
+        private GUIContent ContentHeadFreeRangeTorsion   { get; } = new GUIContent("Head Free Range Torsion",   "The amount of degrees the head can rotate left and right without requiring support from the neck and bones below");
+        private GUIContent ContentNeckHeadBalance        { get; } = new GUIContent("Neck-Head Balance",         "The balance between the neck and the head when solving the head orientation. Lower values will have the neck play a bigger role, while higher values will make the head play a bigger role");
+        private GUIContent ContentSpineBend              { get; } = new GUIContent("Spine Bend",                "The amount of weight the spine will apply to solve up/down rotations");
+        private GUIContent ContentSpineTorsion           { get; } = new GUIContent("Spine Torsion",             "The amount of weight the spine will apply to solve left/right rotations");
+        private GUIContent ContentChestBend              { get; } = new GUIContent("Chest Bend",                "The amount of weight the chest will apply to solve up/down rotations");
+        private GUIContent ContentChestTorsion           { get; } = new GUIContent("Chest Torsion",             "The amount of weight the chest will apply to solve left/right rotations");
+        private GUIContent ContentUpperChestBend         { get; } = new GUIContent("Upper Chest Bend",          "The amount of weight the upper chest will apply to solve up/down rotations");
+        private GUIContent ContentUpperChestTorsion      { get; } = new GUIContent("Upper Chest Torsion",       "The amount of weight the upper chest will apply to solve left/right rotations");
+        private GUIContent ContentNeckBaseHeight         { get; } = new GUIContent("Neck Base Height",          "The height on the avatar where the base of the neck is located. The neck base will be drawn on the scene window as a white disc gizmo");
+        private GUIContent ContentNeckForwardOffset      { get; } = new GUIContent("Neck Forward Offset",       "The forward offset from the avatar pivot where the neck is located. The neck base will be drawn on the scene window as a white disc gizmo");
+        private GUIContent ContentEyesBaseHeight         { get; } = new GUIContent("Eyes Base Height",          "The height on the avatar where the eyes are located. The eye positions will be drawn on the scene window as white disc gizmos");
+        private GUIContent ContentEyesForwardOffset      { get; } = new GUIContent("Eyes Forward Offset",       "The forward offset from the avatar pivot where the eyes are located. The eye positions will be drawn on the scene window as white disc gizmos");
 
         #endregion
     }

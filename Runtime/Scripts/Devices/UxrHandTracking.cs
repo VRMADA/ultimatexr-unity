@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using UltimateXR.Avatar.Rig;
 using UltimateXR.Core;
+using UltimateXR.Core.Settings;
 using UltimateXR.Manipulation.HandPoses;
 using UnityEngine;
 
@@ -202,17 +203,16 @@ namespace UltimateXR.Devices
         /// </summary>
         private void UxrManager_AvatarsUpdating()
         {
-#if ULTIMATEXR_USE_OCULUS_SDK
-
             if (enabled != IsAvailable && Avatar.AvatarController != null && Avatar.AvatarController.AllowHandTracking)
             {
                 enabled = IsAvailable;
 
-                string newStatus = enabled ? "Enabled" : "Disabled";
-                Debug.Log($"{GetType().Name}: Status changed to {newStatus}");
+                if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Relevant)
+                {
+                    string newStatus = enabled ? "Enabled" : "Disabled";
+                    Debug.Log($"{GetType().Name}: Status changed to {newStatus}");
+                }
             }
-
-#endif
         }
 
         #endregion

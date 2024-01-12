@@ -22,11 +22,21 @@ namespace UltimateXR.Manipulation
         /// <summary>
         ///     Place using smooth transition (interpolation).
         /// </summary>
-        Smooth = 1,
+        Smooth = 1 << 0,
 
         /// <summary>
         ///     Do not release the object when placing.
         /// </summary>
-        DontRelease = 1 << 1
+        DontRelease = 1 << 1,
+
+        /// <summary>
+        ///     Overrides <see cref="UxrSnapToAnchorMode"/> so that it forces to snap the position.
+        /// </summary>
+        ForceSnapPosition = 1 << 2,
+
+        /// <summary>
+        ///     Overrides <see cref="UxrSnapToAnchorMode"/> so that it forces to snap the rotation.
+        /// </summary>
+        ForceSnapRotation = 1 << 3
     }
 }

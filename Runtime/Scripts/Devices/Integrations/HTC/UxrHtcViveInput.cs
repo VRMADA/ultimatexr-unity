@@ -59,7 +59,9 @@ namespace UltimateXR.Devices.Integrations.HTC
             uint validElements = (uint)(UxrControllerElements.Joystick | // Joystick
                                         UxrControllerElements.Grip |     // Grip
                                         UxrControllerElements.Trigger |  // Trigger
-                                        UxrControllerElements.Button1 |  // Button A
+                                        UxrControllerElements.Button1 |  // Button A,
+                                        UxrControllerElements.Button2 |
+                                        UxrControllerElements.Menu |
                                         UxrControllerElements.DPad);     // Joystick
 
             return (validElements & (uint)controllerElements) == (uint)controllerElements;

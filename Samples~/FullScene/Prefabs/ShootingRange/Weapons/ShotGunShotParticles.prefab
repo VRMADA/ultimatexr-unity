@@ -5013,6 +5013,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: daa942b3dd922ad4ca6eada519005e7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 70db9fd5-a5a9-40b4-81ea-8dbe0ae32fcd
+  __prefabGuid: f4df92ef522938149b7113698d2923c8
+  __isInPrefab: 1
   _material: {fileID: 2100000, guid: 1c95fb7076b8dce4f9b61ae13d5c61e2, type: 2}
   _textureColumns: 2
   _textureRows: 2
@@ -5032,6 +5035,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af3a08495f6a01846a24adb624144bb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: a011c286-9195-4bf5-a128-f40bac1e1f74
+  __prefabGuid: f4df92ef522938149b7113698d2923c8
+  __isInPrefab: 1
   _seconds: 0.02
 --- !u!1 &1851044888384842
 GameObject:
@@ -10012,6 +10018,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ac1f3fc45c4bd145acc5e43c81e68a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 2b88061a-fb3f-4aa1-b325-69e84893ce00
+  __prefabGuid: f4df92ef522938149b7113698d2923c8
+  __isInPrefab: 1
   _allowRotateAroundY: 1
   _allowRotateAroundX: 1
   _invertedForwardAxis: 0
@@ -10026,7 +10035,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4311196715395422}
   m_Layer: 0
-  m_Name: ShotgunShotParticles
+  m_Name: ShotGunShotParticles
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

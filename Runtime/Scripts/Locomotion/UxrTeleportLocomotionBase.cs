@@ -3,6 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Avatar;
@@ -18,7 +19,7 @@ namespace UltimateXR.Locomotion
     /// <summary>
     ///     Base component for teleport locomotion.
     /// </summary>
-    public abstract class UxrTeleportLocomotionBase : UxrLocomotion, IUxrPrecacheable
+    public abstract partial class UxrTeleportLocomotionBase : UxrLocomotion, IUxrPrecacheable
     {
         #region Inspector Properties/Serialized Fields
 
@@ -64,6 +65,20 @@ namespace UltimateXR.Locomotion
         #region Public Types & Data
 
         /// <summary>
+        ///     Called when a destination validator using <see cref="AddDestinationValidator" /> with
+        ///     <see cref="UxrDestinationValidatorMode.EveryFrame" /> invalidated a destination. If there is more than one
+        ///     validator, it will be raised only by the first validator that returns false during the frame.
+        /// </summary>
+        public event Action<UxrTeleportDestination> ValidatorInvalidated;
+
+        /// <summary>
+        ///     Called when a destination validator using <see cref="AddDestinationValidator" /> with
+        ///     <see cref="UxrDestinationValidatorMode.OnConfirmationOnly" /> canceled a destination. IF there is more than one
+        ///     validator, it will be raised only by the first validator that returns false.
+        /// </summary>
+        public event Action<UxrTeleportDestination> ValidatorCanceled;
+
+        /// <summary>
         ///     Gets the hand used to control the teleport component.
         /// </summary>
         public UxrHandSide HandSide => _controllerHand;
@@ -102,6 +117,24 @@ namespace UltimateXR.Locomotion
         {
             get => _smoothTranslationSeconds;
             set => _smoothTranslationSeconds = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets whether the back-step is permitted.
+        /// </summary>
+        public bool AllowJoystickBackStep
+        {
+            get => _allowJoystickBackStep;
+            set => _allowJoystickBackStep = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the back-step distance.
+        /// </summary>
+        public float BackStepDistance
+        {
+            get => _backStepDistance;
+            set => _backStepDistance = value;
         }
 
         /// <summary>
@@ -164,8 +197,8 @@ namespace UltimateXR.Locomotion
         /// </summary>
         public UxrTeleportTarget Target
         {
-            get => _target;
-            set => _target = value;
+            get => _teleportTarget;
+            set => _teleportTarget = value;
         }
 
         /// <summary>
@@ -288,6 +321,62 @@ namespace UltimateXR.Locomotion
 
         #endregion
 
+        #region Public Methods
+
+        /// <summary>
+        ///     Adds a destination validator, which can cancel a teleport based on custom conditions.
+        /// </summary>
+        /// <param name="validator">
+        ///     The destination validator, a function that receives a <see cref="UxrTeleportDestination" /> and
+        ///     returns a boolean telling whether the teleport can be executed or not
+        /// </param>
+        /// <param name="mode">The validator execution mode</param>
+        /// <exception cref="ArgumentNullException">The validator is null</exception>
+        public void AddDestinationValidator(Func<UxrTeleportDestination, bool> validator, UxrDestinationValidatorMode mode)
+        {
+            if (validator == null)
+            {
+                throw new ArgumentNullException(nameof(validator));
+            }
+
+            _destinationValidators.Add(new Validator(validator, mode));
+        }
+
+        /// <summary>
+        ///     Removes a destination validator added using <see cref="AddDestinationValidator" />.
+        /// </summary>
+        /// <param name="validator">Validator to remove</param>
+        /// <returns>Whether the validator was removed, or false if the validator was not found</returns>
+        /// <exception cref="ArgumentNullException">the validator function is null</exception>
+        public bool RemoveDestinationValidator(Func<UxrTeleportDestination, bool> validator)
+        {
+            if (validator == null)
+            {
+                throw new ArgumentNullException(nameof(validator));
+            }
+
+            for (int i = 0; i < _destinationValidators.Count; ++i)
+            {
+                if (_destinationValidators[i].ValidatorFunc == validator)
+                {
+                    _destinationValidators.RemoveAt(i);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        ///     Removes all destination validators added using <see cref="AddDestinationValidator" />.
+        /// </summary>
+        public void RemoveAllDestinationValidators()
+        {
+            _destinationValidators.Clear();
+        }
+
+        #endregion
+
         #region Unity
 
         /// <summary>
@@ -307,7 +396,7 @@ namespace UltimateXR.Locomotion
 
             // If the teleport target is a prefab, instantiate. Otherwise just reference the object in the scene
 
-            if (_target.gameObject.IsPrefab())
+            if (_target.IsInPrefab())
             {
                 _teleportTarget = Instantiate(_target, Avatar.transform);
             }
@@ -327,8 +416,8 @@ namespace UltimateXR.Locomotion
             {
                 _teleportTarget.transform.rotation = Avatar.transform.rotation;
                 TeleportReference                  = null;
-                TeleportLocalPosition              = Avatar.transform.position;
                 TeleportLocalDirection             = Avatar.ProjectedCameraForward;
+                TeleportLocalPosition              = Avatar.transform.position;
             }
 
             _layerMaskRaycast.value = BlockingTargetLayers.value | ValidTargetLayers.value;
@@ -341,7 +430,8 @@ namespace UltimateXR.Locomotion
         {
             base.OnEnable();
 
-            UxrManager.AvatarMoved += UxrManager_AvatarMoved;
+            UxrAvatar.GlobalAvatarMoved += UxrAvatar_GlobalAvatarMoved;
+            UxrManager.AvatarsUpdated   += UxrManager_AvatarsUpdated;
 
             EnableTeleportObjects(false, false);
 
@@ -359,9 +449,12 @@ namespace UltimateXR.Locomotion
         {
             base.OnDisable();
 
-            UxrManager.AvatarMoved -= UxrManager_AvatarMoved;
+            UxrAvatar.GlobalAvatarMoved -= UxrAvatar_GlobalAvatarMoved;
+            UxrManager.AvatarsUpdated   -= UxrManager_AvatarsUpdated;
 
             NotifyTeleportSpawnCollider(null);
+
+            EnableTeleportObjects(false, false);
         }
 
         #endregion
@@ -373,12 +466,23 @@ namespace UltimateXR.Locomotion
         /// </summary>
         /// <param name="sender">Event sender</param>
         /// <param name="e">Event parameters</param>
-        private void UxrManager_AvatarMoved(object sender, UxrAvatarMoveEventArgs e)
+        private void UxrAvatar_GlobalAvatarMoved(object sender, UxrAvatarMoveEventArgs e)
         {
-            if (e.Avatar == Avatar)
+            if (ReferenceEquals(sender, Avatar))
             {
                 ControllerStart   = RawControllerStart;
                 ControllerForward = RawControllerForward;
+            }
+        }
+
+        /// <summary>
+        ///     When the avatar is in UpdateExternally mode, still smooth the transforms to support multiplayer and replays.
+        /// </summary>
+        private void UxrManager_AvatarsUpdated()
+        {
+            if (Avatar.AvatarMode != UxrAvatarMode.Local)
+            {
+                UpdateSmoothTransforms();
             }
         }
 
@@ -437,7 +541,7 @@ namespace UltimateXR.Locomotion
                                           TriggerCollidersInteraction,
                                           out RaycastHit backStepRaycast))
                 {
-                    if (NotifyDestinationRaycast(backStepRaycast, true))
+                    if (NotifyDestinationRaycast(backStepRaycast, true, out bool _))
                     {
                         _isBackStepAvailable   = false;
                         TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Avatar.ProjectedCameraForward);
@@ -447,18 +551,9 @@ namespace UltimateXR.Locomotion
                 }
             }
 
-            if (_shakeFilter > 0.0f && IsTeleporting && IsOtherComponentTeleporting == false)
-            {
-                float deltaTimeMultiplier = Mathf.Lerp(DeltaTimeMultiplierFilterMin, DeltaTimeMultiplierFilterMax, Mathf.Clamp01(_shakeFilter));
+            // Update smoothing of transforms that track the hands
 
-                ControllerStart   = Vector3.Lerp(ControllerStart,   RawControllerStart,   Time.deltaTime * deltaTimeMultiplier);
-                ControllerForward = Vector3.Lerp(ControllerForward, RawControllerForward, Time.deltaTime * deltaTimeMultiplier);
-            }
-            else
-            {
-                ControllerStart   = RawControllerStart;
-                ControllerForward = RawControllerForward;
-            }
+            UpdateSmoothTransforms();
 
             // Update locomotion in child classes
 
@@ -623,17 +718,23 @@ namespace UltimateXR.Locomotion
         /// <param name="checkBlockingInBetween">
         ///     Should it check for blocking elements in a straight line from the current position to the new position?
         /// </param>
+        /// <param name="isTargetEnabled">Will return whether the target was enabled</param>
         /// <returns>Whether the destination is a valid teleport location</returns>
-        protected bool NotifyDestinationRaycast(RaycastHit hit, bool checkBlockingInBetween)
+        protected bool NotifyDestinationRaycast(RaycastHit hit, bool checkBlockingInBetween, out bool isTargetEnabled)
         {
             _isValidTeleport = true;
+            isTargetEnabled  = true;
 
-            bool ignoreDestination = hit.collider.GetComponentInParent<UxrIgnoreTeleportDestination>() != null;
+            UxrIgnoreTeleportDestination ignoreDestinationComponent = hit.collider.GetComponentInParent<UxrIgnoreTeleportDestination>();
+
+            bool ignoreDestination = ignoreDestinationComponent != null && ignoreDestinationComponent.enabled;
             TeleportReference = hit.collider != null ? hit.collider.transform : null;
+
+            _hitInfo = hit;
 
             // Check for UxrTeleportSpawnCollider component
 
-            UxrTeleportSpawnCollider teleportSpawnCollider = hit.collider.GetComponent<UxrTeleportSpawnCollider>();
+            UxrTeleportSpawnCollider teleportSpawnCollider = hit.collider.GetComponentInParent<UxrTeleportSpawnCollider>();
 
             NotifyTeleportSpawnCollider(teleportSpawnCollider);
 
@@ -647,50 +748,89 @@ namespace UltimateXR.Locomotion
                     TeleportLocalPosition  = TransformExt.GetLocalPosition(TeleportReference, spawnPos.position);
                     TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Vector3.ProjectOnPlane(spawnPos.forward, spawnPos.up));
 
-                    EnableTeleportObjects(true, true);
+                    _isValidTeleport = true;
+                    isTargetEnabled  = true;
+                    EnableTeleportObjects(isTargetEnabled, _isValidTeleport);
                 }
             }
             else
             {
-                Vector3 teleportPos = hit.point;
-                bool    showTarget  = true;
+                Vector3 teleportPos            = hit.point;
+                Vector3 teleportLocalDirection = Vector3.zero;
 
-                _isValidTeleport = IsValidTeleport(checkBlockingInBetween, ref teleportPos, hit.normal, out bool validSlope) && !ignoreDestination;
+                isTargetEnabled = true;
 
-                if (_isValidTeleport && validSlope)
+                // Compute the new local avatar direction
+
+                if (ReorientationType == UxrReorientationType.KeepOrientation)
                 {
-                    // Hit against valid target
-                    EnableTeleportObjects(true, _isValidTeleport);
+                    teleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Avatar.ProjectedCameraForward);
                 }
-                else
+                else if (ReorientationType == UxrReorientationType.UseTeleportFromToDirection)
                 {
-                    // Hit against blocking object or invalid slope
-                    _isValidTeleport = false;
-                    showTarget       = ShowTargetAlsoWhenInvalid && validSlope;
-                    EnableTeleportObjects(showTarget, _isValidTeleport);
+                    teleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Vector3.ProjectOnPlane(teleportPos - Avatar.CameraPosition, UpVector));
+                }
+                else if (ReorientationType == UxrReorientationType.AllowUserJoystickRedirect)
+                {
+                    Vector2 joystickValue     = Avatar.ControllerInput.GetInput2D(HandSide, UxrInput2D.Joystick);
+                    Vector3 projectedForward  = Vector3.ProjectOnPlane(ControllerForward, UpVector).normalized;
+                    Vector3 joystickDirection = new Vector3(joystickValue.x, 0.0f, joystickValue.y).normalized;
+
+                    teleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Quaternion.LookRotation(projectedForward, UpVector) * Quaternion.LookRotation(joystickDirection, UpVector) * Vector3.forward);
                 }
 
-                if (showTarget)
+                // Run "EveryFrame" validators if there are any
+
+                UxrTeleportDestination destination = null;
+
+                foreach (Validator validator in _destinationValidators)
+                {
+                    if (validator.Mode == UxrDestinationValidatorMode.EveryFrame)
+                    {
+                        if (destination == null)
+                        {
+                            destination = new UxrTeleportDestination(hit, teleportPos, Quaternion.LookRotation(TransformExt.GetWorldDirection(TeleportReference, teleportLocalDirection), UpVector));
+                        }
+
+                        if (!validator.ValidatorFunc.Invoke(destination))
+                        {
+                            _isValidTeleport = false;
+                            isTargetEnabled  = ShowTargetAlsoWhenInvalid;
+                            ValidatorInvalidated?.Invoke(destination);
+                            break;
+                        }
+                    }
+                }
+
+                if (_isValidTeleport)
+                {
+                    // Run internal validation
+
+                    _isValidTeleport = IsValidTeleport(checkBlockingInBetween, ref teleportPos, hit.normal, out bool validSlope) && !ignoreDestination;
+
+                    if (_isValidTeleport && validSlope)
+                    {
+                        // Hit against valid target
+                        EnableTeleportObjects(true, _isValidTeleport);
+                    }
+                    else
+                    {
+                        // Hit against blocking object or invalid slope
+                        _isValidTeleport = false;
+                        isTargetEnabled  = ShowTargetAlsoWhenInvalid && validSlope;
+                        EnableTeleportObjects(isTargetEnabled, _isValidTeleport);
+                    }
+                }
+
+                if (isTargetEnabled)
                 {
                     // Place target
 
                     TeleportLocalPosition = TransformExt.GetLocalPosition(TeleportReference, teleportPos);
 
-                    if (ReorientationType == UxrReorientationType.KeepOrientation)
+                    if (Avatar.AvatarMode == UxrAvatarMode.Local)
                     {
-                        TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Avatar.ProjectedCameraForward);
-                    }
-                    else if (ReorientationType == UxrReorientationType.UseTeleportFromToDirection)
-                    {
-                        TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Vector3.ProjectOnPlane(teleportPos - Avatar.CameraPosition, UpVector));
-                    }
-                    else if (ReorientationType == UxrReorientationType.AllowUserJoystickRedirect)
-                    {
-                        Vector2 joystickValue     = Avatar.ControllerInput.GetInput2D(HandSide, UxrInput2D.Joystick);
-                        Vector3 projectedForward  = Vector3.ProjectOnPlane(ControllerForward, UpVector).normalized;
-                        Vector3 joystickDirection = new Vector3(joystickValue.x, 0.0f, joystickValue.y).normalized;
-
-                        TeleportLocalDirection = TransformExt.GetLocalDirection(TeleportReference, Quaternion.LookRotation(projectedForward, UpVector) * Quaternion.LookRotation(joystickDirection, UpVector) * Vector3.forward);
+                        TeleportLocalDirection = teleportLocalDirection;
                     }
                 }
             }
@@ -718,8 +858,6 @@ namespace UltimateXR.Locomotion
 
             if (_isValidTeleport && !IsTeleporting && !IsOtherComponentTeleporting && IsAllowedToTeleport)
             {
-                IsTeleporting = true;
-
                 Transform  avatarTransform = Avatar.transform;
                 Vector3    avatarPos       = avatarTransform.position;
                 Vector3    avatarUp        = avatarTransform.up;
@@ -739,26 +877,61 @@ namespace UltimateXR.Locomotion
 
                 UxrTeleportSpawnCollider spawnCollider = _lastSpawnCollider;
 
-                UxrManager.Instance.TeleportLocalAvatarRelative(TeleportReference,
-                                                                parentToDestination,
-                                                                TransformExt.GetWorldPosition(TeleportReference, TeleportLocalPosition),
-                                                                Quaternion.LookRotation(TransformExt.GetWorldDirection(TeleportReference, TeleportLocalDirection), UpVector),
-                                                                _translationType,
-                                                                TranslationSeconds,
-                                                                () =>
-                                                                {
-                                                                    if (spawnCollider != null)
+                Vector3    teleportPos = TransformExt.GetWorldPosition(TeleportReference, TeleportLocalPosition);
+                Quaternion teleportRot = Quaternion.LookRotation(TransformExt.GetWorldDirection(TeleportReference, TeleportLocalDirection), UpVector);
+
+                // Run validators if there are any
+
+                bool isValid = true;
+
+                if (spawnCollider == null)
+                {
+                    UxrTeleportDestination destination = null;
+
+                    foreach (Validator validator in _destinationValidators)
+                    {
+                        if (validator.Mode == UxrDestinationValidatorMode.OnConfirmationOnly)
+                        {
+                            if (destination == null)
+                            {
+                                destination = new UxrTeleportDestination(_hitInfo, teleportPos, teleportRot);
+                            }
+
+                            if (!validator.ValidatorFunc.Invoke(destination))
+                            {
+                                ValidatorCanceled?.Invoke(destination);
+                                isValid = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (isValid)
+                {
+                    IsTeleporting = true;
+
+                    UxrManager.Instance.TeleportLocalAvatarRelative(TeleportReference,
+                                                                    parentToDestination,
+                                                                    teleportPos,
+                                                                    teleportRot,
+                                                                    _translationType,
+                                                                    TranslationSeconds,
+                                                                    () =>
                                                                     {
-                                                                        spawnCollider.RaiseTeleported(new UxrAvatarMoveEventArgs(Avatar, avatarPos, avatarRot, Avatar.CameraFloorPosition, Quaternion.LookRotation(Avatar.ProjectedCameraForward, avatarUp)));
-                                                                    }
-                                                                },
-                                                                finished =>
-                                                                {
-                                                                    _isValidTeleport  = false;
-                                                                    IsTeleporting     = false;
-                                                                    ControllerStart   = RawControllerStart;
-                                                                    ControllerForward = RawControllerForward;
-                                                                });
+                                                                        if (spawnCollider != null)
+                                                                        {
+                                                                            spawnCollider.RaiseTeleported(Avatar, new UxrAvatarMoveEventArgs(avatarPos, avatarRot, Avatar.CameraFloorPosition, Quaternion.LookRotation(Avatar.ProjectedCameraForward, avatarUp)));
+                                                                        }
+                                                                    },
+                                                                    finished =>
+                                                                    {
+                                                                        _isValidTeleport  = false;
+                                                                        IsTeleporting     = false;
+                                                                        ControllerStart   = RawControllerStart;
+                                                                        ControllerForward = RawControllerForward;
+                                                                    });
+                }
             }
 
             NotifyTeleportSpawnCollider(null);
@@ -767,6 +940,25 @@ namespace UltimateXR.Locomotion
         #endregion
 
         #region Private Methods
+
+        /// <summary>
+        ///     Applies smoothing to the source transforms to avoid too much jitter.
+        /// </summary>
+        private void UpdateSmoothTransforms()
+        {
+            if (_shakeFilter > 0.0f && IsTeleporting && IsOtherComponentTeleporting == false)
+            {
+                float deltaTimeMultiplier = Mathf.Lerp(DeltaTimeMultiplierFilterMin, DeltaTimeMultiplierFilterMax, Mathf.Clamp01(_shakeFilter));
+
+                ControllerStart   = Vector3.Lerp(ControllerStart,   RawControllerStart,   Time.deltaTime * deltaTimeMultiplier);
+                ControllerForward = Vector3.Lerp(ControllerForward, RawControllerForward, Time.deltaTime * deltaTimeMultiplier);
+            }
+            else
+            {
+                ControllerStart   = RawControllerStart;
+                ControllerForward = RawControllerForward;
+            }
+        }
 
         /// <summary>
         ///     Checks if a given teleport position is valid. We use the eye position of the teleport destination as
@@ -784,7 +976,7 @@ namespace UltimateXR.Locomotion
             Vector3 localNewEyePos   = Avatar.transform.InverseTransformPoint(newEyePos);
             Vector3 localTeleportPos = Avatar.transform.InverseTransformPoint(teleportPos);
             float   eyeHeight        = localNewEyePos.y - localTeleportPos.y;
-            
+
             if (HasBlockingRaycastHit(Avatar, newEyePos, -UpVector, eyeHeight * 1.2f, LayerMaskRaycast, TriggerCollidersInteraction, out RaycastHit hit))
             {
                 float slopeDegrees = Mathf.Abs(Vector3.Angle(hit.normal, UpVector));
@@ -795,7 +987,9 @@ namespace UltimateXR.Locomotion
                 Vector3 localHitPoint = Avatar.transform.InverseTransformPoint(hit.point);
                 valid = valid && Mathf.Abs(localHitPoint.y - localTeleportPos.y) < MaxVerticalHeightDisparity;
 
-                if (hit.collider.GetComponentInParent<UxrIgnoreTeleportDestination>() != null)
+                UxrIgnoreTeleportDestination ignoreDestinationComponent = hit.collider.GetComponentInParent<UxrIgnoreTeleportDestination>();
+
+                if (ignoreDestinationComponent != null && ignoreDestinationComponent.enabled)
                 {
                     return false;
                 }
@@ -951,6 +1145,11 @@ namespace UltimateXR.Locomotion
         protected LayerMask LayerMaskRaycast => _layerMaskRaycast;
 
         /// <summary>
+        ///     Gets the up vector used to compute rotations so that it is always computed in the correct space.
+        /// </summary>
+        protected Vector3 UpVector => Avatar.transform.up;
+
+        /// <summary>
         ///     Gets or sets whether to parent the avatar to the destination object (<see cref="TeleportReference" />) after
         ///     teleporting.
         ///     This can also be overriden using a <see cref="UxrParentAvatarDestination" /> component.
@@ -1024,14 +1223,18 @@ namespace UltimateXR.Locomotion
             }
         }
 
+        /// <summary>
+        ///     Gets or sets teleport arrow's local rotation.
+        /// </summary>
+        protected Quaternion TeleportArrowLocalRotation
+        {
+            get => _teleportTarget.ReorientArrowLocalRotation;
+            set => _teleportTarget.ReorientArrowLocalRotation = value;
+        }
+
         #endregion
 
         #region Private Types & Data
-
-        /// <summary>
-        /// Gets the up vector used to compute rotations so that it is always computed in the correct space.
-        /// </summary>
-        protected Vector3 UpVector => Avatar.transform.up;
 
         /// <summary>
         ///     Gets the raw unprocessed world position on the controller where the ray-casting starts.
@@ -1099,14 +1302,15 @@ namespace UltimateXR.Locomotion
             }
         }
 
-        private const float RaycastAboveGround                   = 0.05f;
-        private const float RaycastLongDistance                  = 1000.0f;
-        private const float HeadRadius                           = 0.2f;
-        private const float DeltaTimeMultiplierFilterMin         = 25.0f;
-        private const float DeltaTimeMultiplierFilterMax         = 5.0f;
-        private const float MaxVerticalHeightDisparity           = 0.2f;
-        private const float DestinationValidationSubdivisions    = 8;
-        private const float DestinationValidationPositivesNeeded = 5;
+        private const    float           RaycastAboveGround                   = 0.05f;
+        private const    float           RaycastLongDistance                  = 1000.0f;
+        private const    float           HeadRadius                           = 0.2f;
+        private const    float           DeltaTimeMultiplierFilterMin         = 25.0f;
+        private const    float           DeltaTimeMultiplierFilterMax         = 5.0f;
+        private const    float           MaxVerticalHeightDisparity           = 0.2f;
+        private const    float           DestinationValidationSubdivisions    = 8;
+        private const    float           DestinationValidationPositivesNeeded = 5;
+        private readonly List<Validator> _destinationValidators               = new List<Validator>();
 
         private List<UxrTeleportLocomotionBase> _otherAvatarTeleports;
 
@@ -1117,6 +1321,7 @@ namespace UltimateXR.Locomotion
         private LayerMask                _layerMaskRaycast = 0;
         private UxrTeleportTarget        _teleportTarget;
         private UxrTeleportSpawnCollider _lastSpawnCollider;
+        private RaycastHit               _hitInfo;
 
         #endregion
     }

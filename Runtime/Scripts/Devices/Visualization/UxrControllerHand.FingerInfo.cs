@@ -40,6 +40,12 @@ namespace UltimateXR.Devices.Visualization
             public float FingerToGoalDuration => _fingerToGoalDuration;
 
             /// <summary>
+            ///     Gets or sets whether the component data has been initialized at runtime using
+            ///     <see cref="UxrControllerHand.InitializeFinger" />.
+            /// </summary>
+            public bool Initialized { get; set; }
+
+            /// <summary>
             ///     Gets or sets the effector initial local position. The effector is the part of the finger in the IK chain that will
             ///     try to reach the goal.
             /// </summary>

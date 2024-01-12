@@ -50,6 +50,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 79f5a30897a3c024c805c866226dd743, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 6fdae0ac-345f-4450-83b9-14b5f0c00a90
+  __prefabGuid: d0a5e2e7972347e42a3c7ae966edf222
+  __isInPrefab: 1
   _controlParentDirection: 1
   _ignoreGrabbableParentDependency: 0
   _priority: 0
@@ -162,6 +165,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d17182e9c78c594d96529eb7adbcbe0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 99539606-b752-47f5-9e18-80af72742c4b
+  __prefabGuid: d0a5e2e7972347e42a3c7ae966edf222
+  __isInPrefab: 1
   _continuousManipulationHaptics: 0
   _hapticMixMode: 1
   _minAmplitude: 0.3
@@ -207,6 +213,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de9b9b50632dc364ba61a4632566e267, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 4be1c965-edcd-4669-bc37-8c1751084dc1
+  __prefabGuid: d0a5e2e7972347e42a3c7ae966edf222
+  __isInPrefab: 1
   _audioOnGrab:
     _clip: {fileID: 0}
     _volume: 1
@@ -240,6 +249,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 097a8eab230aadf40bdce734556f5482, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 4af8cc3c-d376-4981-a02f-60429662e89a
+  __prefabGuid: d0a5e2e7972347e42a3c7ae966edf222
+  __isInPrefab: 1
   _rounds: 40
   _capacity: 40
 --- !u!114 &1273189738759934078
@@ -254,6 +266,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80780a72a3aeaf549a04f479bfc41f47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: a680e45e-d03c-4e79-9782-450519561f25
+  __prefabGuid: d0a5e2e7972347e42a3c7ae966edf222
+  __isInPrefab: 1
   _setValueOnStart: 1
   _renderer: {fileID: 129524562939741791}
 --- !u!1 &574113094897291412
@@ -334,6 +349,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212ce82ef45e9684daf388b699410086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 74142a12-029d-4ac9-a0f2-8521f5a16c8f
+  __prefabGuid: d0a5e2e7972347e42a3c7ae966edf222
+  __isInPrefab: 1
 --- !u!1 &1910192248879108477
 GameObject:
   m_ObjectHideFlags: 0
@@ -444,6 +462,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212ce82ef45e9684daf388b699410086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 74df55e0-c9d6-401b-affa-2e0f26969ea2
+  __prefabGuid: d0a5e2e7972347e42a3c7ae966edf222
+  __isInPrefab: 1
 --- !u!1 &5662375172769577263
 GameObject:
   m_ObjectHideFlags: 0
@@ -488,6 +509,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212ce82ef45e9684daf388b699410086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 313ba0ca-f6b3-439c-99e1-0d676d0788f2
+  __prefabGuid: d0a5e2e7972347e42a3c7ae966edf222
+  __isInPrefab: 1
 --- !u!1 &5983769985228056785
 GameObject:
   m_ObjectHideFlags: 0
@@ -532,6 +556,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212ce82ef45e9684daf388b699410086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: e1186995-daca-44a5-a57e-ebd26542913e
+  __prefabGuid: d0a5e2e7972347e42a3c7ae966edf222
+  __isInPrefab: 1
 --- !u!1 &5984470646011373333
 GameObject:
   m_ObjectHideFlags: 0
@@ -576,6 +603,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212ce82ef45e9684daf388b699410086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 592a4067-2583-4b09-80fb-4d03752fdc65
+  __prefabGuid: d0a5e2e7972347e42a3c7ae966edf222
+  __isInPrefab: 1
 --- !u!1 &6544620678039957397
 GameObject:
   m_ObjectHideFlags: 0
@@ -653,6 +683,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212ce82ef45e9684daf388b699410086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 9fc755e4-337d-4b08-ac48-982ea841f4b4
+  __prefabGuid: d0a5e2e7972347e42a3c7ae966edf222
+  __isInPrefab: 1
 --- !u!1001 &2374009734225905648
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -786,6 +819,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2bbad2839f9d42d41ba6b2d584190630, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: b11f3865-1441-4e90-8048-0f6a3bf8f2bd
+  __prefabGuid: d0a5e2e7972347e42a3c7ae966edf222
+  __isInPrefab: 1
   _animationMode: 2
   _valueSpeedDurationSeconds: 0
   _valueSpeed: {x: 0, y: 0, z: 0, w: 0}

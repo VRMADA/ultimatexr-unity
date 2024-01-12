@@ -417,11 +417,9 @@ namespace UltimateXR.Devices.Visualization
         /// <returns>List of GameObjects representing the given controller input elements</returns>
         public IEnumerable<GameObject> GetElements(UxrControllerElements elements)
         {
-            foreach (var value in Enum.GetValues(typeof(UxrControllerElements)))
+            foreach (UxrControllerElements element in ControllerElements)
             {
-                UxrControllerElements enumValue = (UxrControllerElements)value;
-
-                if (elements.HasFlag(enumValue) && _hashedElements.TryGetValue(enumValue, out GameObject elementGameObject))
+                if (elements.HasFlag(element) && _hashedElements.TryGetValue(element, out GameObject elementGameObject))
                 {
                     yield return elementGameObject;
                 }
@@ -435,11 +433,9 @@ namespace UltimateXR.Devices.Visualization
         /// <returns>List of materials used by the objects representing the given controller input elements</returns>
         public IEnumerable<Material> GetElementsMaterials(UxrControllerElements elements)
         {
-            foreach (var value in Enum.GetValues(typeof(UxrControllerElements)))
+            foreach (UxrControllerElements element in ControllerElements)
             {
-                UxrControllerElements enumValue = (UxrControllerElements)value;
-
-                if (elements.HasFlag(enumValue) && _hashedElements.TryGetValue(enumValue, out GameObject elementGameObject))
+                if (elements.HasFlag(element) && _hashedElements.TryGetValue(element, out GameObject elementGameObject))
                 {
                     Renderer elementRenderer = elementGameObject.GetComponent<Renderer>();
 
@@ -460,11 +456,9 @@ namespace UltimateXR.Devices.Visualization
         /// <returns>List of original shared materials used by the objects representing the given controller input elements</returns>
         public IEnumerable<Material> GetElementsOriginalMaterials(UxrControllerElements elements)
         {
-            foreach (var value in Enum.GetValues(typeof(UxrControllerElements)))
+            foreach (UxrControllerElements element in ControllerElements)
             {
-                UxrControllerElements enumValue = (UxrControllerElements)value;
-
-                if (elements.HasFlag(enumValue) && _hashedElementsOriginalMaterial.TryGetValue(enumValue, out Material elementMaterial))
+                if (elements.HasFlag(element) && _hashedElementsOriginalMaterial.TryGetValue(element, out Material elementMaterial))
                 {
                     yield return elementMaterial;
                 }
@@ -478,11 +472,9 @@ namespace UltimateXR.Devices.Visualization
         /// <param name="material">New material to assign</param>
         public void SetElementsMaterial(UxrControllerElements elements, Material material)
         {
-            foreach (var value in Enum.GetValues(typeof(UxrControllerElements)))
+            foreach (UxrControllerElements element in ControllerElements)
             {
-                UxrControllerElements enumValue = (UxrControllerElements)value;
-
-                if (elements.HasFlag(enumValue) && _hashedElements.TryGetValue(enumValue, out GameObject elementGameObject) 
+                if (elements.HasFlag(element) && _hashedElements.TryGetValue(element, out GameObject elementGameObject) 
                     && elementGameObject.TryGetComponent<Renderer>(out var elementRenderer))
                 {
                     elementRenderer.material = material;
@@ -496,14 +488,12 @@ namespace UltimateXR.Devices.Visualization
         /// <param name="elements">Flags representing the input elements whose materials to restore</param>
         public void RestoreElementsMaterials(UxrControllerElements elements)
         {
-            foreach (var value in Enum.GetValues(typeof(UxrControllerElements)))
+            foreach (UxrControllerElements element in ControllerElements)
             {
-                UxrControllerElements enumValue = (UxrControllerElements)value;
-
-                if (elements.HasFlag(enumValue) && _hashedElements.TryGetValue(enumValue, out GameObject elementGameObject) 
+                if (elements.HasFlag(element) && _hashedElements.TryGetValue(element, out GameObject elementGameObject) 
                     && elementGameObject.TryGetComponent<Renderer>(out var elementRenderer))
                 {
-                    elementRenderer.sharedMaterial = _hashedElementsOriginalMaterial[enumValue];
+                    elementRenderer.sharedMaterial = _hashedElementsOriginalMaterial[element];
                 }
             }
         }
@@ -625,6 +615,25 @@ namespace UltimateXR.Devices.Visualization
         #endregion
 
         #region Private Types & Data
+
+        /// <summary>
+        ///     Gets all the possible elements in a controller.
+        /// </summary>
+        private IEnumerable<UxrControllerElements> ControllerElements
+        {
+            get
+            {
+                foreach (var value in Enum.GetValues(typeof(UxrControllerElements)))
+                {
+                    UxrControllerElements element = (UxrControllerElements)value;
+
+                    if (element != UxrControllerElements.None && element != UxrControllerElements.Everything)
+                    {
+                        yield return element;
+                    }
+                }
+            }
+        }
 
         private readonly Dictionary<UxrControllerElements, GameObject>   _hashedElements                 = new Dictionary<UxrControllerElements, GameObject>();
         private readonly Dictionary<UxrControllerElements, Material>     _hashedElementsOriginalMaterial = new Dictionary<UxrControllerElements, Material>();

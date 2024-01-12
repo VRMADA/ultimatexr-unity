@@ -104,8 +104,8 @@ namespace UltimateXR.CameraUtils
 
             _lastValidPosInitialized = false;
 
-            UxrManager.AvatarMoved    += UxrManager_AvatarMoved;
-            UxrManager.AvatarsUpdated += UxrManager_AvatarsUpdated;
+            UxrAvatar.GlobalAvatarMoved += UxrAvatar_GlobalAvatarMoved;
+            UxrManager.AvatarsUpdated   += UxrManager_AvatarsUpdated;
         }
 
         /// <summary>
@@ -115,8 +115,13 @@ namespace UltimateXR.CameraUtils
         {
             base.OnDisable();
 
-            UxrManager.AvatarMoved    -= UxrManager_AvatarMoved;
-            UxrManager.AvatarsUpdated -= UxrManager_AvatarsUpdated;
+            UxrAvatar.GlobalAvatarMoved -= UxrAvatar_GlobalAvatarMoved;
+            UxrManager.AvatarsUpdated   -= UxrManager_AvatarsUpdated;
+
+            if (_quadObject != null)
+            {
+                _quadObject.SetActive(false);
+        }
         }
 
         #endregion
@@ -128,9 +133,12 @@ namespace UltimateXR.CameraUtils
         /// </summary>
         /// <param name="sender">Event sender</param>
         /// <param name="e">Event parameters</param>
-        private void UxrManager_AvatarMoved(object sender, UxrAvatarMoveEventArgs e)
+        private void UxrAvatar_GlobalAvatarMoved(object sender, UxrAvatarMoveEventArgs e)
         {
+            if (ReferenceEquals(sender, Avatar))
+            {
             _lastValidPosInitialized = false;
+        }
         }
 
         /// <summary>
@@ -138,7 +146,17 @@ namespace UltimateXR.CameraUtils
         /// </summary>
         private void UxrManager_AvatarsUpdated()
         {
+            if (Avatar.AvatarMode != UxrAvatarMode.Local)
+            {
+                if (_quadObject)
+                {
+                    _quadObject.SetActive(false);                    
+                }
+            }
+            else
+            {
             UpdateFade();
+        }
         }
 
         #endregion

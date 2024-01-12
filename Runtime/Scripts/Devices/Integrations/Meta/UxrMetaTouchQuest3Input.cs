@@ -18,7 +18,7 @@ namespace UltimateXR.Devices.Integrations.Meta
         /// <summary>
         ///     Gets the SDK dependency: Oculus SDK.
         /// </summary>
-        public override string SDKDependency => UxrManager.SdkOculus;
+        public override string SDKDependency => UxrConstants.SdkOculus;
 
         /// <inheritdoc />
         public override UxrControllerSetupType SetupType => UxrControllerSetupType.Dual;

@@ -38,6 +38,71 @@ namespace UltimateXR.Manipulation
         /// </summary>
         public Transform Center => _center != null ? _center : transform;
 
+        /// <summary>
+        ///     Gets or sets the axis around which the grab can rotate.
+        /// </summary>
+        public UxrAxis CenterAxis
+        {
+            get => _centerAxis;
+            set => _centerAxis = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the minimum angle the grip, defined by the <see cref="UxrGrabbableObject" />, can rotate around
+        ///     <see cref="CenterAxis" />.
+        /// </summary>
+        public float AngleMin
+        {
+            get => _angleMin;
+            set => _angleMin = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the maximum angle the grip, defined by the <see cref="UxrGrabbableObject" />, can rotate around
+        ///     <see cref="CenterAxis" />.
+        /// </summary>
+        public float AngleMax
+        {
+            get => _angleMax;
+            set => _angleMax = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the discrete angle interval steps the grip can rotate around <see cref="CenterAxis" />.
+        /// </summary>
+        public float AngleInterval
+        {
+            get => _angleInterval;
+            set => _angleInterval = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the minimum offset from the center, and along <see cref="CenterAxis" />, the grip can move.
+        /// </summary>
+        public float OffsetMin
+        {
+            get => _offsetMin;
+            set => _offsetMin = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the maximum offset from the center, and along <see cref="CenterAxis" />, the grip can move.
+        /// </summary>
+        public float OffsetMax
+        {
+            get => _offsetMax;
+            set => _offsetMax = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the discrete offset steps along along <see cref="CenterAxis" /> the grip can move.
+        /// </summary>
+        public float OffsetInterval
+        {
+            get => _offsetInterval;
+            set => _offsetInterval = value;
+        }
+
         #endregion
 
         #region Public Overrides UxrGrabPointShape
@@ -54,7 +119,7 @@ namespace UltimateXR.Manipulation
         {
             // Compute best fitting rotation
 
-            Vector3 worldAxis        = Center.TransformDirection(_centerAxis);
+            Vector3 worldAxis        = Center.TransformDirection(CenterAxis);
             Vector3 localSnapAxis    = snapTransform.InverseTransformDirection(worldAxis);
             Vector3 worldGrabberAxis = grabber.transform.TransformDirection(localSnapAxis);
             bool    reverseGrip      = _bidirectional && Vector3.Angle(worldGrabberAxis, -worldAxis) < Vector3.Angle(worldGrabberAxis, worldAxis);
@@ -74,21 +139,21 @@ namespace UltimateXR.Manipulation
             // Compute the rotation required to rotate the grabber to the best suited grip on the axis with the given properties 
 
             rotation = projection * grabber.transform.rotation;
-            
+
             // Compute perpendicular vectors to the axis to get the angle from snap rotation to projected snap rotation.
 
-            Vector3 worldPerpendicular = Center.TransformDirection(_centerAxis.Perpendicular);
+            Vector3 worldPerpendicular = Center.TransformDirection(CenterAxis.Perpendicular);
             Vector3 localPerpendicular = snapTransform.InverseTransformDirection(worldPerpendicular);
 
             Quaternion grabberRotation = grabber.transform.rotation;
             grabber.transform.rotation = rotation;
-            
+
             // Compute angle and clamp it.
-            
+
             float angle        = Vector3.SignedAngle(worldPerpendicular, grabber.transform.TransformDirection(localPerpendicular), worldAxis);
-            float clampedAngle = Mathf.Clamp(angle, _angleMin, _angleMax);
+            float clampedAngle = Mathf.Clamp(angle, AngleMin, AngleMax);
             rotation = Quaternion.AngleAxis(clampedAngle - angle, worldAxis) * rotation;
-            
+
             // TODO: use _angleInterval
             grabber.transform.rotation = grabberRotation;
 
@@ -128,21 +193,21 @@ namespace UltimateXR.Manipulation
         #region Private Methods
 
         /// <summary>
-        ///     Gets one side of the grabbable segment in world space if it started in <paramref name="center"/>.
+        ///     Gets one side of the grabbable segment in world space if it started in <paramref name="center" />.
         /// </summary>
         /// <param name="center">Center in world space to consider</param>
         private Vector3 GetSegmentA(Vector3 center)
         {
-            return center + Center.TransformDirection(_centerAxis) * _offsetMin;
+            return center + Center.TransformDirection(CenterAxis) * OffsetMin;
         }
 
         /// <summary>
-        ///     Gets the other side of the grabbable segment in world space if it started in <paramref name="center"/>.
+        ///     Gets the other side of the grabbable segment in world space if it started in <paramref name="center" />.
         /// </summary>
         /// <param name="center">Center in world space to consider</param>
         private Vector3 GetSegmentB(Vector3 center)
         {
-            return center + Center.TransformDirection(_centerAxis) * _offsetMax;
+            return center + Center.TransformDirection(CenterAxis) * OffsetMax;
         }
 
         #endregion

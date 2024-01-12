@@ -179,6 +179,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96e14cd674acb2e458e6fcb725350787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 171661e2-f75c-4c39-88f9-1968cfb47355
+  __prefabGuid: 668d38722d4cbde439dc86059e153348
+  __isInPrefab: 1
   _updateSeconds: 0.3
   _rangeNear: 0.3
   _rangeFar: 4
@@ -275,6 +278,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8ccd95984a6d5f4a9f5c351b85fc29b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 303b2a02-b98d-4cb3-83b1-2367144162eb
+  __prefabGuid: 668d38722d4cbde439dc86059e153348
+  __isInPrefab: 1
 --- !u!1 &6794937655510667955
 GameObject:
   m_ObjectHideFlags: 0
@@ -804,6 +810,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: DebugInputPanel
       objectReference: {fileID: 0}
+    - target: {fileID: 114168026356972634, guid: c260c52bb1b13764d9ad6e5e22b1eff9,
+        type: 3}
+      propertyPath: __isInPrefab
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114168026356972634, guid: c260c52bb1b13764d9ad6e5e22b1eff9,
+        type: 3}
+      propertyPath: __prefabGuid
+      value: 668d38722d4cbde439dc86059e153348
+      objectReference: {fileID: 0}
+    - target: {fileID: 114168026356972634, guid: c260c52bb1b13764d9ad6e5e22b1eff9,
+        type: 3}
+      propertyPath: _uxrUniqueId
+      value: c270f825-d0fd-4c43-bafd-33a656bb3d3b
+      objectReference: {fileID: 0}
     - target: {fileID: 224014865489565984, guid: c260c52bb1b13764d9ad6e5e22b1eff9,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -1114,6 +1135,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96e14cd674acb2e458e6fcb725350787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 0f566c5c-7d74-436f-9997-92d3971cf1d2
+  __prefabGuid: 668d38722d4cbde439dc86059e153348
+  __isInPrefab: 1
   _updateSeconds: 0.3
   _rangeNear: 0.3
   _rangeFar: 4

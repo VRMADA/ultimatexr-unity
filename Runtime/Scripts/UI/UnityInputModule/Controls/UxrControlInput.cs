@@ -222,6 +222,11 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         public object Tag { get; set; }
 
         /// <summary>
+        ///     Gets whether the control was clicked since the last time it was set to false.
+        /// </summary>
+        public bool WasClicked { get; set; }
+
+        /// <summary>
         ///     Gets or sets how many seconds need to pass to trigger a <see cref="PressHeld" /> event
         /// </summary>
         public float PressAndHoldDuration
@@ -262,26 +267,20 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         #region Public Methods
 
         /// <summary>
-        ///     Creates an awaitable task that blocks until a control is clicked.
-        /// </summary>
-        /// <param name="control">Control to listen to</param>
-        /// <param name="ct">Optional cancellation token, to cancel the task</param>
-        /// <returns>Awaitable <see cref="Task" /> returning the control that was clicked or null if the task was cancelled</returns>
-        public static async Task<UxrControlInput> ReadControl(UxrControlInput control, CancellationToken ct = default)
-        {
-            await WaitForClick(control, ct);
-            return ct.IsCancellationRequested ? null : control;
-        }
-
-        /// <summary>
         ///     Creates an awaitable task that blocks until a control from a given set is clicked, and returns the control that was
         ///     clicked.
         /// </summary>
         /// <param name="ct">Cancellation token, to cancel the task</param>
         /// <param name="controls">Controls to listen to</param>
-        /// <returns>Awaitable <see cref="Task" /> returning the control that was clicked</returns>
-        public static async Task<UxrControlInput> ReadControls(CancellationToken ct, params UxrControlInput[] controls)
+        /// <returns>Awaitable <see cref="Task" /> returning the control that was clicked, or null if the task was cancelled</returns>
+        public static async Task<UxrControlInput> WaitForClickAsync(CancellationToken ct, params UxrControlInput[] controls)
         {
+            async Task<UxrControlInput> ReadControl(UxrControlInput control, CancellationToken ct = default)
+            {
+                await control.WaitForClickAsync(ct);
+                return ct.IsCancellationRequested ? null : control;
+            }
+            
             using CancellationTokenSource      cts          = CancellationTokenSource.CreateLinkedTokenSource(ct);
             IEnumerable<Task<UxrControlInput>> tasks        = controls.Select(b => ReadControl(b, ct));
             Task<UxrControlInput>              finishedTask = await Task.WhenAny(tasks);
@@ -295,12 +294,11 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         }
 
         /// <summary>
-        ///     Creates an awaitable task that blocks until a control is clicked.
+        ///     Creates an awaitable task that blocks until the control is clicked.
         /// </summary>
-        /// <param name="control">Control to listen to</param>
         /// <param name="ct">Optional cancellation token, to cancel the task</param>
         /// <returns>Awaitable <see cref="Task" /> returning the control that was clicked or null if the task was cancelled</returns>
-        public static async Task WaitForClick(UxrControlInput control, CancellationToken ct = default)
+        public async Task WaitForClickAsync(CancellationToken ct = default)
         {
             bool isClicked = false;
 
@@ -309,9 +307,9 @@ namespace UltimateXR.UI.UnityInputModule.Controls
                 isClicked = localControl.Interactable;
             }
 
-            control.Clicked += ControlClicked;
+            Clicked += ControlClicked;
             await TaskExt.WaitUntil(() => isClicked, ct);
-            control.Clicked -= ControlClicked;
+            Clicked -= ControlClicked;
         }
 
         #endregion
@@ -684,8 +682,9 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         /// <param name="eventData">Event parameters</param>
         protected virtual void OnClicked(PointerEventData eventData)
         {
-            if (!IsDragging && enabled)
+            if (!IsDragging && enabled && Interactable)
             {
+                WasClicked = true;
                 GlobalClicked?.Invoke(this, eventData);
                 Clicked?.Invoke(this, eventData);
             }

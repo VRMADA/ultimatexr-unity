@@ -16,12 +16,13 @@ namespace UltimateXR.Manipulation.Helpers
     ///     <see cref="UxrGrabbableObjectAnchor" /> it was grabbed from whenever it is released.
     /// </summary>
     [RequireComponent(typeof(UxrGrabbableObject))]
-    public class UxrReturnGrabbableObject : UxrGrabbableObjectComponent<UxrReturnGrabbableObject>
+    public partial class UxrReturnGrabbableObject : UxrGrabbableObjectComponent<UxrReturnGrabbableObject>
     {
         #region Inspector Properties/Serialized Fields
 
-        [SerializeField] private bool  _smoothTransition   = true;
-        [SerializeField] private float _returnDelaySeconds = -1.0f;
+        [SerializeField] private bool         _smoothTransition   = true;
+        [SerializeField] private float        _returnDelaySeconds = -1.0f;
+        [SerializeField] private ReturnPolicy _returnPolicy       = ReturnPolicy.LastAnchor;
 
         #endregion
 
@@ -48,12 +49,13 @@ namespace UltimateXR.Manipulation.Helpers
         ///     Coroutine that returns the object to the original target after some time.
         /// </summary>
         /// <param name="grabbableObject">Object to return</param>
-        /// <param name="anchor">Anchor to return the object to</param>
         /// <param name="propagateEvents">Whether to propagate manipulation events</param>
         /// <returns>Coroutine IEnumerator</returns>
-        private IEnumerator ReturnCoroutine(UxrGrabbableObject grabbableObject, UxrGrabbableObjectAnchor anchor, bool propagateEvents)
+        private IEnumerator ReturnCoroutine(UxrGrabbableObject grabbableObject, bool propagateEvents)
         {
             yield return new WaitForSeconds(_returnDelaySeconds);
+
+            UxrGrabbableObjectAnchor anchor = GetReturnAnchor();
 
             if (anchor != null && anchor.CurrentPlacedObject == null)
             {
@@ -89,25 +91,25 @@ namespace UltimateXR.Manipulation.Helpers
         {
             base.OnObjectReleased(e);
 
-            if (e.IsOwnershipChanged)
+            if (e.IsGrabbedStateChanged)
             {
                 if (e.GrabbableAnchor != null)
                 {
-                    _grabbableObjectAnchor = e.GrabbableAnchor;
+                    _lastObjectAnchor = e.GrabbableAnchor;
                 }
 
                 // Check also dependent grabs. We may be grabbing the object using another grip
-                if (!UxrGrabManager.Instance.IsHandGrabbing(UxrAvatar.LocalAvatar, GrabbableObject, UxrHandSide.Left) &&
-                    !UxrGrabManager.Instance.IsHandGrabbing(UxrAvatar.LocalAvatar, GrabbableObject, UxrHandSide.Right))
+                if (!UxrGrabManager.Instance.IsHandGrabbing(UxrAvatar.LocalAvatar, GrabbableObject, UxrHandSide.Left,  true) &&
+                    !UxrGrabManager.Instance.IsHandGrabbing(UxrAvatar.LocalAvatar, GrabbableObject, UxrHandSide.Right, true))
                 {
                     if (_returnDelaySeconds <= 0.0f)
                     {
                         // Return to original place
-                        UxrGrabManager.Instance.PlaceObject(e.GrabbableObject, _grabbableObjectAnchor, _smoothTransition ? UxrPlacementOptions.Smooth : UxrPlacementOptions.None, true);
+                        UxrGrabManager.Instance.PlaceObject(e.GrabbableObject, GetReturnAnchor(), _smoothTransition ? UxrPlacementOptions.Smooth : UxrPlacementOptions.None, true);
                     }
                     else
                     {
-                        _returnCoroutine = StartCoroutine(ReturnCoroutine(e.GrabbableObject, _grabbableObjectAnchor, true));
+                        _returnCoroutine = StartCoroutine(ReturnCoroutine(e.GrabbableObject, true));
                     }
                 }
             }
@@ -116,6 +118,20 @@ namespace UltimateXR.Manipulation.Helpers
         #endregion
 
         #region Private Methods
+
+        /// <summary>
+        ///     Gets the anchor where the object should be returned.
+        /// </summary>
+        /// <returns>Destination anchor</returns>
+        private UxrGrabbableObjectAnchor GetReturnAnchor()
+        {
+            if (_returnPolicy == ReturnPolicy.LastAnchor && _lastObjectAnchor != null && _lastObjectAnchor.CurrentPlacedObject != null)
+            {
+                return _lastObjectAnchor;
+            }
+
+            return GrabbableObject.StartAnchor;
+        }
 
         /// <summary>
         ///     Cancels a return if there was one programmed.
@@ -133,7 +149,7 @@ namespace UltimateXR.Manipulation.Helpers
 
         #region Private Types & Data
 
-        private UxrGrabbableObjectAnchor _grabbableObjectAnchor;
+        private UxrGrabbableObjectAnchor _lastObjectAnchor;
         private Coroutine                _returnCoroutine;
 
         #endregion

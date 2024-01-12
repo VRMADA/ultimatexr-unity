@@ -3,10 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Core;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Editor.Utilities
+namespace UltimateXR.Editor.Utilities.TransformUtils
 {
     /// <summary>
     ///     Custom tool window to implement a LookAt on an object transform.
@@ -30,7 +31,7 @@ namespace UltimateXR.Editor.Utilities
                 if (EditorUtility.IsPersistent(_object))
                 {
                     _object = objectToLookAt;
-                    EditorUtility.DisplayDialog("Error", "The object to process needs to be in the scene", "OK");
+                    EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "The object to process needs to be in the scene", UxrConstants.Editor.Ok);
                 }
             }
 
@@ -57,7 +58,7 @@ namespace UltimateXR.Editor.Utilities
         /// <summary>
         ///     Menu entry that invokes the tool.
         /// </summary>
-        [MenuItem("Tools/UltimateXR/Utils/LookAt Object")]
+        [MenuItem(UxrConstants.Editor.MenuPathUtils + "LookAt Object", priority = UxrConstants.Editor.PriorityMenuPathUtils + 2)]
         private static void Init()
         {
             LookAtWindow window = (LookAtWindow)GetWindow(typeof(LookAtWindow), true, "LookAt Object");

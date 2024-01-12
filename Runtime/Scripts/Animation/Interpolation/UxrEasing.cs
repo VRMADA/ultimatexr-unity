@@ -7,6 +7,7 @@ using UltimateXR.Animation.Lights;
 using UltimateXR.Animation.Materials;
 using UltimateXR.Animation.Transforms;
 using UltimateXR.Animation.UI;
+using UltimateXR.Manipulation.Helpers;
 using UnityEngine;
 
 namespace UltimateXR.Animation.Interpolation
@@ -29,6 +30,7 @@ namespace UltimateXR.Animation.Interpolation
     ///         <item><see cref="UxrAnimatedTransform" /> (<see cref="Transform" /> animation)</item>
     ///         <item><see cref="UxrAnimatedLightIntensity" /> (<see cref="Light" /> intensity parameter animation)</item>
     ///         <item><see cref="UxrAnimatedMaterial" /> (<see cref="Material" /> parameter animation)</item>
+    ///         <item><see cref="UxrRestoreOnRelease" /> (Restores original grabbable object position/rotation when released)</item>
     ///     </list>
     /// </summary>
     public enum UxrEasing

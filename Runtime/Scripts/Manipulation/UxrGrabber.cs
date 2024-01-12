@@ -95,7 +95,7 @@ namespace UltimateXR.Manipulation
             get
             {
                 Vector3 direction = transform.right;
-                
+
                 if (Avatar != null && Avatar.AvatarRigInfo != null)
                 {
                     direction = transform.GetClosestLocalAxis(Avatar.AvatarRigInfo.GetArmInfo(Side).HandUniversalLocalAxes.WorldRight);
@@ -170,17 +170,17 @@ namespace UltimateXR.Manipulation
         /// <summary>
         ///     Gets the avatar hand bone that corresponds to the grabber.
         /// </summary>
-        public Transform HandBone { get; private set; }
+        public Transform HandBone => Avatar.GetHandBone(Side);
 
         /// <summary>
         ///     Gets the relative position of the hand bone to the grabber.
         /// </summary>
-        public Vector3 HandBoneRelativePos { get; private set; }
+        public Vector3 HandBoneRelativePos => HandBone != null ? transform.InverseTransformPoint(HandBone.position) : Vector3.zero;
 
         /// <summary>
         ///     Gets the relative rotation of the hand bone to the grabber.
         /// </summary>
-        public Quaternion HandBoneRelativeRot { get; private set; }
+        public Quaternion HandBoneRelativeRot => HandBone != null ? Quaternion.Inverse(transform.rotation) * HandBone.rotation : Quaternion.identity;
 
         /// <summary>
         ///     Gets or sets the hand renderer.
@@ -267,6 +267,26 @@ namespace UltimateXR.Manipulation
 
         #endregion
 
+        #region Internal Types & Data
+
+        /// <summary>
+        ///     Gets whether the grabber is currently being smoothly interpolated in an object manipulation.
+        /// </summary>
+        internal bool IsInSmoothManipulationTransition => SmoothManipulationTimer >= 0.0f;
+
+        #endregion
+
+        #region Public Overrides Object
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            string avatarName = Avatar != null ? $"{Avatar.name} " : string.Empty; 
+            return $"{avatarName}{Side.ToString().ToLower()} hand grabber";
+        }
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>
@@ -314,7 +334,7 @@ namespace UltimateXR.Manipulation
         /// </summary>
         internal void UpdateThrowPhysicsInfo()
         {
-            Transform     sampledTransform     = GrabbedObject != null ? GrabbedObject.transform : this.transform;
+            Transform     sampledTransform     = GrabbedObject != null ? GrabbedObject.transform : transform;
             Vector3       centerOfMassPosition = transform.TransformPoint(ThrowCenterOfMassLocalPosition);
             Vector3       throwTipPosition     = transform.TransformPoint(ThrowTipLocalPosition);
             PhysicsSample newSample            = new PhysicsSample(_physicsSampleWindow.LastOrDefault(), sampledTransform, centerOfMassPosition, throwTipPosition, Time.deltaTime);
@@ -329,14 +349,44 @@ namespace UltimateXR.Manipulation
             _physicsSampleWindow.Add(newSample);
 
             // Compute instant and smoothed values:
-            Velocity              = newSample.Velocity;
-            AngularVelocity       = newSample.EulerSpeed;
-            SmoothVelocity        = Vector3Ext.Average(_physicsSampleWindow.Select(s => s.TotalVelocity));
+            Velocity        = newSample.Velocity;
+            AngularVelocity = newSample.EulerSpeed;
+            SmoothVelocity  = Vector3Ext.Average(_physicsSampleWindow.Select(s => s.TotalVelocity));
 
             Quaternion relative = Quaternion.Inverse(_physicsSampleWindow.First().Rotation) * _physicsSampleWindow.Last().Rotation;
             relative.ToAngleAxis(out float angle, out Vector3 axis);
-            
-            SmoothAngularVelocity = (angle * sampledTransform.TransformDirection(axis)) / _physicsSampleWindow.First().Age;
+
+            SmoothAngularVelocity = angle * sampledTransform.TransformDirection(axis) / _physicsSampleWindow.First().Age;
+        }
+
+        /// <summary>
+        ///     Starts a smooth manipulation transition in a grab or a release, to make sure the hand transitions smoothly.
+        /// </summary>
+        internal void StartSmoothManipulationTransition()
+        {
+            SmoothManipulationTimer = UxrConstants.SmoothManipulationTransitionSeconds;
+
+            SmoothTransitionLocalAvatarHandBonePos = Avatar.transform.InverseTransformPoint(transform.TransformPoint(HandBoneRelativePos));
+            SmoothTransitionLocalAvatarHandBoneRot = Quaternion.Inverse(Avatar.transform.rotation) * transform.rotation * HandBoneRelativeRot;
+        }
+
+        /// <summary>
+        ///     Updates the smooth manipulation transitions if they exist.
+        /// </summary>
+        internal void UpdateSmoothManipulationTransition(float deltaTime)
+        {
+            if (SmoothManipulationTimer >= 0.0f)
+            {
+                SmoothManipulationTimer -= deltaTime;
+
+                if (SmoothManipulationTimer > 0.0f)
+                {
+                    float t = SmoothManipulationT;
+
+                    HandBone.SetPositionAndRotation(Vector3.Lerp(Avatar.transform.TransformPoint(SmoothTransitionLocalAvatarHandBonePos), transform.TransformPoint(HandBoneRelativePos), t),
+                                                    Quaternion.Slerp(Avatar.transform.rotation * SmoothTransitionLocalAvatarHandBoneRot, transform.rotation * HandBoneRelativeRot, t));
+                }
+            }
         }
 
         #endregion
@@ -355,12 +405,6 @@ namespace UltimateXR.Manipulation
 
             if (Avatar != null)
             {
-                // Compute hand bone info
-
-                HandBone            = Avatar.GetHandBone(Side);
-                HandBoneRelativePos = HandBone != null ? transform.InverseTransformPoint(HandBone.position) : Vector3.zero;
-                HandBoneRelativeRot = HandBone != null ? Quaternion.Inverse(transform.rotation) * HandBone.rotation : Quaternion.identity;
-
                 // Compute grabber info
 
                 UxrGrabber[] avatarGrabbers = Avatar.GetComponentsInChildren<UxrGrabber>();
@@ -424,12 +468,43 @@ namespace UltimateXR.Manipulation
         #region Private Types & Data
 
         /// <summary>
-        ///     Gets the throw center of mass (palm center) in the grabber's local coordinate system.
+        ///     Gets the smooth manipulation transition interpolation value.
+        /// </summary>
+        private float SmoothManipulationT
+        {
+            get
+            {
+                if (SmoothManipulationTimer <= 0.0f)
+                {
+                    return 1.0f;
+                }
+
+                return 1.0f - Mathf.Clamp01(SmoothManipulationTimer / UxrConstants.SmoothManipulationTransitionSeconds);
+            }
+        }
+
+        /// <summary>
+        ///     Gets or sets the decreasing smooth manipulation transition timer.
+        /// </summary>
+        private float SmoothManipulationTimer { get; set; } = -1.0f;
+
+        /// <summary>
+        ///     Gets or sets the position of the hand bone in local avatar space at the start of a smooth transition.
+        /// </summary>
+        private Vector3 SmoothTransitionLocalAvatarHandBonePos { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the rotation of the hand bone in local avatar space at the start of a smooth transition.
+        /// </summary>
+        private Quaternion SmoothTransitionLocalAvatarHandBoneRot { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the throw center of mass (palm center) in the grabber's local coordinate system.
         /// </summary>
         private Vector3 ThrowCenterOfMassLocalPosition { get; set; } = Vector3.zero;
 
         /// <summary>
-        ///     Gets the throw center of mass (palm center) in the grabber local coordinate system.
+        ///     Gets or sets the throw center of mass (palm center) in the grabber local coordinate system.
         /// </summary>
         private Vector3 ThrowTipLocalPosition { get; set; } = Vector3.zero;
 

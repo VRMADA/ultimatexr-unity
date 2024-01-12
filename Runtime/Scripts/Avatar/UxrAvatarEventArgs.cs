@@ -3,14 +3,12 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using System;
-
 namespace UltimateXR.Avatar
 {
     /// <summary>
     ///     Base class for avatar events.
     /// </summary>
-    public abstract class UxrAvatarEventArgs : EventArgs
+    public abstract class UxrAvatarEventArgs
     {
         #region Public Types & Data
 

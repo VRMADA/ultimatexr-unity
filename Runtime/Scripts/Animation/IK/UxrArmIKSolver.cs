@@ -3,9 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Avatar;
 using UltimateXR.Avatar.Rig;
 using UltimateXR.Core;
 using UltimateXR.Core.Math;
+using UltimateXR.Core.Settings;
 using UltimateXR.Extensions.Unity;
 using UnityEngine;
 
@@ -429,14 +431,18 @@ namespace UltimateXR.Animation.IK
         /// </summary>
         private void ComputeParameters()
         {
-            // Try to figure out which arm it is
-            Transform armElement = TransformExt.GetFirstNonNullTransformFromSet(Hand, Forearm, Arm, Clavicle);
+            UxrAvatar avatar = GetComponentInParent<UxrAvatar>();
 
-            if (armElement)
+            if (avatar == null)
             {
-                _side = Avatar.transform.InverseTransformPoint(Hand.position).x < 0.0f ? UxrHandSide.Left : UxrHandSide.Right;
+                if (UxrGlobalSettings.Instance.LogLevelAvatar >= UxrLogLevel.Errors)
+                {
+                    Debug.LogError($"{UxrConstants.AvatarModule} {nameof(UxrArmIKSolver)} can't find {nameof(UxrAvatar)} component upwards in the hierarchy. Component is located in {this.GetPathUnderScene()}");
+                }
+                
+                return;
             }
-
+            
             // Try to find opposite arm
             UxrArmIKSolver[] otherArms = transform.root.GetComponentsInChildren<UxrArmIKSolver>();
 
@@ -476,14 +482,24 @@ namespace UltimateXR.Animation.IK
 
             if (arm != null && arm.UpperArm && arm.Forearm && arm.Hand.Wrist)
             {
-                // Compute lengths in local avatar coordinates in case avatar has scaling
+                // Compute lengths in local avatar coordinates in case avatar has scaling.
+                // We use special treatment for the local hand in case that the component is being added at runtime and the hand is driven by a multiplayer NetworkTransform component that already moved it.
                 
                 Vector3 localUpperArm = ToLocalAvatarPos(arm.UpperArm.position);
                 Vector3 localForearm  = ToLocalAvatarPos(arm.Forearm.position);
-                Vector3 localHand     = ToLocalAvatarPos(arm.Hand.Wrist.position);
+                Vector3 localHand     = ToLocalAvatarPos(arm.Hand.Wrist.transform.parent.TransformPoint(avatar.AvatarRigInfo.GetArmInfo(_side).HandUniversalLocalAxes.InitialLocalPosition));
                 
                 _upperArmLocalLength = Vector3.Distance(localUpperArm, localForearm);
                 _forearmLocalLength  = Vector3.Distance(localForearm,  localHand);
+            }
+            else
+            {
+                if (UxrGlobalSettings.Instance.LogLevelAvatar >= UxrLogLevel.Errors)
+                {
+                    Debug.LogError($"{UxrConstants.AvatarModule} {nameof(UxrArmIKSolver)} can't find one or more of the following bones: upper arm, forearm, wrist. Component is located in {this.GetPathUnderScene()}");
+                }
+
+                return;
             }
 
             _clavicleUniversalLocalAxes = Avatar.AvatarRigInfo.GetArmInfo(_side).ClavicleUniversalLocalAxes;

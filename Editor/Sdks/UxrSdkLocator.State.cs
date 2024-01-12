@@ -3,7 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-namespace UltimateXR.Editor
+namespace UltimateXR.Editor.Sdks
 {
     public abstract partial class UxrSdkLocator
     {

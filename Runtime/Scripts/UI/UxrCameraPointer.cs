@@ -34,7 +34,7 @@ namespace UltimateXR.UI
                 _crosshair.GetComponentsInChildren<Collider>().ForEach(c => c.enabled = false);
             }
 
-            ClickInput     = UxrInputButtons.None;
+            ClickInput     = UxrInputButtons.Everything;
             ShowLaserInput = UxrInputButtons.None;
             IsInvisible    = true;
 

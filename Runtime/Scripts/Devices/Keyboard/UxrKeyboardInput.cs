@@ -8,7 +8,9 @@ using UnityEngine.InputSystem;
 #else
 using UnityEngine;
 using System.Collections.Generic;
+using UltimateXR.Core;
 #endif
+using UltimateXR.Core.Settings;
 
 namespace UltimateXR.Devices.Keyboard
 {
@@ -34,7 +36,11 @@ namespace UltimateXR.Devices.Keyboard
                 return Input.GetKeyDown((KeyCode)mappedKey);
             }
 
-            Debug.LogError($"{nameof(UxrKeyboardInput)}.{nameof(GetPressDown)}: Key {key} has no mapping for Unity's legacy input system");
+            if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Errors)
+            {
+                Debug.LogError($"{UxrConstants.DevicesModule} {nameof(UxrKeyboardInput)}.{nameof(GetPressDown)}: Key {key} has no mapping for Unity's legacy input system");
+            }
+            
             return false;
 #else
 
@@ -58,7 +64,11 @@ namespace UltimateXR.Devices.Keyboard
                 return Input.GetKeyUp((KeyCode)mappedKey);
             }
 
-            Debug.LogError($"{nameof(UxrKeyboardInput)}.{nameof(GetPressUp)}: Key {key} has no mapping for Unity's legacy input system");
+            if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Errors)
+            {
+                Debug.LogError($"{UxrConstants.DevicesModule} {nameof(UxrKeyboardInput)}.{nameof(GetPressUp)}: Key {key} has no mapping for Unity's legacy input system");
+            }
+            
             return false;
 #else
 
@@ -82,7 +92,11 @@ namespace UltimateXR.Devices.Keyboard
                 return Input.GetKey((KeyCode) mappedKey);
             }
 
-            Debug.LogError($"{nameof(UxrKeyboardInput)}.{nameof(GetPressed)}: Key {key} has no mapping for Unity's legacy input system");
+            if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Errors)
+            {
+                Debug.LogError($"{UxrConstants.DevicesModule} {nameof(UxrKeyboardInput)}.{nameof(GetPressed)}: Key {key} has no mapping for Unity's legacy input system");
+            }
+            
             return false;
 #else
 

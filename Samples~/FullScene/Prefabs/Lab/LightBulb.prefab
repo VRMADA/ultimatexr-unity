@@ -44,6 +44,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212ce82ef45e9684daf388b699410086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 80f8ffa3-7977-42ce-b32f-58ad90cbf0a0
+  __prefabGuid: d5641a3dd1f41ff43988620bc086e4a7
+  __isInPrefab: 1
 --- !u!1 &1600329656182161838
 GameObject:
   m_ObjectHideFlags: 0
@@ -125,16 +128,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 79f5a30897a3c024c805c866226dd743, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _manipulationMode: 0
+  _uxrUniqueId: 2c1da74a-29fb-416f-87ab-0333feda99d7
+  __prefabGuid: d5641a3dd1f41ff43988620bc086e4a7
+  __isInPrefab: 1
   _controlParentDirection: 1
   _ignoreGrabbableParentDependency: 0
   _priority: 0
+  _allowMultiGrab: 1
+  _translationConstraintMode: 0
+  _restrictToBox: {fileID: 0}
+  _restrictToSphere: {fileID: 0}
+  _translationLimitsMin: {x: 0, y: 0, z: 0}
+  _translationLimitsMax: {x: 0, y: 0, z: 0}
+  _rotationConstraintMode: 0
+  _rotationAngleLimitsMin: {x: 0, y: 0, z: 0}
+  _rotationAngleLimitsMax: {x: 0, y: 0, z: 0}
+  _autoRotationProvider: 1
+  _rotationProvider: 0
+  _rotationLongitudinalAxis:
+    _axis: 2
+  _needsTwoHandsToRotate: 0
+  _lockedGrabReleaseDistance: 0.4
+  _translationResistance: 0
+  _rotationResistance: 0
   _rigidBodySource: {fileID: 7665122940653472961}
   _rigidBodyDynamicOnRelease: 1
   _verticalReleaseMultiplier: 1
   _horizontalReleaseMultiplier: 1
-  _needsTwoHandsToRotate: 0
-  _allowMultiGrab: 1
   _previewGrabPosesMode: 3
   _previewPosesRegenerationType: 0
   _previewPosesRegenerationIndex: -1
@@ -195,21 +215,6 @@ MonoBehaviour:
   _dropSnapMode: 3
   _dropProximityTransformUseSelf: 1
   _dropProximityTransform: {fileID: 0}
-  _translationConstraintMode: 0
-  _restrictToBox: {fileID: 0}
-  _restrictToSphere: {fileID: 0}
-  _translationLimitsMin: {x: 0, y: 0, z: 0}
-  _translationLimitsMax: {x: 0, y: 0, z: 0}
-  _translationLimitsReferenceIsParent: 1
-  _translationLimitsParent: {fileID: 0}
-  _rotationConstraintMode: 0
-  _rotationAngleLimitsMin: {x: 0, y: 0, z: 0}
-  _rotationAngleLimitsMax: {x: 0, y: 0, z: 0}
-  _rotationLimitsReferenceIsParent: 1
-  _rotationLimitsParent: {fileID: 0}
-  _lockedGrabReleaseDistance: 0.4
-  _translationResistance: 0
-  _rotationResistance: 0
 --- !u!54 &7665122940653472961
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -337,6 +342,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212ce82ef45e9684daf388b699410086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 5ee42e77-d978-43fd-8e0c-985c43173332
+  __prefabGuid: d5641a3dd1f41ff43988620bc086e4a7
+  __isInPrefab: 1
 --- !u!1 &4265662427548621001
 GameObject:
   m_ObjectHideFlags: 0
@@ -414,6 +422,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212ce82ef45e9684daf388b699410086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 18a91c52-462d-4e87-a617-917856ca5169
+  __prefabGuid: d5641a3dd1f41ff43988620bc086e4a7
+  __isInPrefab: 1
 --- !u!1 &4688660716773218170
 GameObject:
   m_ObjectHideFlags: 0
@@ -458,6 +469,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212ce82ef45e9684daf388b699410086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 99eb16b3-b216-43dc-b6ac-8a7483248893
+  __prefabGuid: d5641a3dd1f41ff43988620bc086e4a7
+  __isInPrefab: 1
 --- !u!1 &5970369769630276868
 GameObject:
   m_ObjectHideFlags: 0
@@ -535,6 +549,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212ce82ef45e9684daf388b699410086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 2e050ace-0904-4a78-bceb-84277b237af6
+  __prefabGuid: d5641a3dd1f41ff43988620bc086e4a7
+  __isInPrefab: 1
 --- !u!1 &6981412970035308902
 GameObject:
   m_ObjectHideFlags: 0
@@ -611,6 +628,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 212ce82ef45e9684daf388b699410086, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: d9238d09-6dbe-42dd-bb75-af1bb7f3b5d1
+  __prefabGuid: d5641a3dd1f41ff43988620bc086e4a7
+  __isInPrefab: 1
 --- !u!1 &8780210340689713853
 GameObject:
   m_ObjectHideFlags: 0
@@ -880,6 +900,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 70e977db6e159b54f80cba9f6dc6f6a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: b3fbe605-662c-410f-bacf-a3aa9c0f4724
+  __prefabGuid: d5641a3dd1f41ff43988620bc086e4a7
+  __isInPrefab: 1
   _grabbableObject: {fileID: 1790049054757885708}
   _lightIntensity: 0.2
   _isFaulty: 0

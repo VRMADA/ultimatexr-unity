@@ -68,7 +68,7 @@ namespace UltimateXR.Extensions.System.IO
             {
                 try
                 {
-                    return await UnityWebRequestExt.Read(uri, ct);
+                    return await UnityWebRequestExt.ReadBytesAsync(uri, ct);
                 }
                 catch (UwrException e)
                 {
@@ -162,7 +162,7 @@ namespace UltimateXR.Extensions.System.IO
             {
                 try
                 {
-                    return await UnityWebRequestExt.ReadText(uri, ct);
+                    return await UnityWebRequestExt.ReadTextAsync(uri, ct);
                 }
                 catch (UwrException e)
                 {

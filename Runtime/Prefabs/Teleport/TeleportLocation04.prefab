@@ -44,8 +44,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f49112646ffbe3943ad1a450d98ee87e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 8105592d-0a7d-4a13-943c-df8fcc573e02
+  __prefabGuid: f0f8e4ac04e9b6a499967d502cc2891e
+  __isInPrefab: 1
   _controllerHand: 0
   _useControllerForward: 1
+  _parentToDestination: 0
   _shakeFilter: 0.4
   _translationType: 1
   _fadeTranslationColor: {r: 0, g: 0, b: 0, a: 1}

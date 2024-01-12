@@ -38,6 +38,20 @@ namespace UltimateXR.Extensions.System.Collections
         }
 
         /// <summary>
+        ///     Returns the list in reverse order.
+        /// </summary>
+        /// <param name="self">List in reverse order</param>
+        /// <typeparam name="T">Element type</typeparam>
+        /// <returns>List in reverse order</returns>
+        public static IEnumerable<T> Reversed<T>(this IList<T> self)
+        {
+            for (int i = self.Count - 1; i >= 0; --i)
+            {
+                yield return self[i];
+            }
+        }
+
+        /// <summary>
         ///     Returns a random element from the list.
         /// </summary>
         /// <param name="self">List to get the random element from</param>
@@ -49,6 +63,25 @@ namespace UltimateXR.Extensions.System.Collections
         public static T RandomElement<T>(this IReadOnlyList<T> self)
         {
             return self.Count > 0 ? self[Random.Range(0, self.Count)] : default;
+        }
+
+        /// <summary>
+        ///     Generates a list of random indices without repetition in a given range.
+        /// </summary>
+        /// <param name="minInclusive">The minimum index value (inclusive)</param>
+        /// <param name="maxExclusive">The maximum value, which will not be included</param>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        public static List<int> GenerateRandomIndicesWithoutRepetition(int minInclusive, int maxExclusive, int count)
+        {
+            List<int> newList = new List<int>();
+
+            for (int i = minInclusive; i < maxExclusive; ++i)
+            {
+                newList.Add(i);
+            }
+
+            return newList.RandomElementsWithoutRepetition(count);
         }
 
         /// <summary>

@@ -46,7 +46,7 @@ namespace UltimateXR.Editor.Sdks
 
             foreach (UxrSdkLocator registeredLocator in s_locators)
             {
-                if (registeredLocator.Name == locator.Name)
+                if (string.Equals(registeredLocator.Name, locator.Name, StringComparison.Ordinal))
                 {
                     locatorAlreadyRegistered = true;
                     break;

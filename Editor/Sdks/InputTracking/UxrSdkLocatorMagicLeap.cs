@@ -15,12 +15,15 @@ namespace UltimateXR.Editor.Sdks
     public sealed class UxrSdkLocatorMagicLeap : UxrSdkLocator
     {
         #region Public Overrides UxrSdkLocator
+
+        /// <inheritdoc />
+        public override SupportType Support => SupportType.InputTracking;
         
         /// <inheritdoc />
         public override string PackageName => "com.magicleap.unitysdk";
 
         /// <inheritdoc />
-        public override string Name => UxrManager.SdkMagicLeap;
+        public override string Name => UxrConstants.SdkMagicLeap;
 
         /// <inheritdoc />
         public override string MinimumUnityVersion => "2022.2";

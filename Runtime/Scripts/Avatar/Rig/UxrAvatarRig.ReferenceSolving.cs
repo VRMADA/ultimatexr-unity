@@ -3,6 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Animation.IK;
@@ -80,7 +81,14 @@ namespace UltimateXR.Avatar.Rig
 
                 if (arm.UpperArm == null)
                 {
-                    arm.UpperArm = GetNextLimbBoneIfOnlyOne(arm.Clavicle, skin);
+                    if (arm.Hand.Wrist != null)
+                    {
+                        arm.UpperArm = GetChildTransformWithNodeUnderHierarchy(arm.Clavicle, arm.Hand.Wrist);
+                    }
+                    else
+                    {
+                        arm.UpperArm = GetNextLimbBoneIfOnlyOne(arm.Clavicle, skin);
+                    }
                 }
             }
 
@@ -94,12 +102,26 @@ namespace UltimateXR.Avatar.Rig
 
                 if (arm.Forearm == null)
                 {
-                    arm.Forearm = GetNextLimbBoneIfOnlyOne(arm.UpperArm, skin);
+                    if (arm.Hand.Wrist != null)
+                    {
+                        arm.UpperArm = GetChildTransformWithNodeUnderHierarchy(arm.UpperArm, arm.Hand.Wrist);
+                    }
+                    else
+                    {
+                        arm.Forearm = GetNextLimbBoneIfOnlyOne(arm.UpperArm, skin);
+                    }
                 }
             }
             else
             {
-                arm.UpperArm = GetNextLimbBoneIfOnlyOne(arm.Clavicle, skin);
+                if (arm.Hand.Wrist != null)
+                {
+                    arm.UpperArm = GetChildTransformWithNodeUnderHierarchy(arm.Clavicle, arm.Hand.Wrist);
+                }
+                else
+                {
+                    arm.UpperArm = GetNextLimbBoneIfOnlyOne(arm.Clavicle, skin);
+                }
             }
 
             if (arm.Forearm != null)
@@ -129,17 +151,17 @@ namespace UltimateXR.Avatar.Rig
 
             if (arm.Forearm == null && arm.Hand.Wrist != null)
             {
-                arm.Forearm = GetPreviousLimbBoneIfOnlyChild(arm.Hand.Wrist, skin);
+                arm.Forearm = GetPreviousLimbBone(arm.Hand.Wrist, skin);
             }
 
             if (arm.UpperArm == null && arm.Forearm != null)
             {
-                arm.UpperArm = GetPreviousLimbBoneIfOnlyChild(arm.Forearm, skin);
+                arm.UpperArm = GetPreviousLimbBone(arm.Forearm, skin);
             }
 
             if (arm.Clavicle == null && arm.UpperArm != null)
             {
-                arm.Clavicle = GetPreviousLimbBoneIfOnlyChild(arm.UpperArm, skin);
+                arm.Clavicle = GetPreviousLimbBone(arm.UpperArm, skin);
             }
 
             if (arm.UpperArm != null && arm.Hand.Wrist != null && arm.Hand.Wrist.parent != null && arm.Hand.Wrist.parent.parent == arm.UpperArm)
@@ -264,7 +286,7 @@ namespace UltimateXR.Avatar.Rig
             {
                 return;
             }
-            
+
             // Head
 
             if (rig.Head.Neck == null)
@@ -395,7 +417,7 @@ namespace UltimateXR.Avatar.Rig
             {
                 rig.RightArm.Hand.Wrist = TryToResolveBoneUniqueAnd(skins, "wrist", "r");
             }
-                
+
             // Try to resolve arms using topology
 
             foreach (SkinnedMeshRenderer skin in skins)
@@ -535,7 +557,7 @@ namespace UltimateXR.Avatar.Rig
             {
                 rig.RightLeg.Toes = TryToResolveBoneUniqueAnd(skins, "toe", "r");
             }
-            
+
             // Hips/pelvis
 
             if (rig.Hips == null)
@@ -580,7 +602,7 @@ namespace UltimateXR.Avatar.Rig
             {
                 rig._spine = TryToResolveBoneUniqueOr(skins, "spine");
             }
-            
+
             // Try to find wrist torsion elements
 
             foreach (UxrAvatarArm arm in rig.GetArms())
@@ -593,7 +615,7 @@ namespace UltimateXR.Avatar.Rig
                     {
                         List<Transform> forearmChildren = new List<Transform>();
                         arm.Forearm.GetAllChildren(ref forearmChildren);
-                        
+
                         // Find nodes that can potentially be for progressive forearm twist 
 
                         IEnumerable<Transform> torsionNodes = forearmChildren.Where(t => !t.HasParent(arm.Hand.Wrist) && t.name.ToLower().Contains("torsion"));
@@ -602,7 +624,7 @@ namespace UltimateXR.Avatar.Rig
                         {
                             torsionNodes = forearmChildren.Where(t => !t.HasParent(arm.Hand.Wrist) && t.name.ToLower().Contains("twist"));
                         }
-                        
+
                         // Create components and assign torsion amount to found nodes. Be careful to distinguish between nodes hanging from the same
                         // parent and nodes in a hierarchy because the torsion amount will be inherited.
 
@@ -1096,7 +1118,7 @@ namespace UltimateXR.Avatar.Rig
                     {
                         distalCandidate = distalCandidate.parent;
                     }
-                    
+
                     if (distalCandidate != fingerRootCandidate)
                     {
                         if (distalCandidate.parent != fingerRootCandidate && distalCandidate.parent != null)
@@ -1125,6 +1147,30 @@ namespace UltimateXR.Avatar.Rig
         }
 
         /// <summary>
+        ///     Gets the child from a bone that has a given node somewhere down in the hierarchy.
+        /// </summary>
+        /// <param name="bone">The bone where the search will start</param>
+        /// <param name="node">The node that the child should have down in the hierarchy</param>
+        /// <returns>Child if it meets the requirements or null if not</returns>
+        private static Transform GetChildTransformWithNodeUnderHierarchy(Transform bone, Transform node)
+        {
+            if (bone != null)
+            {
+                for (int i = 0; i < bone.childCount; ++i)
+                {
+                    Transform child = bone.GetChild(i);
+
+                    if (child != node && child.HasChild(node))
+                    {
+                        return child;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
         ///     Gets the next bone in a hierarchical chain of bones.
         /// </summary>
         /// <param name="bone">The bone where the search will start</param>
@@ -1132,7 +1178,7 @@ namespace UltimateXR.Avatar.Rig
         /// <param name="lastInChain">
         ///     If true, the search will look for a bone next to the specified one that
         ///     has no other child bones part of the skin. If false, the search will look for a bone next to
-        ///     the specified one that has another child bone -ond only one- part of the skin.
+        ///     the specified one that has another child bone -and only one- part of the skin.
         /// </param>
         /// <returns>Bone if it meets the requirements or null if not</returns>
         private static Transform GetNextLimbBoneIfOnlyOne(Transform bone, SkinnedMeshRenderer skin, bool lastInChain = false)
@@ -1178,7 +1224,7 @@ namespace UltimateXR.Avatar.Rig
                 {
                     return bone.GetChild(childBoneIndex);
                 }
-                
+
                 // Try another approach. Look for non-skinned bones.
 
                 if (bone.childCount == 1)
@@ -1199,33 +1245,16 @@ namespace UltimateXR.Avatar.Rig
         }
 
         /// <summary>
-        ///     Gets the parent of a bone in the hierarchy if it is also part of the bones in a skin and if the bone is the
-        ///     parent's only child bone.
+        ///     Gets the parent of a bone in the hierarchy if it is also part of the bones in a skin.
         /// </summary>
         /// <param name="bone">Bone to get the parent from</param>
         /// <param name="skin">Skin where the bones are</param>
         /// <returns>Gets the parent of the bone if it meets the requirements or null if not</returns>
-        private static Transform GetPreviousLimbBoneIfOnlyChild(Transform bone, SkinnedMeshRenderer skin)
+        private static Transform GetPreviousLimbBone(Transform bone, SkinnedMeshRenderer skin)
         {
-            if (bone != null)
+            if (bone != null && bone.parent != null && IsBoneInList(skin, bone.parent))
             {
-                if (bone.parent != null && IsBoneInList(skin, bone.parent))
-                {
-                    int childBones = 0;
-
-                    for (int i = 0; i < bone.parent.childCount; ++i)
-                    {
-                        if (IsBoneInList(skin, bone.parent.GetChild(i)) || bone.parent.GetChild(i) == bone)
-                        {
-                            childBones++;
-                        }
-                    }
-
-                    if (childBones == 1)
-                    {
-                        return bone.parent;
-                    }
-                }
+                return bone.parent;
             }
 
             return null;
@@ -1269,7 +1298,7 @@ namespace UltimateXR.Avatar.Rig
         /// <returns>Whether the bone was found in the skin</returns>
         private static bool IsBoneInList(SkinnedMeshRenderer skin, Transform transformToCheck)
         {
-            if (transformToCheck.name.Contains("ignore", System.StringComparison.OrdinalIgnoreCase))
+            if (transformToCheck.name.Contains("ignore", StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }

@@ -5,7 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System;
 
-namespace UltimateXR.Editor.Sdks
+namespace UltimateXR.Editor.Sdks.InputTracking
 {
     public static partial class SteamVRActionsExporter
     {

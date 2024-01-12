@@ -7,6 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using UltimateXR.Core.Components;
+using UltimateXR.Core.Settings;
 using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.System.Threading;
 using UnityEngine;
@@ -136,11 +137,19 @@ namespace UltimateXR.Core.Threading
             {
                 s_instance = this;
                 DontDestroyOnLoad(gameObject);
-                Debug.Log($"[{nameof(UxrMonoDispatcher)}] singleton successfully initialized on Awake", this);
+
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Relevant)
+                {
+                    Debug.Log($"{UxrConstants.CoreModule} {nameof(UxrMonoDispatcher)} singleton successfully initialized on Awake", this);
+                }
             }
             else if (!ReferenceEquals(s_instance, this))
             {
-                Debug.LogWarning($"[{nameof(UxrMonoDispatcher)}] singleton already initialized. Destroying secondary instance on Awake", this);
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.CoreModule} {nameof(UxrMonoDispatcher)} singleton already initialized. Destroying secondary instance on Awake", this);
+                }
+                
                 Destroy(this);
             }
         }

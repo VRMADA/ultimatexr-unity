@@ -27,23 +27,40 @@ namespace UltimateXR.Editor
         /// <param name="progressUpdater">
         ///     Will receive updates of the process so that the information can be fed to a Unity progress bar
         /// </param>
-        public static void ProcessAllScriptableObjects<T>(string basePath, UxrScriptableObjectProcessor<T> scriptableObjectProcessor, UxrProgressUpdater progressUpdater) where T : ScriptableObject
+        /// <param name="canceled">Returns whether the user canceled the operation using the progress updater</param>
+        /// <param name="ignoreUltimateXRAssets">Whether to ignore assets in UltimateXR folders</param>
+        public static void ProcessAllScriptableObjects<T>(string                          basePath,
+                                                          UxrScriptableObjectProcessor<T> scriptableObjectProcessor,
+                                                          UxrProgressUpdater              progressUpdater,
+                                                          out bool                        canceled,
+                                                          bool                            ignoreUltimateXRAssets) where T : ScriptableObject
         {
             // Get all asset files and process them
 
             string[] allAssetPaths = AssetDatabase.GetAllAssetPaths();
 
+            canceled = false;
+
             for (int i = 0; i < allAssetPaths.Length; ++i)
             {
                 string assetPath = allAssetPaths[i];
 
-                if (AssetDatabase.GetMainAssetTypeAtPath(assetPath) == typeof(T) && PathRequiresProcessing(basePath, assetPath))
+                if (AssetDatabase.GetMainAssetTypeAtPath(assetPath) == typeof(T) && PathRequiresProcessing(basePath, assetPath, ignoreUltimateXRAssets))
                 {
                     T assetObject = AssetDatabase.LoadAssetAtPath<T>(assetPath);
 
                     if (assetObject)
                     {
-                        progressUpdater?.Invoke(new UxrProgressInfo($"Processing {typeof(T).Name} assets", $"Asset {assetObject.name}", (float)i / allAssetPaths.Length));
+                        if (progressUpdater != null)
+                        {
+                            canceled = progressUpdater.Invoke(new UxrProgressInfo($"Processing {typeof(T).Name} assets", $"Asset {assetObject.name}", (float)i / allAssetPaths.Length));
+
+                            if (canceled)
+                            {
+                                return;
+                            }
+                        }
+
                         scriptableObjectProcessor?.Invoke(assetObject);
                     }
                 }

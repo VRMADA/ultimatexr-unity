@@ -3,7 +3,9 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Core;
 using UltimateXR.Core.Components;
+using UltimateXR.Core.Settings;
 using UltimateXR.UI.UnityInputModule.Controls;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -43,11 +45,17 @@ namespace UltimateXR.UI.UnityInputModule.Utils
 
             if (_useFillImage && _image == null)
             {
-                Debug.LogWarning($"UseFillImage was specified on {GetType().Name} component of GameObject {name} but there is no Image component on it to update fill.");
+                if (UxrGlobalSettings.Instance.LogLevelUI >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.UiModule} UseFillImage was specified on {GetType().Name} component of GameObject {name} but there is no Image component on it to update fill.");
+                }
             }
             else if (_useFillImage && _image != null && _image.type != Image.Type.Filled)
             {
-                Debug.LogWarning($"UseFillImage was specified on {GetType().Name} component of GameObject {name} but the Image component is not of a filled type (Image Type property).");
+                if (UxrGlobalSettings.Instance.LogLevelUI >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.UiModule} UseFillImage was specified on {GetType().Name} component of GameObject {name} but the Image component is not of a filled type (Image Type property).");
+                }
             }
         }
 

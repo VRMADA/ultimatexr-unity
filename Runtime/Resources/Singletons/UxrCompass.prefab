@@ -392,6 +392,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efeafa86beca1214bb2174751a2d64a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 06c56176a4a86c537b43e0f0fb39b6eb
+  __prefabGuid: ea120ce8edf3ea147919eff604dd8f38
+  __isInPrefab: 1
   _distanceToCamera: 1
   _focusedObjectTarget: {fileID: 0}
   _compassArrowPivot: {fileID: 3403222859682713987}
@@ -484,6 +487,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ac1f3fc45c4bd145acc5e43c81e68a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 2543fba8-82c8-4d08-bb5d-f084e7c33b34
+  __prefabGuid: ea120ce8edf3ea147919eff604dd8f38
+  __isInPrefab: 1
   _allowRotateAroundY: 1
   _allowRotateAroundX: 0
   _invertedForwardAxis: 1
@@ -584,6 +590,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ac1f3fc45c4bd145acc5e43c81e68a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 8c765f0b-45b5-4171-a729-6a5587e66a43
+  __prefabGuid: ea120ce8edf3ea147919eff604dd8f38
+  __isInPrefab: 1
   _allowRotateAroundY: 1
   _allowRotateAroundX: 1
   _invertedForwardAxis: 1
@@ -716,6 +725,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ac1f3fc45c4bd145acc5e43c81e68a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: c547e653-be25-492e-9f68-4e4d228dbb1b
+  __prefabGuid: ea120ce8edf3ea147919eff604dd8f38
+  __isInPrefab: 1
   _allowRotateAroundY: 1
   _allowRotateAroundX: 1
   _invertedForwardAxis: 1
@@ -848,6 +860,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ac1f3fc45c4bd145acc5e43c81e68a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 17911747-318f-4d29-97b5-2c63089817c9
+  __prefabGuid: ea120ce8edf3ea147919eff604dd8f38
+  __isInPrefab: 1
   _allowRotateAroundY: 1
   _allowRotateAroundX: 1
   _invertedForwardAxis: 1

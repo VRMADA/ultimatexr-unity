@@ -217,6 +217,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 156df0def5d48a3489e870c7fb9a1243, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: d36b76a2-aa32-427e-8404-bbaa6328ff7b
+  __prefabGuid: a177e9aa58dec8c4bbf93e28c848e454
+  __isInPrefab: 1
   _controllerInput: {fileID: 0}
   _hand: 0
   _target: 0

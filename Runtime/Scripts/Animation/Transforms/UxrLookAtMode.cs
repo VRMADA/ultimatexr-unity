@@ -23,6 +23,6 @@ namespace UltimateXR.Animation.Transforms
         /// <summary>
         ///     Use a direction in world-space coordinates.
         /// </summary>
-        WorldDirection
+        MatchWorldDirection
     }
 }

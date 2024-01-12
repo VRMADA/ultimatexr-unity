@@ -5,6 +5,8 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System;
 using UltimateXR.Animation.Interpolation;
+using UltimateXR.Core;
+using UltimateXR.Core.Settings;
 using UltimateXR.Extensions.Unity;
 using UnityEngine;
 
@@ -495,7 +497,11 @@ namespace UltimateXR.Animation.Materials
                 }
             }
 
-            Debug.LogWarning($"Material slot {_materialSlot} for {this.GetPathUnderScene()} is not valid");
+            if (UxrGlobalSettings.Instance.LogLevelAnimation >= UxrLogLevel.Warnings)
+            {
+                Debug.LogWarning($"{UxrConstants.AnimationModule} Material slot {_materialSlot} for {this.GetPathUnderScene()} is not valid");
+            }
+            
             return Vector4.zero;
         }
 
@@ -641,7 +647,10 @@ namespace UltimateXR.Animation.Materials
                 }
             }
 
-            Debug.LogWarning("Material slot " + _materialSlot + " for object " + name + " is not valid");
+            if (UxrGlobalSettings.Instance.LogLevelAnimation >= UxrLogLevel.Warnings)
+            {
+                Debug.LogWarning($"{UxrConstants.AnimationModule} Material slot " + _materialSlot + " for object " + name + " is not valid");
+            }
         }
 
         #endregion

@@ -68,6 +68,8 @@ namespace UltimateXR.Editor.Core.Math
             {
                 propertyAxis.intValue = EditorGUI.Popup(UxrEditorUtils.GetRect(position, 0), label, propertyAxis.intValue, UxrEditorUtils.ToGUIContentArray(AxesAsStrings));
             }
+
+            EditorGUI.EndProperty();
         }
 
         #endregion

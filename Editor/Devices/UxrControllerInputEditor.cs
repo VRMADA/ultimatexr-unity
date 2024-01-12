@@ -34,7 +34,7 @@ namespace UltimateXR.Editor.Devices
 
                     if (UxrEditorUtils.CenteredButton(new GUIContent("Check", "Go to the SDK Manager to check the SDK")))
                     {
-                        UxrSdkManagerWindow.ShowWindow();
+                        UxrSdkManagerWindow.ShowWindow(UxrSdkLocator.SupportType.InputTracking);
                     }
 
                     EditorGUILayout.Space();

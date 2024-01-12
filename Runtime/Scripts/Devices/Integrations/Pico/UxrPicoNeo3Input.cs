@@ -18,7 +18,7 @@ namespace UltimateXR.Devices.Integrations.Pico
         /// <summary>
         ///     Gets the SDK dependency: PicoXR.
         /// </summary>
-        public override string SDKDependency => UxrManager.SdkPicoXR;
+        public override string SDKDependency => UxrConstants.SdkPicoXR;
 
         /// <inheritdoc />
         public override UxrControllerSetupType SetupType => UxrControllerSetupType.Dual;
@@ -57,6 +57,8 @@ namespace UltimateXR.Devices.Integrations.Pico
                 yield return "PicoXR Controller-Right";
                 yield return "PICO Controller-Left";
                 yield return "PICO Controller-Right";
+                yield return "PICO Live Preview Controller-Left";
+                yield return "PICO Live Preview Controller-Right";
             }
         }
 

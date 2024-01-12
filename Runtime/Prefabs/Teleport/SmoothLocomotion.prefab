@@ -44,6 +44,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2b87341763ed1447b56652023d58f90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: e933c528-667a-4cbd-aab0-04baf7ae5d5c
+  __prefabGuid: 2458bdaebec80ef4d83b1168d9be46c1
+  __isInPrefab: 1
+  _parentToDestination: 0
   _metersPerSecondNormal: 2
   _metersPerSecondSprint: 4
   _walkDirection: 0
@@ -52,6 +56,7 @@ MonoBehaviour:
   _gravity: -9.81
   _sprintButtonHand: 0
   _sprintButton: 1
+  _triggerCollidersInteraction: 1
   _collisionLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295

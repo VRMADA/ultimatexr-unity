@@ -4,17 +4,31 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System;
+using UltimateXR.Core.Serialization;
 
 namespace UltimateXR.Core.StateSync
 {
     /// <summary>
     ///     <para>
-    ///         Interface for entities that are able to expose internal state changes described by a
-    ///         <see cref="UxrStateSyncEventArgs" /> raised through a <see cref="StateChanged" /> event.
-    ///         To support the synchronization, classes that implement this interface are also able to reproduce
-    ///         state changes using <see cref="SyncState" />.
+    ///         Interface for classes whose state can be synchronized, enabling them to be used in networking environments or
+    ///         saved to disk.<br />
+    ///         They have 2 main features:
+    ///         <list type="bullet">
+    ///             <item>
+    ///                 They expose relevant internal state changes through a <see cref="StateChanged" /> event. The state
+    ///                 change is described by a <see cref="UxrSyncEventArgs" /> object. Each <see cref="UxrSyncEventArgs" />
+    ///                 can be reproduced back using the <see cref="SyncState" /> method. This architecture can be used to
+    ///                 listen for changes and reproduce them on the other clients, since <see cref="UxrSyncEventArgs" />
+    ///                 objects can be serialized.
+    ///             </item>
+    ///             <item>
+    ///                 They can load and save their complete state using <see cref="SerializeGlobalState" />. This can be used
+    ///                 to synchronize the current state of a scene when a user joins an existing multi-user session. It also
+    ///                 allows to save the state of a scene to disk, enabling the creation of save-state functionality or
+    ///                 replays.
+    ///             </item>
+    ///         </list>
     ///     </para>
-    ///     This interface should be implemented in entities relevant in network synchronization.
     /// </summary>
     public interface IUxrStateSync
     {
@@ -23,7 +37,13 @@ namespace UltimateXR.Core.StateSync
         /// <summary>
         ///     Event raised when a relevant state of an object changed and requires storage/synchronization.
         /// </summary>
-        event EventHandler<UxrStateSyncEventArgs> StateChanged;
+        event EventHandler<UxrSyncEventArgs> StateChanged;
+
+        /// <summary>
+        ///     Gets the name of the entity.
+        /// </summary>
+        /// <returns>Name of the entity</returns>
+        public string SyncTargetName { get; }
 
         #endregion
 
@@ -33,8 +53,13 @@ namespace UltimateXR.Core.StateSync
         ///     Executes the state change described by <see cref="e" />.
         /// </summary>
         /// <param name="e">State change information</param>
-        /// <param name="propagateEvents">Whether the event should propagate other internal events</param>
-        void SyncState(UxrStateSyncEventArgs e, bool propagateEvents);
+        void SyncState(UxrSyncEventArgs e);
+
+        /// <summary>
+        ///     Serializes or deserializes the current global object state.
+        /// </summary>
+        /// <param name="serializer">Serializer to use</param>
+        void SerializeGlobalState(IUxrSerializer serializer);
 
         #endregion
     }

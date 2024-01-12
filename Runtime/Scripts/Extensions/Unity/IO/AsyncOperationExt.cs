@@ -25,7 +25,7 @@ namespace UltimateXR.Extensions.Unity.IO
         /// <returns>Awaitable <see cref="Task" /> returning the caller <see cref="AsyncOperation" /> object</returns>
         public static async Task<AsyncOperation> Wait(this AsyncOperation self, CancellationToken ct = default)
         {
-            await TaskExt.WaitUntil(() => self.isDone, ct).ConfigureAwait(false);
+            await TaskExt.WaitUntil(() => self.isDone, ct);
             return self;
         }
 

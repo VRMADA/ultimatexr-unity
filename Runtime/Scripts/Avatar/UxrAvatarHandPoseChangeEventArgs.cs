@@ -3,6 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System;
 using UltimateXR.Core;
 using UltimateXR.Manipulation.HandPoses;
 
@@ -11,7 +12,7 @@ namespace UltimateXR.Avatar
     /// <summary>
     ///     Event args for a hand pose change in an <see cref="UxrAvatar" />.
     /// </summary>
-    public class UxrAvatarHandPoseChangeEventArgs : UxrAvatarEventArgs
+    public class UxrAvatarHandPoseChangeEventArgs : EventArgs
     {
         #region Public Types & Data
 
@@ -37,14 +38,12 @@ namespace UltimateXR.Avatar
         /// <summary>
         ///     Constructor.
         /// </summary>
-        /// <param name="avatar">The avatar</param>
         /// <param name="handSide">Which hand the event belongs to</param>
         /// <param name="poseName">Name of the pose to change to</param>
         /// <param name="blendValue">New blend value</param>
-        public UxrAvatarHandPoseChangeEventArgs(UxrAvatar   avatar,
-                                                UxrHandSide handSide,
+        public UxrAvatarHandPoseChangeEventArgs(UxrHandSide handSide,
                                                 string      poseName   = "",
-                                                float       blendValue = 0.0f) : base(avatar)
+                                                float       blendValue = 0.0f)
         {
             HandSide   = handSide;
             PoseName   = poseName;
@@ -58,7 +57,7 @@ namespace UltimateXR.Avatar
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"Event: Hand={HandSide}, PoseName={PoseName}, BlendValue={BlendValue}";
+            return $"Hand pose changed (Hand={HandSide}, PoseName={PoseName}, BlendValue={BlendValue})";
         }
 
         #endregion

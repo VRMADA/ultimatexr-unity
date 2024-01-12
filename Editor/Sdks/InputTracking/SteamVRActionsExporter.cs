@@ -8,15 +8,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UltimateXR.Core;
+using UltimateXR.Core.Settings;
 using UltimateXR.Devices;
 using UltimateXR.Devices.Integrations.SteamVR;
+using UltimateXR.Extensions.System.IO;
 using UnityEditor;
 using UnityEngine;
-using Valve.VR;
 using Valve.Newtonsoft.Json;
+using Valve.VR;
 #endif
 
-namespace UltimateXR.Editor.Sdks
+namespace UltimateXR.Editor.Sdks.InputTracking
 {
 #if ULTIMATEXR_USE_STEAMVR_SDK
     /// <summary>
@@ -92,7 +95,7 @@ namespace UltimateXR.Editor.Sdks
                     {
                         actionSet = new SteamVR_Input_ActionFile_ActionSet
                                     {
-                                                name  = ActionSetName,
+                                                name = ActionSetName,
                                                 usage = SteamVR_Input_ActionFile_ActionSet_Usages.single
                                     };
 
@@ -105,7 +108,7 @@ namespace UltimateXR.Editor.Sdks
 
                     // Clear list and add actions. This will remove deprecated actions in the future.
 
-                    actionSet.actionsInList  = new List<SteamVR_Input_ActionFile_Action>();
+                    actionSet.actionsInList = new List<SteamVR_Input_ActionFile_Action>();
                     actionSet.actionsOutList = new List<SteamVR_Input_ActionFile_Action>();
 
                     foreach (SteamVR_Input_ActionFile_Action action in EnumerateCustomActionsToBeAdded(actionSet))
@@ -123,7 +126,10 @@ namespace UltimateXR.Editor.Sdks
                         }
                         else
                         {
-                            Debug.LogWarning($"Warning. Action {action.name} already exists. Skipping...");
+                            if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Warnings)
+                            {
+                                Debug.LogWarning($"{UxrConstants.DevicesModule}: Warning. Action {action.name} already exists. Skipping...");
+                            }
                         }
                     }
 
@@ -285,8 +291,8 @@ namespace UltimateXR.Editor.Sdks
         {
             SteamVR_Input_ActionFile_Action action = new SteamVR_Input_ActionFile_Action
                                                      {
-                                                                 name        = SteamVR_Input_ActionFile_Action.CreateNewName(actionSet.shortName, direction, actionName.ToLower()) + "_" + varType,
-                                                                 type        = varType,
+                                                                 name = SteamVR_Input_ActionFile_Action.CreateNewName(actionSet.shortName, direction, actionName.ToLower()) + "_" + varType,
+                                                                 type = varType,
                                                                  requirement = SteamVR_Input_ActionFile_Action_Requirements.optional.ToString()
                                                      };
 
@@ -326,9 +332,9 @@ namespace UltimateXR.Editor.Sdks
         {
             SteamVR_Input_ActionFile_Action action = new SteamVR_Input_ActionFile_Action
                                                      {
-                                                                 name        = SteamVR_Input_ActionFile_Action.CreateNewName(actionSet.shortName, SteamVR_ActionDirections.In, actionName),
-                                                                 type        = SteamVR_Input_ActionFile_ActionTypes.skeleton,
-                                                                 skeleton    = SteamVR_Input_ActionFile_ActionTypes.listSkeletons[isLeft ? 0 : 1].Replace("\\", "/"),
+                                                                 name = SteamVR_Input_ActionFile_Action.CreateNewName(actionSet.shortName, SteamVR_ActionDirections.In, actionName),
+                                                                 type = SteamVR_Input_ActionFile_ActionTypes.skeleton,
+                                                                 skeleton = SteamVR_Input_ActionFile_ActionTypes.listSkeletons[isLeft ? 0 : 1].Replace("\\", "/"),
                                                                  requirement = SteamVR_Input_ActionFile_Action_Requirements.optional.ToString()
                                                      };
 
@@ -365,7 +371,7 @@ namespace UltimateXR.Editor.Sdks
             {
                 // Compose full path
 
-                string bindingsFilePath = Path.Combine(SteamVR_Input.GetActionsFileFolder(), binding.binding_url);
+                string bindingsFilePath = PathExt.Combine(SteamVR_Input.GetActionsFileFolder(), binding.binding_url);
 
                 if (File.Exists(bindingsFilePath))
                 {
@@ -432,7 +438,10 @@ namespace UltimateXR.Editor.Sdks
                     }
                     catch (Exception e)
                     {
-                        Debug.LogError($"Error creating custom bindings to {nameof(SteamVR_Input_BindingFile)} in {bindingsFilePath} : {e.Message}, {e.StackTrace}");
+                        if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Errors)
+                        {
+                            Debug.LogError($"{UxrConstants.DevicesModule}: Error creating custom bindings to {nameof(SteamVR_Input_BindingFile)} in {bindingsFilePath} : {e.Message}, {e.StackTrace}");
+                        }
                     }
                 }
             }
@@ -659,13 +668,13 @@ namespace UltimateXR.Editor.Sdks
             actionList.skeleton.Add(new SteamVR_Input_BindingFile_Skeleton
                                     {
                                                 output = $"/actions/{UxrSteamVRConstants.ActionSetName}/in/{UxrSteamVRConstants.ActionNameHandSkeletonLeft}",
-                                                path   = BindingSkeletonPathLeft
+                                                path = BindingSkeletonPathLeft
                                     });
 
             actionList.skeleton.Add(new SteamVR_Input_BindingFile_Skeleton
                                     {
                                                 output = $"/actions/{UxrSteamVRConstants.ActionSetName}/in/{UxrSteamVRConstants.ActionNameHandSkeletonRight}",
-                                                path   = BindingSkeletonPathRight
+                                                path = BindingSkeletonPathRight
                                     });
         }
 
@@ -678,13 +687,13 @@ namespace UltimateXR.Editor.Sdks
             actionList.haptics.Add(new SteamVR_Input_BindingFile_Haptic
                                    {
                                                output = $"/actions/{UxrSteamVRConstants.ActionSetName}/out/{UxrSteamVRConstants.ActionNameHandHaptics}",
-                                               path   = BindingHapticsPathLeft
+                                               path = BindingHapticsPathLeft
                                    });
 
             actionList.haptics.Add(new SteamVR_Input_BindingFile_Haptic
                                    {
                                                output = $"/actions/{UxrSteamVRConstants.ActionSetName}/out/{UxrSteamVRConstants.ActionNameHandHaptics}",
-                                               path   = BindingHapticsPathRight
+                                               path = BindingHapticsPathRight
                                    });
         }
 
@@ -807,24 +816,24 @@ namespace UltimateXR.Editor.Sdks
 
         #region Private Types & Data
 
-        private const string ActionSetName                            = "/actions/" + UxrSteamVRConstants.ActionSetName;
-        private const string BindingModeButton                        = "button";
-        private const string BindingModeTrigger                       = "trigger";
-        private const string BindingModeTrackpad                      = "trackpad";
-        private const string BindingModeJoystick                      = "joystick";
-        private const string BindingInputPull                         = "pull";
-        private const string BindingInputPosition                     = "position";
-        private const string BindingLeft                              = "left";
-        private const string BindingRight                             = "right";
-        private const string BindingOutput                            = "output";
-        private const string BindingSkeletonPathLeft                  = "/user/hand/left/input/skeleton/left";
-        private const string BindingSkeletonPathRight                 = "/user/hand/right/input/skeleton/right";
-        private const string BindingHapticsPathLeft                   = "/user/hand/left/output/haptic";
-        private const string BindingHapticsPathRight                  = "/user/hand/right/output/haptic";
-        private const string BindingControllerTypeOculusTouch         = "oculus_touch";
-        private const string BindingControllerTypeHtcVive             = "vive_controller";
-        private const string BindingControllerTypeHtcViveCosmos       = "vive_cosmos_controller";
-        private const string BindingControllerTypeValveKnuckles       = "knuckles";
+        private const string ActionSetName = "/actions/" + UxrSteamVRConstants.ActionSetName;
+        private const string BindingModeButton = "button";
+        private const string BindingModeTrigger = "trigger";
+        private const string BindingModeTrackpad = "trackpad";
+        private const string BindingModeJoystick = "joystick";
+        private const string BindingInputPull = "pull";
+        private const string BindingInputPosition = "position";
+        private const string BindingLeft = "left";
+        private const string BindingRight = "right";
+        private const string BindingOutput = "output";
+        private const string BindingSkeletonPathLeft = "/user/hand/left/input/skeleton/left";
+        private const string BindingSkeletonPathRight = "/user/hand/right/input/skeleton/right";
+        private const string BindingHapticsPathLeft = "/user/hand/left/output/haptic";
+        private const string BindingHapticsPathRight = "/user/hand/right/output/haptic";
+        private const string BindingControllerTypeOculusTouch = "oculus_touch";
+        private const string BindingControllerTypeHtcVive = "vive_controller";
+        private const string BindingControllerTypeHtcViveCosmos = "vive_cosmos_controller";
+        private const string BindingControllerTypeValveKnuckles = "knuckles";
         private const string BindingControllerTypeWindowsMixedReality = "holographic_controller";
 
         #endregion

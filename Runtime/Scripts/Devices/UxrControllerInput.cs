@@ -11,6 +11,7 @@ using UltimateXR.Animation.GameObjects;
 using UltimateXR.Avatar;
 using UltimateXR.Core;
 using UltimateXR.Core.Components.Composite;
+using UltimateXR.Core.Settings;
 using UltimateXR.Devices.Integrations;
 using UltimateXR.Devices.Visualization;
 using UltimateXR.Extensions.System;
@@ -87,11 +88,6 @@ namespace UltimateXR.Devices
                 return EnabledComponentsInLocalAvatar.FirstOrDefault(i => i.GetType() != typeof(UxrDummyControllerInput));
             }
         }
-
-        /// <summary>
-        ///     Gets or sets the current log level. This controls the amount of information sent.
-        /// </summary>
-        public static UxrLogLevel LogLevel { get; set; } = UxrLogLevel.Relevant;
 
         #endregion
 
@@ -430,12 +426,12 @@ namespace UltimateXR.Devices
                                                 float              durationSeconds = -1.0f,
                                                 UxrHapticMode      hapticMode      = UxrHapticMode.Mix)
         {
-            if (UxrGrabManager.Instance.IsHandGrabbing(UxrAvatar.LocalAvatar, grabbableObject, UxrHandSide.Left))
+            if (UxrGrabManager.Instance.IsHandGrabbing(UxrAvatar.LocalAvatar, grabbableObject, UxrHandSide.Left, true))
             {
                 SendHapticFeedback(UxrHandSide.Left, clipType, amplitude, durationSeconds, hapticMode);
             }
 
-            if (UxrGrabManager.Instance.IsHandGrabbing(UxrAvatar.LocalAvatar, grabbableObject, UxrHandSide.Right))
+            if (UxrGrabManager.Instance.IsHandGrabbing(UxrAvatar.LocalAvatar, grabbableObject, UxrHandSide.Right, true))
             {
                 SendHapticFeedback(UxrHandSide.Right, clipType, amplitude, durationSeconds, hapticMode);
             }
@@ -444,12 +440,12 @@ namespace UltimateXR.Devices
         /// <inheritdoc />
         public void SendGrabbableHapticFeedback(UxrGrabbableObject grabbableObject, UxrHapticClip hapticClip)
         {
-            if (UxrGrabManager.Instance.IsHandGrabbing(UxrAvatar.LocalAvatar, grabbableObject, UxrHandSide.Left))
+            if (UxrGrabManager.Instance.IsHandGrabbing(UxrAvatar.LocalAvatar, grabbableObject, UxrHandSide.Left, true))
             {
                 SendHapticFeedback(UxrHandSide.Left, hapticClip);
             }
 
-            if (UxrGrabManager.Instance.IsHandGrabbing(UxrAvatar.LocalAvatar, grabbableObject, UxrHandSide.Right))
+            if (UxrGrabManager.Instance.IsHandGrabbing(UxrAvatar.LocalAvatar, grabbableObject, UxrHandSide.Right, true))
             {
                 SendHapticFeedback(UxrHandSide.Right, hapticClip);
             }
@@ -832,23 +828,26 @@ namespace UltimateXR.Devices
         {
             base.Awake();
 
-            if (SetupType == UxrControllerSetupType.Single)
+            if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Errors)
             {
-                if (_controller != null && _controller.gameObject.IsPrefab())
+                if (SetupType == UxrControllerSetupType.Single)
                 {
-                    Debug.LogError($"The controller in the {GetType().Name} component needs to be instantiated in the avatar. It cannot be an asset.");
+                    if (_controller != null && _controller.IsInPrefab() && UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Errors)
+                    {
+                        Debug.LogError($"{UxrConstants.DevicesModule}: The controller in the {GetType().Name} component needs to be instantiated in the avatar. It cannot be an asset.");
+                    }
                 }
-            }
-            else if (SetupType == UxrControllerSetupType.Dual)
-            {
-                if (_leftController != null && _leftController.gameObject.IsPrefab())
+                else if (SetupType == UxrControllerSetupType.Dual)
                 {
-                    Debug.LogError($"The left controller in the {GetType().Name} component needs to be instantiated in the avatar. It cannot be an asset.");
-                }
+                    if (_leftController != null && _leftController.IsInPrefab() && UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Errors)
+                    {
+                        Debug.LogError($"{UxrConstants.DevicesModule}: The left controller in the {GetType().Name} component needs to be instantiated in the avatar. It cannot be an asset.");
+                    }
 
-                if (_rightController != null && _rightController.gameObject.IsPrefab())
-                {
-                    Debug.LogError($"The right controller in the {GetType().Name} component needs to be instantiated in the avatar. It cannot be an asset.");
+                    if (_rightController != null && _rightController.IsInPrefab() && UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Errors)
+                    {
+                        Debug.LogError($"{UxrConstants.DevicesModule}: The right controller in the {GetType().Name} component needs to be instantiated in the avatar. It cannot be an asset.");
+                    }
                 }
             }
 

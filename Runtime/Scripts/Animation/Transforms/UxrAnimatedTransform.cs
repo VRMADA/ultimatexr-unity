@@ -695,7 +695,7 @@ namespace UltimateXR.Animation.Transforms
 
         #region Private Types & Data
 
-        private bool       _useEuler;
+        private bool       _useEuler = true;
         private Quaternion _quaternionStart;
         private Quaternion _quaternionEnd;
         private float      _scaleTimer;

@@ -45,6 +45,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2285bc0022316448ac5c40fd488b38a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 30979347-1eb0-42d4-8f32-1e9c4cd9d6c2
+  __prefabGuid: 288a93c0145c91e42b6c0eaf63f1705c
+  __isInPrefab: 1
   _needsBothHands: 0
   _handSide: 0
   _controllerHand: {fileID: 0}

@@ -96,6 +96,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: c7ddc23f-5dbc-465b-8162-e8d06d80487a
+  __prefabGuid: d540321f70784984ca5c086707cf71ff
+  __isInPrefab: 1
   _translationMode: 0
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}
@@ -5140,6 +5143,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 40cc657b-f9dd-4db1-9cae-27087c0910a1
+  __prefabGuid: d540321f70784984ca5c086707cf71ff
+  __isInPrefab: 1
   _translationMode: 0
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}
@@ -5360,6 +5366,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: f00653df-3a3a-462c-84a4-e243cff52c92
+  __prefabGuid: d540321f70784984ca5c086707cf71ff
+  __isInPrefab: 1
   _translationMode: 0
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}
@@ -10272,6 +10281,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7a14046e346a1a4a80bc53b1c296bb0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 77bd9c25-f5eb-4add-840e-bec62d028594
+  __prefabGuid: d540321f70784984ca5c086707cf71ff
+  __isInPrefab: 1
   _reorientArrowRoot: {fileID: 1263411978876760}
   _validColorStateIgnoreList:
   - {fileID: 1366940297999150}
@@ -10413,6 +10425,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 493b841d-52be-412c-9241-9f84a02bd6cf
+  __prefabGuid: d540321f70784984ca5c086707cf71ff
+  __isInPrefab: 1
   _translationMode: 0
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}
@@ -10550,6 +10565,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: aa3bdaa0-ca93-46c2-9f7b-8c32787b2e88
+  __prefabGuid: d540321f70784984ca5c086707cf71ff
+  __isInPrefab: 1
   _translationMode: 0
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}
@@ -10770,6 +10788,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 7bc5b2c7-45a0-450c-a708-ca5932a38a93
+  __prefabGuid: d540321f70784984ca5c086707cf71ff
+  __isInPrefab: 1
   _translationMode: 0
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}
@@ -10907,6 +10928,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce7d381cb12d2be46a9bd814aa9e52a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 6390cca7-531f-4959-93d4-f8d7176c1252
+  __prefabGuid: d540321f70784984ca5c086707cf71ff
+  __isInPrefab: 1
   _translationMode: 0
   _translationSpace: 0
   _translationSpeed: {x: 0, y: 0, z: 0}

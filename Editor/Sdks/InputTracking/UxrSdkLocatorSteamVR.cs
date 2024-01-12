@@ -6,11 +6,13 @@
 using UltimateXR.Core;
 using UnityEditor;
 using UnityEngine;
+#if ULTIMATEXR_USE_STEAMVR_SDK
+using Valve.VR;
+#endif
 
-namespace UltimateXR.Editor.Sdks
+namespace UltimateXR.Editor.Sdks.InputTracking
 {
 #if ULTIMATEXR_USE_STEAMVR_SDK
-    using Valve.VR;
 #endif
     /// <summary>
     ///     SDK Locator for the SteamVR SDK.
@@ -20,7 +22,10 @@ namespace UltimateXR.Editor.Sdks
         #region Public Overrides UxrSdkLocator
 
         /// <inheritdoc />
-        public override string Name => UxrManager.SdkSteamVR;
+        public override SupportType Support => SupportType.InputTracking;
+
+        /// <inheritdoc />
+        public override string Name => UxrConstants.SdkSteamVR;
 
         /// <inheritdoc />
         public override string MinimumUnityVersion => "2021.1";
@@ -162,7 +167,7 @@ namespace UltimateXR.Editor.Sdks
         /// <summary>
         ///     Allows to remove dependencies from the project in case the user removed SDK folders manually.
         /// </summary>
-        [MenuItem("Tools/UltimateXR/SDKs/Remove Symbols for SteamVR")]
+        [MenuItem(UxrConstants.Editor.MenuPathSdksInputTracking + "Remove Symbols for SteamVR", priority = UxrConstants.Editor.PriorityMenuPathSdksInputTracking)]
         private static void RemoveSymbols()
         {
             UxrSdkManager.RemoveSymbols(new UxrSdkLocatorSteamVR());

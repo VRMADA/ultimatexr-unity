@@ -136,10 +136,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 57e9e370504f517459fa8c9ffc9b37b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: d6937b9d-a42a-4dcc-a56f-d25b97e8c084
+  __prefabGuid: 31f1e574331515942972937a24c6887a
+  __isInPrefab: 1
   _textTitle: {fileID: 4555545927279522329}
   _canvasGroup: {fileID: 1027190381493002384}
   _entriesRoot: {fileID: 7012591260614910640}
-  _prefabEntry: {fileID: 1504883249021876872, guid: 706673668b0e0774f91855cfce08cdb0, type: 3}
+  _prefabEntry: {fileID: 1504883249021876872, guid: 706673668b0e0774f91855cfce08cdb0,
+    type: 3}
   _buttonOk: {fileID: 6943766661837394947}
   _textButtonOk: {fileID: 2054075053617911937}
 --- !u!223 &4555545926217798872
@@ -227,6 +231,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07521b0732d327543ad102e617a223c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 0567238d-26e0-49ed-a294-b05c69dbfb14
+  __prefabGuid: 31f1e574331515942972937a24c6887a
+  __isInPrefab: 1
   _interactionType: 1
   _fingerTipMinHoverDistance: 0.05
   _autoEnableLaserPointer: 0

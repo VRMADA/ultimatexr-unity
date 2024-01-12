@@ -58,7 +58,10 @@ namespace UltimateXR.Extensions.Unity.Render
             {
                 foreach (Renderer renderer in lods[i].renderers)
                 {
-                    renderer.enabled = i == level;
+                    if (renderer != null)
+                    {
+                        renderer.enabled = i == level;
+                    }
                 }
             }
         }

@@ -8,6 +8,7 @@ using UltimateXR.Avatar;
 using UltimateXR.Avatar.Rig;
 using UltimateXR.Core;
 using UltimateXR.Core.Math;
+using UltimateXR.Core.Settings;
 using UltimateXR.Extensions.Unity;
 using UnityEngine;
 
@@ -37,7 +38,11 @@ namespace UltimateXR.Animation.IK
 
             if (avatar.AvatarRig.Head.Head == null)
             {
-                Debug.LogError($"Avatar {avatar.name} has no head setup in the {nameof(UxrAvatar)}'s Rig field");
+                if (UxrGlobalSettings.Instance.LogLevelAvatar >= UxrLogLevel.Errors)
+                {
+                    Debug.LogError($"{UxrConstants.AvatarModule} Avatar {avatar.name} has no head setup in the {nameof(UxrAvatar)}'s Rig field");
+                }
+                
                 return;
             }
 
@@ -97,7 +102,11 @@ namespace UltimateXR.Animation.IK
 
             if (_avatarBodyRoot == null)
             {
-                Debug.LogWarning("No common avatar body root found. If there is an avatar body it will not follow the head position.");
+                if (UxrGlobalSettings.Instance.LogLevelAvatar >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.AvatarModule} No common avatar body root found. If there is an avatar body it will not follow the head position.");
+                }
+                
                 _avatarBodyRoot = new GameObject("Dummy Root").transform;
                 _avatarBodyRoot.SetParent(_avatarTransform);
                 _avatarBodyRoot.SetPositionAndRotation(_avatarTransform.position, _avatarTransform.rotation);
@@ -205,25 +214,30 @@ namespace UltimateXR.Animation.IK
 
             // Compute neck position/rotation to make the avatar eyes match the camera
 
-            Transform  cameraTransform = _avatar.CameraComponent.transform;
-            Vector3    avatarPivotPos  = _avatarForward.position;
-            Vector3    neckPosition    = GetWorldPosFromOffset(cameraTransform, cameraTransform, _neckPosRelativeToEyes);
-            Quaternion neckRotation    = cameraTransform.rotation * _neckRotRelativeToEyes;
+            Transform  cameraTransform     = _avatar.CameraComponent.transform;
+            Vector3    localAvatarPivotPos = _avatar.transform.InverseTransformPoint(_avatarForward.position);
+            Vector3    neckPosition        = GetWorldPosFromOffset(cameraTransform, cameraTransform, _neckPosRelativeToEyes);
+            Quaternion neckRotation        = cameraTransform.rotation * _neckRotRelativeToEyes;
 
             _avatarNeck.SetPositionAndRotation(neckPosition, neckRotation);
 
             // Update avatar pivot
 
             _avatarForward.position = GetWorldPosFromOffset(_avatarForward, _avatarNeck, _avatarForwardPosRelativeToNeck);
+            bool smoothForwardRotation = true;
 
-            if (Vector3.Angle(cameraTransform.forward, _avatar.transform.up) > CameraUpsideDownAngleThreshold &&
-                Vector3.Angle(cameraTransform.forward, -_avatar.transform.up) > CameraUpsideDownAngleThreshold &&
-                Vector3.Angle(cameraTransform.forward, _avatarForward.forward) < 90.0f)
+            if (Vector3.Angle(cameraTransform.forward, _avatar.transform.up) > CameraUpsideDownAngleThreshold && Vector3.Angle(cameraTransform.forward, -_avatar.transform.up) > CameraUpsideDownAngleThreshold)
             {
                 // _straightSpineForward contains the forward direction where the avatar looks (vector.y is 0).
                 // This is different from _avatarForward.forward because avatarForward allows the head to rotate
                 // some degrees without rotating the whole body along with it.
                 _straightSpineForward = Vector3.ProjectOnPlane(cameraTransform.forward, _avatar.transform.up);
+
+                if (Vector3.Angle(cameraTransform.forward, _avatarForward.forward) > 90.0f)
+                {
+                    // Bad orientation, fix instantly.
+                    smoothForwardRotation = false;
+                }
             }
 
             float bodyRotationAngle = Vector3.Angle(_straightSpineForward, _avatarForward.forward);
@@ -236,16 +250,18 @@ namespace UltimateXR.Animation.IK
             // Update avatar forward direction
 
             float rotationSpeedMultiplier = Vector3.Angle(_avatarForward.forward, _avatarForwardTarget) / 30.0f;
+            float maxForwardDegreesDelta  = AvatarRotationDegreesPerSecond * rotationSpeedMultiplier * _settings.BodyPivotRotationSpeed * Time.deltaTime;
+            
             _avatarForward.rotation = Quaternion.RotateTowards(Quaternion.LookRotation(_avatarForward.forward, _avatar.transform.up),
                                                                Quaternion.LookRotation(_avatarForwardTarget,   _avatar.transform.up),
-                                                               AvatarRotationDegreesPerSecond * rotationSpeedMultiplier * _settings.BodyPivotRotationSpeed * Time.deltaTime);
+                                                               smoothForwardRotation ? maxForwardDegreesDelta : 180.0f);
 
             // Since the avatar pivot is parent of all body nodes, move the neck back to its position
             _avatarNeck.SetPositionAndRotation(neckPosition, neckRotation);
 
             if (_settings.LockBodyPivot)
             {
-                _avatarForward.position = avatarPivotPos;
+                _avatarForward.position = _avatar.transform.TransformPoint(localAvatarPivotPos);
             }
 
             // We've computed the avatar head orientation using only the neck. Now redistribute it using the _neckHeadBalance parameter so that
@@ -340,7 +356,7 @@ namespace UltimateXR.Animation.IK
 
             // If the avatar moves, straighten the forward direction
 
-            float avatarMovedDistance = Vector3.Distance(avatarPivotPos, _avatarForward.position);
+            float avatarMovedDistance = Vector3.Distance(localAvatarPivotPos, _avatarForward.position);
 
             if (avatarMovedDistance / Time.deltaTime > AvatarStraighteningMinSpeed)
             {
@@ -353,6 +369,11 @@ namespace UltimateXR.Animation.IK
             foreach (IndependentBoneInfo boneInfo in _independentBones)
             {
                 boneInfo.Transform.SetPositionAndRotation(boneInfo.Position, boneInfo.Rotation);
+            }
+            
+            if (_settings.LockBodyPivot)
+            {
+                _avatarForward.position = _avatar.transform.TransformPoint(localAvatarPivotPos);
             }
         }
 

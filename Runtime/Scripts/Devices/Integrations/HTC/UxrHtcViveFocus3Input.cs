@@ -18,7 +18,7 @@ namespace UltimateXR.Devices.Integrations.HTC
         /// <summary>
         ///     Gets the SDK dependency: Wave XR.
         /// </summary>
-        public override string SDKDependency => UxrManager.SdkWaveXR;
+        public override string SDKDependency => UxrConstants.SdkWaveXR;
 
         /// <inheritdoc />
         public override UxrControllerSetupType SetupType => UxrControllerSetupType.Dual;

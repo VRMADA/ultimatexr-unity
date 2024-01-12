@@ -8,7 +8,7 @@ using System.Reflection;
 using UltimateXR.Core;
 using UnityEditor;
 
-namespace UltimateXR.Editor
+namespace UltimateXR.Editor.Sdks
 {
     /// <summary>
     ///     Base class for SDK locators. SDK locators are classes instantiated when Unity is loaded or changes are made and the
@@ -19,6 +19,11 @@ namespace UltimateXR.Editor
     public abstract partial class UxrSdkLocator
     {
         #region Public Types & Data
+
+        /// <summary>
+        ///     Gets the type of SDK it is (device/multiplayer, etc.).
+        /// </summary>
+        public abstract SupportType Support { get; }
 
         /// <summary>
         ///     Gets the SDK name.

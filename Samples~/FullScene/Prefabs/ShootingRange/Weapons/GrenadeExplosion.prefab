@@ -9756,6 +9756,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ac1f3fc45c4bd145acc5e43c81e68a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 0dd23c84-f3dc-4e76-a91a-11e2a48bf945
+  __prefabGuid: 636a8a2b8b730bd4d858c5e264ad4dcd
+  __isInPrefab: 1
   _allowRotateAroundY: 1
   _allowRotateAroundX: 1
   _invertedForwardAxis: 0
@@ -14597,6 +14600,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a9bfd497bfea50143a9aaebc8203630b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 261acbd1-7254-4ef4-87e2-4665480679ea
+  __prefabGuid: 636a8a2b8b730bd4d858c5e264ad4dcd
+  __isInPrefab: 1
   _animationMode: 2
   _valueSpeedDurationSeconds: 0
   _valueSpeed: {x: 0, y: 0, z: 0, w: 0}

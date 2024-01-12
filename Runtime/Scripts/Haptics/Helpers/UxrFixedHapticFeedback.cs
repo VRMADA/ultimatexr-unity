@@ -106,7 +106,7 @@ namespace UltimateXR.Haptics.Helpers
                     SendHapticClip(_handSide);
                 }
 
-                yield return new WaitForSeconds(SampleDurationSeconds);
+                yield return new WaitForSeconds(UxrConstants.InputControllers.HapticSampleDurationSeconds);
             }
         }
 
@@ -120,17 +120,12 @@ namespace UltimateXR.Haptics.Helpers
         /// <param name="handSide">Target hand</param>
         private void SendHapticClip(UxrHandSide handSide)
         {
-            UxrAvatar.LocalAvatarInput.SendHapticFeedback(handSide, _frequency, _amplitude, SampleDurationSeconds);
+            UxrAvatar.LocalAvatarInput.SendHapticFeedback(handSide, _frequency, _amplitude, UxrConstants.InputControllers.HapticSampleDurationSeconds);
         }
 
         #endregion
 
         #region Private Types & Data
-
-        /// <summary>
-        ///     Controls the duration of each individual sample sent, and thus the iteration of each loop.
-        /// </summary>
-        private const float SampleDurationSeconds = 0.1f;
 
         private Coroutine _hapticsCoroutine;
 

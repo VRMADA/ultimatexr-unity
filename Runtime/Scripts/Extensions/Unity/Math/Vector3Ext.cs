@@ -148,9 +148,15 @@ namespace UltimateXR.Extensions.Unity.Math
         ///     Computes the average of a set of vectors.
         /// </summary>
         /// <param name="vectors">Input vectors</param>
+        /// <param name="defaultIfEmpty">The default value to return if the list is empty</param>
         /// <returns>Vector with components averaged</returns>
-        public static Vector3 Average(IEnumerable<Vector3> vectors)
+        public static Vector3 Average(IEnumerable<Vector3> vectors, Vector3 defaultIfEmpty = default)
         {
+            if (vectors == null || !vectors.Any())
+            {
+                return defaultIfEmpty;
+            }
+            
             return new Vector3(vectors.Average(v => v.x),
                                vectors.Average(v => v.y),
                                vectors.Average(v => v.z));
@@ -172,9 +178,15 @@ namespace UltimateXR.Extensions.Unity.Math
         ///     Computes the maximum values of a set of vectors.
         /// </summary>
         /// <param name="vectors">Input vectors</param>
+        /// <param name="defaultIfEmpty">The default value to return if the list is empty</param>
         /// <returns>Vector with maximum component values</returns>
-        public static Vector3 Max(IEnumerable<Vector3> vectors)
+        public static Vector3 Max(IEnumerable<Vector3> vectors, Vector3 defaultIfEmpty = default)
         {
+            if (vectors == null || !vectors.Any())
+            {
+                return defaultIfEmpty;
+            }
+            
             return new Vector3(vectors.Max(v => v.x),
                                vectors.Max(v => v.y),
                                vectors.Max(v => v.z));
@@ -196,9 +208,15 @@ namespace UltimateXR.Extensions.Unity.Math
         ///     Computes the minimum values of a set of vectors.
         /// </summary>
         /// <param name="vectors">Input vectors</param>
+        /// <param name="defaultIfEmpty">The default value to return if the list is empty</param>
         /// <returns>Vector with minimum component values</returns>
-        public static Vector3 Min(IEnumerable<Vector3> vectors)
+        public static Vector3 Min(IEnumerable<Vector3> vectors, Vector3 defaultIfEmpty = default)
         {
+            if (vectors == null || !vectors.Any())
+            {
+                return defaultIfEmpty;
+            }
+            
             return new Vector3(vectors.Min(v => v.x),
                                vectors.Min(v => v.y),
                                vectors.Min(v => v.z));

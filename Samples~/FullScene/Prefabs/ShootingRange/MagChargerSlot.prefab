@@ -45,6 +45,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7b06a52e9ced0e46a369c9a6e98a92c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 39ad855c-d8a1-405a-9db5-f406725b657b
+  __prefabGuid: 13d8e0dc7a0a046468ffad1453df87a0
+  __isInPrefab: 1
   _compatibleTags:
   - MagGun
   - MagMachinegun

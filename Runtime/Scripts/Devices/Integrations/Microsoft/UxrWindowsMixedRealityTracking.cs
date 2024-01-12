@@ -23,7 +23,7 @@ namespace UltimateXR.Devices.Integrations.Microsoft
         #region Public Overrides UxrTrackingDevice
 
         /// <inheritdoc />
-        public override string SDKDependency => UxrManager.SdkWindowsMixedReality;
+        public override string SDKDependency => UxrConstants.SdkWindowsMixedReality;
 
         #endregion
     }

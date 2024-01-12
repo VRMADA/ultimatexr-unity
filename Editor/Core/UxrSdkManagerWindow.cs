@@ -3,7 +3,9 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using UltimateXR.Core;
 using UltimateXR.Editor.Sdks;
 using UnityEditor;
@@ -20,12 +22,26 @@ namespace UltimateXR.Editor.Core
         #region Public Methods
 
         /// <summary>
-        ///     Shows the hand pose editor menu item.
+        ///     Shows the SDK Manager window.
         /// </summary>
-        [MenuItem("Tools/UltimateXR/SDK Manager")]
+        [MenuItem(UxrConstants.Editor.MenuPathSdks + "SDK Manager", priority = UxrConstants.Editor.PriorityMenuPathSdks + 100)]
         public static void ShowWindow()
         {
-            GetWindow(typeof(UxrSdkManagerWindow), true, "UltimateXR SDK Manager");
+            ShowWindow(UxrSdkLocator.SupportType.InputTracking);
+        }
+
+        /// <summary>
+        ///     Shows the SDK Manager window.
+        /// </summary>
+        /// <param name="supportType">SDK type tab to show</param>
+        public static void ShowWindow(UxrSdkLocator.SupportType supportType)
+        {
+            UxrSdkManagerWindow managerWindow = GetWindow(typeof(UxrSdkManagerWindow), true, "UltimateXR SDK Manager") as UxrSdkManagerWindow;
+
+            if (GetRegisteredSdkSupportTypes().Contains(supportType))
+            {
+                managerWindow._selectedType = (int)supportType;
+            }
         }
 
         #endregion
@@ -37,7 +53,8 @@ namespace UltimateXR.Editor.Core
         /// </summary>
         private void OnEnable()
         {
-            _foldouts = new Dictionary<UxrSdkLocator, bool>();
+            _foldouts        = new Dictionary<UxrSdkLocator, bool>();
+            _registeredTypes = GetRegisteredSdkSupportTypes();
         }
 
         /// <summary>
@@ -51,14 +68,38 @@ namespace UltimateXR.Editor.Core
                 return;
             }
 
+            if (_registeredTypes.Count == 0)
+            {
+                EditorGUILayout.LabelField("No SDK locators have been registered");
+                return;
+            }
+
+            // SDK type tabs
+
+            if (_registeredTypes.Count > 1)
+            {
+                EditorGUILayout.Space();
+                EditorGUILayout.Space();
+
+                _selectedType = GUILayout.Toolbar(_selectedType, _registeredTypes.Select(t => t.ToString()).ToArray());
+            }
+
+            // SDK list
+
+            IEnumerable<UxrSdkLocator> locatorsOfCurrentType = UxrSdkManager.SDKLocators.Where(l => l.Support == _registeredTypes[_selectedType]);
+
+            if (!locatorsOfCurrentType.Any())
+            {
+                EditorGUILayout.LabelField("Support coming in next versions. Stay tuned!");
+                return;
+            }
+
             EditorGUILayout.Space();
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Supported SDKs:", EditorStyles.boldLabel);
             EditorGUILayout.Space();
 
-            // SDK List
-
-            foreach (UxrSdkLocator sdkLocator in UxrSdkManager.SDKLocators)
+            foreach (UxrSdkLocator sdkLocator in locatorsOfCurrentType)
             {
                 if (!_foldouts.ContainsKey(sdkLocator))
                 {
@@ -111,8 +152,23 @@ namespace UltimateXR.Editor.Core
 
         #endregion
 
+        #region Private Methods
+
+        /// <summary>
+        ///     Gets the different SDK types that have been registered
+        /// </summary>
+        /// <returns>SDK types</returns>
+        private static List<UxrSdkLocator.SupportType> GetRegisteredSdkSupportTypes()
+        {
+            return Enum.GetValues(typeof(UxrSdkLocator.SupportType)).OfType<UxrSdkLocator.SupportType>().ToList();
+        }
+
+        #endregion
+
         #region Private Types & Data
 
+        private List<UxrSdkLocator.SupportType> _registeredTypes = new List<UxrSdkLocator.SupportType>();
+        private int                             _selectedType;
         private Dictionary<UxrSdkLocator, bool> _foldouts;
 
         #endregion

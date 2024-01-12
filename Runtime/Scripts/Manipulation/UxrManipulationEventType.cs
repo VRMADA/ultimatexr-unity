@@ -1,19 +1,23 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="UxrManipulationSyncEventType.cs" company="VRMADA">
+// <copyright file="UxrManipulationEventType.cs" company="VRMADA">
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 namespace UltimateXR.Manipulation
 {
     /// <summary>
-    ///     Enumerates the different events that can be synced for networking using <see cref="UxrManipulationSyncEventArgs" />
-    ///     .
+    ///     Enumerates the different manipulation event types.
     /// </summary>
-    public enum UxrManipulationSyncEventType
+    public enum UxrManipulationEventType
     {
         Grab,
         Release,
         Place,
-        Remove
+        Remove,
+        GrabTrying,
+        AnchorRangeEntered,
+        AnchorRangeLeft,
+        PlacedObjectRangeEntered,
+        PlacedObjectRangeLeft
     }
 }

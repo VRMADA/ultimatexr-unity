@@ -7,6 +7,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using UltimateXR.Animation.Interpolation;
+using UltimateXR.Core;
+using UltimateXR.Core.Settings;
 using UnityEngine;
 
 namespace UltimateXR.Extensions.System.Threading
@@ -39,8 +41,11 @@ namespace UltimateXR.Extensions.System.Threading
             }
             catch (Exception e) // ...but default LogException behaviour only shows innerException.
             {
-                Debug.LogError($"{nameof(TaskExt)}::{nameof(FireAndForget)}>> Exception missed (stack trace below):{e.Message}\n\n{e}");
-                Debug.LogException(e); // Log and ignore exceptions, until playlists are empty.
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+                {
+                    Debug.LogError($"{UxrConstants.CoreModule} {nameof(TaskExt)}::{nameof(FireAndForget)} Exception missed (stack trace below):{e.Message}\n\n{e}");
+                    Debug.LogException(e); // Log and ignore exceptions, until playlists are empty.
+                }
             }
         }
 

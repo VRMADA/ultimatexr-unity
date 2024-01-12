@@ -4,7 +4,10 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System;
+using UltimateXR.Core;
+using UltimateXR.Core.Settings;
 using UltimateXR.Extensions.System;
+using UltimateXR.UI.UnityInputModule.Utils;
 using UnityEngine;
 
 namespace UltimateXR.Animation.Interpolation
@@ -389,7 +392,11 @@ namespace UltimateXR.Animation.Interpolation
 #if UNITY_EDITOR
             if (!(formatStringArgs.Length > 0 && formatStringArgs.Length % 2 == 0))
             {
-                Debug.LogError("The text has no arguments or the number of arguments is not even");
+                if (UxrGlobalSettings.Instance.LogLevelAnimation >= UxrLogLevel.Errors)
+                {
+                    Debug.LogError($"{UxrConstants.AnimationModule} {nameof(InterpolateText)}: The text has no arguments or the number of arguments is not even");
+
+                }
                 return string.Empty;
             }
 #endif
@@ -401,20 +408,32 @@ namespace UltimateXR.Animation.Interpolation
             {
                 if (formatStringArgs[i] == null)
                 {
-                    Debug.LogError("Argument " + i + " is null");
+                    if (UxrGlobalSettings.Instance.LogLevelAnimation >= UxrLogLevel.Errors)
+                    {
+                        Debug.LogError($"{UxrConstants.AnimationModule} {nameof(InterpolateText)}: Argument " + i + " is null");
+                    }
+                    
                     return formatStringArgs[i + numArgs] != null ? formatStringArgs[i + numArgs].ToString() : string.Empty;
                 }
 
                 if (formatStringArgs[i + numArgs] == null)
                 {
-                    Debug.LogError("Argument " + (i + numArgs) + " is null");
+                    if (UxrGlobalSettings.Instance.LogLevelAnimation >= UxrLogLevel.Errors)
+                    {
+                        Debug.LogError($"{UxrConstants.AnimationModule} {nameof(InterpolateText)}: Argument " + (i + numArgs) + " is null");
+                    }
+                    
                     return formatStringArgs[i] != null ? formatStringArgs[i].ToString() : string.Empty;
                 }
 
 #if UNITY_EDITOR
                 if (!(formatStringArgs[i].GetType() == formatStringArgs[i + numArgs].GetType()))
                 {
-                    Debug.LogError("Type of argument " + i + " is not the same as argument " + (i + numArgs));
+                    if (UxrGlobalSettings.Instance.LogLevelAnimation >= UxrLogLevel.Errors)
+                    {
+                        Debug.LogError($"{UxrConstants.AnimationModule} {nameof(InterpolateText)}: Type of argument " + i + " is not the same as argument " + (i + numArgs));
+                    }
+                    
                     return string.Empty;
                 }
 #endif
@@ -451,7 +470,17 @@ namespace UltimateXR.Animation.Interpolation
                         if (isForUnityTextUI)
                         {
                             // Add the remaining characters as "invisible" to avoid word wrapping effects during interpolation.
-                            finalArgs[i] += @"<color=#00000000>" + (endChars > startChars ? b.Substring(numChars, endChars - numChars) : string.Empty) + @"</color>";
+
+                            string remaining = @"<color=#00000000>" + (endChars > startChars ? b.Substring(numChars, endChars - numChars) : string.Empty) + @"</color>"; 
+                            
+                            if (!UxrRightToLeftSupport.UseRightToLeft)
+                            {
+                                finalArgs[i] += remaining;
+                            }
+                            else
+                            {
+                                finalArgs[i] = remaining + finalArgs[i];
+                            }
                         }
                     }
                     else
@@ -648,13 +677,14 @@ namespace UltimateXR.Animation.Interpolation
                 case UxrEasing.EaseInBack:
                 {
                     float s = 1.70158f;
-                    return change * (t * t * (s + 1.0f) * t - s) + start;
+                    return change * (t * t * ((s + 1.0f) * t - s)) + start;
                 }
 
                 case UxrEasing.EaseOutBack:
                 {
                     float s = 1.70158f;
-                    return change * ((t - 1.0f) * t * ((s + 1.0f) * t + s) + 1.0f) + start;
+                    t = t - 1.0f;
+                    return change * (t * t * ((s + 1.0f) * t + s) + 1.0f) + start;
                 }
 
                 case UxrEasing.EaseInOutBack:
@@ -741,7 +771,10 @@ namespace UltimateXR.Animation.Interpolation
 
                 default:
 #if UNITY_EDITOR
-                    Debug.LogError($"{nameof(UxrInterpolator)} Unknown easing mode");
+                    if (UxrGlobalSettings.Instance.LogLevelAnimation >= UxrLogLevel.Errors)
+                    {
+                        Debug.LogError($"{UxrConstants.AnimationModule}: {nameof(UxrInterpolator)} Unknown easing mode");
+                    }
 #endif
                     return Vector4.zero;
             }

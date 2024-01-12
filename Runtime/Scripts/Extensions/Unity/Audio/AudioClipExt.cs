@@ -213,7 +213,7 @@ namespace UltimateXR.Extensions.Unity.Audio
 
             try
             {
-                return UnityWebRequestExt.LoadAudioClip(uri, ct);
+                return UnityWebRequestExt.LoadAudioClipAsync(uri, ct);
             }
             catch (UwrException e)
             {

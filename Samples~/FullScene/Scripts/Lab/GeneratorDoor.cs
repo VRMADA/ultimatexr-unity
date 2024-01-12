@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 using UltimateXR.Core.Components;
 using UltimateXR.Manipulation;
+using UltimateXR.Manipulation.Helpers;
 using UnityEngine;
 
 namespace UltimateXR.Examples.FullScene.Lab
@@ -16,12 +17,12 @@ namespace UltimateXR.Examples.FullScene.Lab
     {
         #region Inspector Properties/Serialized Fields
 
-        [SerializeField] private BatteryAnchor      _batteryAnchor;
-        [SerializeField] private UxrGrabbableObject _grabbableLock;
-        [SerializeField] private Transform[]        _locks;
-        [SerializeField] private float              _lockHandleAngleClosed;
-        [SerializeField] private float              _lockHandleAngleOpen;
-        [SerializeField] private bool               _startLockOpen = true;
+        [SerializeField] private UxrAutoSlideInAnchor _batteryAnchor;
+        [SerializeField] private UxrGrabbableObject   _grabbableLock;
+        [SerializeField] private Transform[]          _locks;
+        [SerializeField] private float                _lockHandleAngleClosed;
+        [SerializeField] private float                _lockHandleAngleOpen;
+        [SerializeField] private bool                 _startLockOpen = true;
 
         #endregion
 
@@ -69,8 +70,6 @@ namespace UltimateXR.Examples.FullScene.Lab
             {
                 _lockInitialRotation[i] = _locks[i].localRotation;
             }
-
-            IsBatteryInContact = _batteryAnchor.Anchor.CurrentPlacedObject != null;
         }
 
         /// <summary>
@@ -103,7 +102,9 @@ namespace UltimateXR.Examples.FullScene.Lab
         protected override void Start()
         {
             base.Start();
-            IsLockOpen = _startLockOpen;
+
+            IsBatteryInContact = _batteryAnchor.Anchor.CurrentPlacedObject != null;
+            IsLockOpen         = _startLockOpen;
         }
 
         /// <summary>
@@ -148,11 +149,11 @@ namespace UltimateXR.Examples.FullScene.Lab
 
             if (_batteryAnchor.Anchor.CurrentPlacedObject != null && _batteryAnchor.Anchor.CurrentPlacedObject.transform.localPosition.z > 0.01f)
             {
-                _grabbableLock.RotationConstraint = UxrRotationConstraintMode.Locked;
+                _grabbableLock.IsLockedInPlace = true;
             }
             else
             {
-                _grabbableLock.RotationConstraint = UxrRotationConstraintMode.RestrictLocalRotation;
+                _grabbableLock.IsLockedInPlace = false;
             }
         }
 

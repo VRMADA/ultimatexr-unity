@@ -55,9 +55,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 114050169640948700, guid: d249b95d343b5ab4babd0ea8c975c6bb, type: 3}
+    - target: {fileID: 114050169640948700, guid: d249b95d343b5ab4babd0ea8c975c6bb,
+        type: 3}
       propertyPath: _target
       value: 
-      objectReference: {fileID: 4660503626119773979, guid: acce09554867aea41801f211ab81dfe0, type: 3}
+      objectReference: {fileID: 4660503626119773979, guid: acce09554867aea41801f211ab81dfe0,
+        type: 3}
+    - target: {fileID: 114050169640948700, guid: d249b95d343b5ab4babd0ea8c975c6bb,
+        type: 3}
+      propertyPath: __isInPrefab
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114050169640948700, guid: d249b95d343b5ab4babd0ea8c975c6bb,
+        type: 3}
+      propertyPath: __prefabGuid
+      value: bf317e1ae4702c348ad81415eb464947
+      objectReference: {fileID: 0}
+    - target: {fileID: 114050169640948700, guid: d249b95d343b5ab4babd0ea8c975c6bb,
+        type: 3}
+      propertyPath: _uxrUniqueId
+      value: ee805492-93ba-43be-abfc-812a0d210aa3
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d249b95d343b5ab4babd0ea8c975c6bb, type: 3}

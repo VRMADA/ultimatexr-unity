@@ -5,18 +5,17 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
-    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1304256556020238828, guid: 829a78814902e734baf523f5584385ef,
         type: 3}
       propertyPath: m_Name
-      value: MagicLeap2Left_URP Variant
+      value: MagicLeap2Left_BRP
       objectReference: {fileID: 0}
     - target: {fileID: 2256169275208995370, guid: 829a78814902e734baf523f5584385ef,
         type: 3}
       propertyPath: m_RootOrder
-      value: 5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2256169275208995370, guid: 829a78814902e734baf523f5584385ef,
         type: 3}
@@ -68,8 +67,20 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7655119207221670824, guid: 829a78814902e734baf523f5584385ef,
+        type: 3}
+      propertyPath: __isInPrefab
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7655119207221670824, guid: 829a78814902e734baf523f5584385ef,
+        type: 3}
+      propertyPath: __prefabGuid
+      value: cb46143d735015744aa0ed5a39f96b1c
+      objectReference: {fileID: 0}
+    - target: {fileID: 7655119207221670824, guid: 829a78814902e734baf523f5584385ef,
+        type: 3}
+      propertyPath: _uxrUniqueId
+      value: cdf753c3-8a13-4386-8a40-b99f260e8a09
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 829a78814902e734baf523f5584385ef, type: 3}

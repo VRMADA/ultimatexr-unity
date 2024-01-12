@@ -31,6 +31,15 @@ namespace UltimateXR.Locomotion
 
         #endregion
 
+        #region Public Types & Data
+
+        /// <summary>
+        ///     Gets or sets whether the arc can be used.
+        /// </summary>
+        public bool IsArcAllowed { get; set; } = true;
+
+        #endregion
+
         #region Public Overrides UxrLocomotion
 
         /// <inheritdoc />
@@ -96,7 +105,21 @@ namespace UltimateXR.Locomotion
             _arcCancelledByAngle = false;
             _scroll              = 0.0f;
 
+            _lastSyncIsArcEnabled        = false;
+            _lastSyncIsTargetEnabled     = false;
+            _lastSyncIsValidTeleport     = false;
+            _lastSyncTargetArrowLocalRot = Quaternion.identity;
+
             EnableArc(false, false);
+        }
+
+        /// <summary>
+        ///     Disables the teleport graphics.
+        /// </summary>
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+            UpdateTeleportState(false, false, false, Quaternion.identity);
         }
 
         #endregion
@@ -134,7 +157,7 @@ namespace UltimateXR.Locomotion
             if (IsArcVisible || _arcCancelledByAngle)
             {
                 // To support both touchpads and joysticks, we need to check in the case of touchpads that it is also pressed.
-                
+
                 if (Avatar.ControllerInput.MainJoystickIsTouchpad)
                 {
                     if (Avatar.ControllerInput.GetButtonsPress(HandSide, UxrInputButtons.Joystick))
@@ -157,7 +180,16 @@ namespace UltimateXR.Locomotion
                 teleportArcActive = true;
             }
 
+            if (!IsArcAllowed)
+            {
+                teleportArcActive = false;
+            }
+
             // If teleport is active update arc & target
+
+            bool isArcEnabled;
+            bool isTargetEnabled;
+            bool isValidTeleport;
 
             if (teleportArcActive)
             {
@@ -170,66 +202,32 @@ namespace UltimateXR.Locomotion
 
                 // Compute trajectory
 
-                bool    isValidTeleport  = false;
-                Vector3 right            = Vector3.Cross(ControllerForward, UpVector).normalized;
-                Vector3 projectedForward = Vector3.ProjectOnPlane(ControllerForward, UpVector).normalized;
-                float   angle            = -Vector3.SignedAngle(ControllerForward, projectedForward, right);
-
-                if (Mathf.Abs(angle) < AbsoluteMaxArcAngleThreshold && _arcWidth > 0.0f)
-                {
-                    float parabolicSpeed           = Mathf.Sqrt(ArcGravity * MaxAllowedDistance);
-                    float timeToTravelHorizontally = Mathf.Max(2.0f, 2.0f * parabolicSpeed * Mathf.Abs(Mathf.Sin(angle * Mathf.Deg2Rad)) / ArcGravity);
-
-                    float endTime   = timeToTravelHorizontally * 2;
-                    float deltaTime = endTime / BlockingRaycastStepsQualityToSteps(_raycastStepsQuality);
-
-                    bool hitSomething = false;
-
-                    for (float time = 0.0f; time < endTime; time += deltaTime)
-                    {
-                        Vector3 point1                = EvaluateArc(ControllerStart, ControllerForward, parabolicSpeed, time);
-                        Vector3 point2                = EvaluateArc(ControllerStart, ControllerForward, parabolicSpeed, time + deltaTime);
-                        float   distanceBetweenPoints = Vector3.Distance(point1, point2);
-                        Vector3 direction             = (point2 - point1) / distanceBetweenPoints;
-
-                        // Process blocking hit.
-                        // Use RaycastAll to avoid putting "permitted" objects in between "blocking" objects to teleport through walls or any other cheats.
-
-                        if (HasBlockingRaycastHit(point1, direction, distanceBetweenPoints, out RaycastHit hit))
-                        {
-                            endTime         = time + deltaTime * (hit.distance / distanceBetweenPoints);
-                            hitSomething    = true;
-                            isValidTeleport = NotifyDestinationRaycast(hit, false);
-                            break;
-                        }
-                    }
-
-                    if (hitSomething == false)
-                    {
-                        NotifyNoDestinationRaycast();
-                    }
-
-                    _previousFrameHadArc = true;
-                    GenerateArcMesh(isValidTeleport, right, parabolicSpeed, endTime);
-                    EnableArc(true, isValidTeleport);
-                }
-                else
-                {
-                    _arcCancelledByAngle = true;
-                    EnableArc(false, false);
-                    NotifyNoDestinationRaycast();
-                }
+                ComputeCurrentArcTrajectory(out isArcEnabled, out isTargetEnabled, out isValidTeleport);
             }
             else
             {
-                if (_previousFrameHadArc)
+                if (_previousFrameHadArc && IsArcAllowed)
                 {
                     TryTeleportUsingCurrentTarget();
                 }
 
                 _previousFrameHadArc = false;
-                EnableArc(false, false);
+                isArcEnabled         = false;
+                isTargetEnabled      = false;
+                isValidTeleport      = false;
+
+                EnableArc(isArcEnabled, isValidTeleport);
                 NotifyNoDestinationRaycast();
+            }
+
+            // Notify state changes in a simpler way to avoid unnecessary traffic
+
+            if (_lastSyncIsArcEnabled != isArcEnabled ||
+                _lastSyncIsTargetEnabled != isTargetEnabled ||
+                _lastSyncIsValidTeleport != isValidTeleport ||
+                Quaternion.Angle(_lastSyncTargetArrowLocalRot, TeleportArrowLocalRotation) > ArrowAngleChangeThreshold)
+            {
+                UpdateTeleportState(isArcEnabled, isTargetEnabled, isValidTeleport, TeleportArrowLocalRotation);
             }
         }
 
@@ -250,6 +248,41 @@ namespace UltimateXR.Locomotion
         #region Private Methods
 
         /// <summary>
+        ///     Updates the state of elements in the teleport. This is mainly to synchronize the state on a networking environment.
+        ///     It is performed in a separate method in order to have better control over the amount of traffic that is being
+        ///     generated because of the arrow rotation.
+        /// </summary>
+        /// <param name="isArcEnabled">Is the arc enabled?</param>
+        /// <param name="isTargetEnabled">Is the target enabled?</param>
+        /// <param name="isValidTeleport">Is the teleport destination valid?</param>
+        /// <param name="teleportArrowLocalRotation">The teleport arrow's local rotation</param>
+        private void UpdateTeleportState(bool isArcEnabled, bool isTargetEnabled, bool isValidTeleport, Quaternion teleportArrowLocalRotation)
+        {
+            // This method will be synchronized through network
+            BeginSync();
+
+            _lastSyncIsArcEnabled        = isArcEnabled;
+            _lastSyncIsTargetEnabled     = isTargetEnabled;
+            _lastSyncIsValidTeleport     = isValidTeleport;
+            _lastSyncTargetArrowLocalRot = teleportArrowLocalRotation;
+
+            if (isArcEnabled)
+            {
+                // TODO: The target enabled and valid teleport state are computed using the current
+                // hand transform, which might be slightly different in a network environment. 
+                ComputeCurrentArcTrajectory(out bool _, out bool _, out bool _);
+                TeleportArrowLocalRotation = teleportArrowLocalRotation;
+            }
+            else
+            {
+                EnableArc(isArcEnabled, isValidTeleport);
+                NotifyNoDestinationRaycast();
+            }
+
+            EndSyncMethod(new object[] { isArcEnabled, isTargetEnabled, isValidTeleport, teleportArrowLocalRotation });
+        }
+
+        /// <summary>
         ///     Enables or disables the teleportation arc.
         /// </summary>
         /// <param name="enable">Whether the arc is visible</param>
@@ -258,6 +291,66 @@ namespace UltimateXR.Locomotion
         {
             _arcGameObject.SetActive(enable);
             _arcRenderer.sharedMaterial = isValidTeleport ? _arcMaterialValid : _arcMaterialInvalid;
+        }
+
+        /// <summary>
+        ///     Computes the current teleport arc trajectory.
+        /// </summary>
+        private void ComputeCurrentArcTrajectory(out bool isArcEnabled, out bool isTargetEnabled, out bool isValidTeleport)
+        {
+            Vector3 right                    = Vector3.Cross(ControllerForward, Vector3.up).normalized;
+            float   angle                    = GetCurrentParabolicAngle();
+            float   timeToTravelHorizontally = GetTimeToTravelHorizontally(angle);
+            float   parabolicSpeed           = GetCurrentParabolicSpeed();
+
+            if (Mathf.Abs(angle) < AbsoluteMaxArcAngleThreshold && _arcWidth > 0.0f)
+            {
+                isTargetEnabled = false;
+                isValidTeleport = false;
+
+                float endTime   = timeToTravelHorizontally * 2;
+                float deltaTime = endTime / BlockingRaycastStepsQualityToSteps(_raycastStepsQuality);
+
+                bool hitSomething = false;
+
+                for (float time = 0.0f; time < endTime; time += deltaTime)
+                {
+                    Vector3 point1                = EvaluateArc(ControllerStart, ControllerForward, parabolicSpeed, time);
+                    Vector3 point2                = EvaluateArc(ControllerStart, ControllerForward, parabolicSpeed, time + deltaTime);
+                    float   distanceBetweenPoints = Vector3.Distance(point1, point2);
+                    Vector3 direction             = (point2 - point1) / distanceBetweenPoints;
+
+                    // Process blocking hit.
+                    // Use RaycastAll to avoid putting "permitted" objects in between "blocking" objects to teleport through walls or any other cheats.
+
+                    if (HasBlockingRaycastHit(point1, direction, distanceBetweenPoints, out RaycastHit hit))
+                    {
+                        endTime         = time + deltaTime * (hit.distance / distanceBetweenPoints);
+                        hitSomething    = true;
+                        isValidTeleport = NotifyDestinationRaycast(hit, false, out isTargetEnabled);
+                        break;
+                    }
+                }
+
+                if (hitSomething == false)
+                {
+                    NotifyNoDestinationRaycast();
+                }
+
+                _previousFrameHadArc = true;
+                isArcEnabled         = true;
+                GenerateArcMesh(isValidTeleport, right, parabolicSpeed, endTime);
+                EnableArc(isArcEnabled, isValidTeleport);
+            }
+            else
+            {
+                _arcCancelledByAngle = true;
+                isArcEnabled         = false;
+                isTargetEnabled      = false;
+                isValidTeleport      = false;
+                EnableArc(isArcEnabled, isValidTeleport);
+                NotifyNoDestinationRaycast();
+            }
         }
 
         /// <summary>
@@ -338,7 +431,7 @@ namespace UltimateXR.Locomotion
             _arcMesh.colors32 = _vertexColors;
             _arcMesh.uv       = _vertexMapping;
             _arcMesh.SetIndices(_indices, MeshTopology.Quads, 0);
-            _arcMesh.bounds = new Bounds(Vector3.zero, Vector3.one * UxrAvatar.LocalAvatarCamera.farClipPlane);
+            _arcMesh.bounds = new Bounds(Vector3.zero, Vector3.one * Avatar.CameraComponent.farClipPlane);
         }
 
         /// <summary>
@@ -371,6 +464,36 @@ namespace UltimateXR.Locomotion
             }
         }
 
+        /// <summary>
+        ///     Gets the parabolic speed to compute in the arc equation.
+        /// </summary>
+        /// <returns>Parabolic speed</returns>
+        private float GetCurrentParabolicSpeed()
+        {
+            return Mathf.Sqrt(ArcGravity * MaxAllowedDistance);
+        }
+
+        /// <summary>
+        ///     Gets the parabolic angle to compute in the arc equation.
+        /// </summary>
+        /// <returns>Parabolic angle</returns>
+        private float GetCurrentParabolicAngle()
+        {
+            Vector3 right            = Vector3.Cross(ControllerForward, UpVector).normalized;
+            Vector3 projectedForward = Vector3.ProjectOnPlane(ControllerForward, UpVector).normalized;
+            return -Vector3.SignedAngle(ControllerForward, projectedForward, right);
+        }
+
+        /// <summary>
+        ///     Gets the time in seconds it would take a parabolic trajectory to travel up and down again.
+        /// </summary>
+        /// <param name="angle">Parabolic angle</param>
+        /// <returns>Time in seconds to go up and get back down again</returns>
+        private float GetTimeToTravelHorizontally(float angle)
+        {
+            return Mathf.Max(2.0f, 2.0f * GetCurrentParabolicSpeed() * Mathf.Abs(Mathf.Sin(angle * Mathf.Deg2Rad)) / ArcGravity);
+        }
+
         #endregion
 
         #region Private Types & Data
@@ -379,6 +502,12 @@ namespace UltimateXR.Locomotion
         ///     Gets whether the teleport arc is currently visible.
         /// </summary>
         private bool IsArcVisible => _arcGameObject.activeSelf;
+
+        /// <summary>
+        ///     The change in degrees of the arrow direction to consider it a state change and raise the event. It is used to avoid
+        ///     sending repeated data.
+        /// </summary>
+        private const float ArrowAngleChangeThreshold = 2.0f;
 
         private const int   BlockingRaycastStepsQualityLow      = 10;
         private const int   BlockingRaycastStepsQualityMedium   = 20;
@@ -401,6 +530,11 @@ namespace UltimateXR.Locomotion
         private int[]        _indices;
         private float[]      _accumulatedArcLength;
         private float        _scroll;
+
+        private bool       _lastSyncIsArcEnabled;
+        private bool       _lastSyncIsTargetEnabled;
+        private bool       _lastSyncIsValidTeleport;
+        private Quaternion _lastSyncTargetArrowLocalRot;
 
         #endregion
     }

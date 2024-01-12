@@ -3,7 +3,6 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using UltimateXR.Extensions.Unity.Math;
 using UnityEngine;
 
 namespace UltimateXR.Manipulation

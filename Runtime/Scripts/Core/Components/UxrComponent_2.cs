@@ -49,17 +49,7 @@ namespace UltimateXR.Core.Components
         /// <summary>
         ///     Parent the component belongs to.
         /// </summary>
-        public TP Parent
-        {
-            get
-            {
-                if (_parent == null)
-                {
-                    _parent = GetComponentInParent<TP>();
-                }
-                return _parent;
-            }
-        }
+        public TP Parent => GetComponentInParent<TP>();
 
         #endregion
 
@@ -83,28 +73,8 @@ namespace UltimateXR.Core.Components
             {
                 return AllComponents.Where(c => c is UxrComponent<TP, TC> child && child.Parent == parent);
             }
-            return AllComponents.Where(c => c.isActiveAndEnabled && c is UxrComponent<TP, TC> child && child.Parent == parent);
+            return AllComponents.Where(c => c is UxrComponent<TP, TC> child && child.Parent == parent && c.isActiveAndEnabled);
         }
-
-        #endregion
-
-        #region Unity
-
-        /// <summary>
-        ///     Pre-caches the root parent's component.
-        /// </summary>
-        protected override void Awake()
-        {
-            base.Awake();
-
-            _parent = GetComponentInParent<TP>();
-        }
-
-        #endregion
-
-        #region Private Types & Data
-
-        private TP _parent;
 
         #endregion
     }

@@ -6,7 +6,7 @@
 using UltimateXR.Core;
 using UnityEditor;
 
-namespace UltimateXR.Editor.Sdks
+namespace UltimateXR.Editor.Sdks.InputTracking
 {
     /// <summary>
     ///     SDK Locator for the Windows Mixed Reality SDK.
@@ -16,7 +16,10 @@ namespace UltimateXR.Editor.Sdks
         #region Public Overrides UxrSdkLocator
 
         /// <inheritdoc />
-        public override string Name => UxrManager.SdkWindowsMixedReality;
+        public override SupportType Support => SupportType.InputTracking;
+
+        /// <inheritdoc />
+        public override string Name => UxrConstants.SdkWindowsMixedReality;
 
         /// <inheritdoc />
         public override string MinimumUnityVersion => "2021.1";
@@ -86,7 +89,7 @@ namespace UltimateXR.Editor.Sdks
         /// <summary>
         ///     Allows to remove dependencies from the project in case the user removed SDK folders manually.
         /// </summary>
-        [MenuItem("Tools/UltimateXR/SDKs/Remove Symbols for Windows Mixed Reality")]
+        [MenuItem(UxrConstants.Editor.MenuPathSdksInputTracking + "Remove Symbols for Windows Mixed Reality", priority = UxrConstants.Editor.PriorityMenuPathSdksInputTracking)]
         private static void RemoveSymbols()
         {
             UxrSdkManager.RemoveSymbols(new UxrSdkLocatorWindowsMixedReality());

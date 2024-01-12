@@ -5437,6 +5437,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7a14046e346a1a4a80bc53b1c296bb0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: d108b1fe-d12d-4e90-8b0b-162743e32b4f
+  __prefabGuid: 81a6e4099b454fe479f240fbb12bf640
+  __isInPrefab: 1
   _reorientArrowRoot: {fileID: 1670105640789478}
   _validColorStateIgnoreList:
   - {fileID: 1636197212540806}

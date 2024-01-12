@@ -20,7 +20,7 @@ namespace UltimateXR.Devices.Integrations.SteamVR
         /// <summary>
         ///     Gets SDK dependency. SteamVR tracking devices require SteamVR SDK installed.
         /// </summary>
-        public override string SDKDependency => UxrManager.SdkSteamVR;
+        public override string SDKDependency => UxrConstants.SdkSteamVR;
 
         #endregion
 

@@ -10,10 +10,33 @@ using System.Threading.Tasks;
 namespace UltimateXR.Core.Threading.TaskControllers
 {
     /// <summary>
-    ///     A wrapper class to turn a cancelable task delegate into a controllable
-    ///     <see cref="UxrCancellableController.Start()" />/
-    ///     <see cref="UxrCancellableController.Stop" /> pattern.
+    ///     A class that simplifies running tasks in Unity, taking care of stopping them automatically if an application quits
+    ///     or Unity exits playmode.
     /// </summary>
+    /// <example>
+    ///     <para>
+    ///         UxrTaskController simplifies running the task and takes care of stopping it automatically if Unity or the
+    ///         application stops/quits.
+    ///         The constructor lets you start the task automatically, without requiring any further instructions, and also
+    ///         start/stop it manually if needed.
+    ///     </para>
+    ///     <code>
+    ///     // An asynchronous task
+    ///     public async Task MyTask(int parameterA, CancellationToken ct)
+    ///     {
+    ///         await SomethingAsync(ct);
+    ///     }
+    ///     <br />
+    ///     // Create the task but don't start it yet (autoStart = false).
+    ///     UxrTaskController taskController = new UxrTaskController(ct => MyTask(10, ct), false);<br />
+    ///     <br />
+    ///     // Start the task manually. There are optional parameters for delayed start or forced duration.
+    ///     taskController.Start();<br />
+    ///     <br />
+    ///     // Stop the task manually at any point.
+    ///     taskController.Stop();
+    ///     </code>
+    /// </example>
     public sealed class UxrTaskController : UxrCancellableController
     {
         #region Constructors & Finalizer
@@ -75,7 +98,7 @@ namespace UltimateXR.Core.Threading.TaskControllers
         /// <inheritdoc />
         protected override async void StartInternal(CancellationToken ct, Action onCompleted)
         {
-            await _taskFunc(ct).ConfigureAwait(true);
+            await _taskFunc(ct);
             onCompleted();
         }
 

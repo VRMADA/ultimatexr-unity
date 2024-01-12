@@ -47,6 +47,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3dc12cc8ceda632428882a248e42df44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 07a9760a-7012-4873-a4a0-58d3bd73633b
+  __prefabGuid: 95c478f150ccb19479163c230f3914f4
+  __isInPrefab: 1
   _floorCenter: {fileID: 7558918880325445593}
   _leftDoor: {fileID: 7846093289797472831}
   _rightDoor: {fileID: 4482263683134349178}

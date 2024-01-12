@@ -24,7 +24,7 @@ namespace UltimateXR.Devices
         ///     Gets the SDK the implemented device needs in order to be available.
         ///     It should be null or empty if there is no SDK dependency. Otherwise is should use any of the SDK names in
         ///     <see cref="UxrManager" />. For example if requires the Oculus SDK, it should return
-        ///     <see cref="UxrManager.SdkOculus" />.
+        ///     <see cref="UxrConstants.SdkOculus" />.
         /// </summary>
         string SDKDependency { get; }
 

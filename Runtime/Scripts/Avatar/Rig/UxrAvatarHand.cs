@@ -230,7 +230,10 @@ namespace UltimateXR.Avatar.Rig
                 return false;
             }
 
-            direction = Wrist.TransformDirection(Vector3.Cross(Wrist.InverseTransformPoint(Index.Proximal.position), Wrist.InverseTransformPoint(Little.Proximal.position)).normalized);
+            Vector3 localPalmToIndex  = Wrist.InverseTransformPoint(Index.Proximal.position).normalized;
+            Vector3 localPalmToLittle = Wrist.InverseTransformPoint(Little.Proximal.position).normalized;
+
+            direction = Wrist.TransformDirection(Vector3.Cross(localPalmToIndex, localPalmToLittle)).normalized;
 
             if (handSide == UxrHandSide.Right)
             {

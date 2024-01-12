@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UltimateXR.Core;
+using UltimateXR.Core.Settings;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -94,8 +96,15 @@ namespace UltimateXR.Extensions.System.Collections
         {
             void OnFaulted(Task runTask, int itemIndex)
             {
-                Debug.LogWarning($"ForEachThreaded::Item[{itemIndex}] FAULTED (see reason below):");
-                Debug.LogException(runTask.Exception);
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.CoreModule} ForEachThreaded::Item[{itemIndex}] faulted (see reason below):");
+                }
+
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+                {
+                    Debug.LogException(runTask.Exception);
+                }
             }
 
             return Task.WhenAll(list.Select((item, index) => Task.Run(() => action(item)).ContinueWith(runTask => OnFaulted(runTask, index), TaskContinuationOptions.OnlyOnFaulted)));
@@ -112,8 +121,16 @@ namespace UltimateXR.Extensions.System.Collections
         {
             TOut OnFaulted(Task<TOut> t, int itemIndex)
             {
-                Debug.LogWarning($"ForEachThreaded::Item[{itemIndex}] FAULTED (see reason below):");
-                Debug.LogException(t.Exception);
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.CoreModule} ForEachThreaded::Item[{itemIndex}] faulted (see reason below):");
+                }
+
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+                {
+                    Debug.LogException(t.Exception);
+                }
+                
                 return default;
             }
 

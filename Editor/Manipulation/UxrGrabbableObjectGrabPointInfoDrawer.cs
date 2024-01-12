@@ -368,7 +368,7 @@ namespace UltimateXR.Editor.Manipulation
 
                             if (targetObjects.Length == 1 && snapTransformNew != null && !snapTransformNew.HasParent((targetObjects[0] as UxrGrabbableObject).transform))
                             {
-                                EditorUtility.DisplayDialog("Invalid snap transform", "Snap transform must be a child GameObject of the GameObject containing this component", "OK");
+                                EditorUtility.DisplayDialog("Invalid snap transform", "Snap transform must be a child GameObject of the GameObject containing this component", UxrConstants.Editor.Ok);
                                 gripPoseInfoProperty.FindPropertyRelative(PropertyGripAlignTransformHandLeft).objectReferenceValue = snapTransformOld;
                             }
                             else
@@ -390,7 +390,7 @@ namespace UltimateXR.Editor.Manipulation
 
                             if (targetObjects.Length == 1 && snapTransformNew && !snapTransformNew.HasParent((targetObjects[0] as UxrGrabbableObject).transform))
                             {
-                                EditorUtility.DisplayDialog("Invalid snap transform", "Snap transform must be a child GameObject of the GameObject containing this component", "OK");
+                                EditorUtility.DisplayDialog("Invalid snap transform", "Snap transform must be a child GameObject of the GameObject containing this component", UxrConstants.Editor.Ok);
                                 gripPoseInfoProperty.FindPropertyRelative(PropertyGripAlignTransformHandRight).objectReferenceValue = snapTransformOld;
                             }
                             else
@@ -515,7 +515,7 @@ namespace UltimateXR.Editor.Manipulation
         {
             Transform snapParent = leftSnap != null  ? leftSnap.parent :
                                    rightSnap != null ? rightSnap.parent : null;
-            string prefabName = selectedAvatarPrefab != null ? selectedAvatarPrefab.name : UxrGrabbableObject.DefaultAvatarName;
+            string prefabName = selectedAvatarPrefab != null ? selectedAvatarPrefab.name : UxrConstants.DefaultAvatarName;
 
             UxrGrabbableObject grabbableObject = property.serializedObject.targetObject as UxrGrabbableObject;
 

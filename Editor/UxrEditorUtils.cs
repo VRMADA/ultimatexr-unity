@@ -11,6 +11,7 @@ using UltimateXR.Avatar.Controllers;
 using UltimateXR.Core;
 using UltimateXR.Devices;
 using UltimateXR.Manipulation;
+using UnityEditor;
 using Object = UnityEngine.Object;
 
 namespace UltimateXR.Editor
@@ -20,13 +21,15 @@ namespace UltimateXR.Editor
     /// </summary>
     public static partial class UxrEditorUtils
     {
-        #region Public Types & Data
-
-        public const int ButtonWidth = 200;
-
-        #endregion
-
         #region Public Methods
+        
+        /// <summary>
+        ///     Shows an error message window telling the user the selected folder must be in the current project.
+        /// </summary>
+        public static void ShowFolderNotInProjectError()
+        {
+            EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "Folder must be in the current project.", UxrConstants.Editor.Ok);
+        }
 
         /// <summary>
         ///     Checks for the presence of <see cref="UxrManager" /> in scene.

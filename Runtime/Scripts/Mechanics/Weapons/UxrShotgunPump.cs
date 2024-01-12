@@ -78,9 +78,9 @@ namespace UltimateXR.Mechanics.Weapons
                     _audioSlide.Play(_pump.transform.position);
                 }
 
-                if (UxrGrabManager.Instance.GetGrabbingHand(_pump, 0, out UxrHandSide handSide))
+                if (UxrGrabManager.Instance.GetGrabbingHand(_pump, 0, out UxrGrabber grabber) && grabber.Avatar.AvatarMode == UxrAvatarMode.Local)
                 {
-                    UxrAvatar.LocalAvatarInput.SendHapticFeedback(handSide, _firearm.IsLoaded(_triggerIndex) ? _hapticClipSlideAlreadyLoaded : _hapticClipSlide);
+                    UxrAvatar.LocalAvatarInput.SendHapticFeedback(grabber.Side, _firearm.IsLoaded(_triggerIndex) ? _hapticClipSlideAlreadyLoaded : _hapticClipSlide);
                 }
             }
             else if (_state == State.WaitPumpBack && currentSlide < _slideThreshold * 0.9f)
@@ -94,9 +94,9 @@ namespace UltimateXR.Mechanics.Weapons
                     _audioSlideBack.Play(_pump.transform.position);
                 }
 
-                if (UxrGrabManager.Instance.GetGrabbingHand(_pump, 0, out UxrHandSide handSide))
+                if (UxrGrabManager.Instance.GetGrabbingHand(_pump, 0, out UxrGrabber grabber) && grabber.Avatar.AvatarMode == UxrAvatarMode.Local)
                 {
-                    UxrAvatar.LocalAvatarInput.SendHapticFeedback(handSide, _firearm.IsLoaded(_triggerIndex) ? _hapticClipSlideBackAlreadyLoaded : _hapticClipSlideBack);
+                    UxrAvatar.LocalAvatarInput.SendHapticFeedback(grabber.Side, _firearm.IsLoaded(_triggerIndex) ? _hapticClipSlideBackAlreadyLoaded : _hapticClipSlideBack);
                 }
 
                 _firearm.Reload(_triggerIndex);

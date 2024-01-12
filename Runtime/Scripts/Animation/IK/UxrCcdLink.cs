@@ -100,6 +100,11 @@ namespace UltimateXR.Animation.IK
         }
 
         /// <summary>
+        ///     Gets whether the data has been initialized.
+        /// </summary>
+        public bool Initialized { get; internal set; }
+
+        /// <summary>
         ///     Gets the local rotation at the beginning.
         /// </summary>
         public Quaternion InitialLocalRotation { get; internal set; }

@@ -4,9 +4,8 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System;
-using UltimateXR.UI;
 
-namespace UltimateXR
+namespace UltimateXR.UI
 {
     /// <summary>
     /// Enumerates the different elements that a <see cref="UxrLaserPointer"/> can interact with. 

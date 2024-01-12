@@ -369,7 +369,7 @@ namespace UltimateXR.Avatar.Controllers
         {
             base.OnEnable();
 
-            UxrManager.AvatarMoved                 += UxrManager_AvatarMoved;
+            UxrAvatar.GlobalAvatarMoved            += UxrAvatar_GlobalAvatarMoved;
             UxrGrabManager.Instance.ObjectGrabbed  += UxrGrabManager_ObjectGrabbed;
             UxrGrabManager.Instance.ObjectPlaced   += UxrGrabManager_ObjectPlacedOrReleased;
             UxrGrabManager.Instance.ObjectReleased += UxrGrabManager_ObjectPlacedOrReleased;
@@ -382,7 +382,7 @@ namespace UltimateXR.Avatar.Controllers
         {
             base.OnDisable();
 
-            UxrManager.AvatarMoved                 -= UxrManager_AvatarMoved;
+            UxrAvatar.GlobalAvatarMoved            -= UxrAvatar_GlobalAvatarMoved;
             UxrGrabManager.Instance.ObjectGrabbed  -= UxrGrabManager_ObjectGrabbed;
             UxrGrabManager.Instance.ObjectPlaced   -= UxrGrabManager_ObjectPlacedOrReleased;
             UxrGrabManager.Instance.ObjectReleased -= UxrGrabManager_ObjectPlacedOrReleased;
@@ -411,9 +411,9 @@ namespace UltimateXR.Avatar.Controllers
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void UxrManager_AvatarMoved(object sender, UxrAvatarMoveEventArgs e)
+        private void UxrAvatar_GlobalAvatarMoved(object sender, UxrAvatarMoveEventArgs e)
         {
-            if (_bodyIK != null && e.Avatar == Avatar)
+            if (_bodyIK != null && ReferenceEquals(sender, Avatar))
             {
                 _bodyIK.NotifyAvatarMoved(e);
             }

@@ -122,16 +122,17 @@ namespace UltimateXR.Extensions.Unity.Math
         ///     Computes the average quaternion from a list.
         /// </summary>
         /// <param name="quaternions">List of quaternions</param>
+        /// <param name="defaultIfEmpty">The default value to return if the list of quaternions is empty</param>
         /// <returns>Average quaternion</returns>
         /// <remarks>
         ///     From
         ///     https://gamedev.stackexchange.com/questions/119688/calculate-average-of-arbitrary-amount-of-quaternions-recursion
         /// </remarks>
-        public static Quaternion Average(IEnumerable<Quaternion> quaternions)
+        public static Quaternion Average(IEnumerable<Quaternion> quaternions, Quaternion defaultIfEmpty = default)
         {
-            if (quaternions == null || quaternions.Count() == 0)
+            if (quaternions == null || !quaternions.Any())
             {
-                return Quaternion.identity;
+                return defaultIfEmpty;
             }
 
             float x = 0.0f;

@@ -3,6 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Core.Settings;
 using UltimateXR.Manipulation;
 using UltimateXR.Extensions.Unity;
 using UnityEngine;
@@ -20,7 +21,6 @@ namespace UltimateXR.Core.Components.Composite
     ///     </para>
     /// </summary>
     /// <typeparam name="T">Component type</typeparam>
-    [RequireComponent(typeof(UxrGrabbableObject))]
     public abstract class UxrGrabbableObjectComponent<T> : UxrComponent<T> where T : UxrGrabbableObjectComponent<T>
     {
         #region Public Types & Data
@@ -62,7 +62,10 @@ namespace UltimateXR.Core.Components.Composite
 
             if (GrabbableObject == null && IsGrabbableObjectRequired)
             {
-                Debug.LogError($"Component {nameof(T)} requires a {nameof(UxrGrabbableObject)} component in the same object or any of its parents.");
+                if (UxrGlobalSettings.Instance.LogLevelManipulation >= UxrLogLevel.Errors)
+                {
+                    Debug.LogError($"Component {nameof(T)} requires a {nameof(UxrGrabbableObject)} component in the same object or any of its parents.");
+                }
             }
         }
 

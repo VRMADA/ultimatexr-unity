@@ -4,8 +4,9 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UltimateXR.Avatar;
-using UltimateXR.Core;
 using UltimateXR.Core.Components;
 using UltimateXR.Extensions.Unity.Render;
 using UltimateXR.Locomotion;
@@ -23,6 +24,12 @@ namespace UltimateXR.Rendering.LOD
     [RequireComponent(typeof(LODGroup))]
     public class UxrLODGroup : UxrComponent<UxrLODGroup>
     {
+        #region Inspector Properties/Serialized Fields
+
+        [SerializeField] private bool _onlyFixLodBias;
+
+        #endregion
+
         #region Public Types & Data
 
         /// <summary>
@@ -41,7 +48,23 @@ namespace UltimateXR.Rendering.LOD
         {
             base.Awake();
 
-            UxrTeleportLocomotion.GlobalEnabled += UxrLocomotion_Enabled;
+            if (!_onlyFixLodBias)
+            {
+                UxrTeleportLocomotion.GlobalEnabled += UxrLocomotion_Enabled;
+                
+                UnityEngine.LOD[] lods = UnityLODGroup.GetLODs();
+
+                foreach (UnityEngine.LOD lod in lods)
+                {
+                    foreach (Renderer r in lod.renderers)
+                    {
+                        if (r != null && !_lodRenderers.ContainsKey(r))
+                        {
+                            _lodRenderers.Add(r, r.enabled);
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -51,19 +74,58 @@ namespace UltimateXR.Rendering.LOD
         {
             base.OnDestroy();
 
-            UxrTeleportLocomotion.GlobalEnabled -= UxrLocomotion_Enabled;
+            if (!_onlyFixLodBias)
+            {
+                UxrTeleportLocomotion.GlobalEnabled -= UxrLocomotion_Enabled;
+            }
         }
 
         /// <summary>
         ///     Subscribes to the event called whenever an avatar was moved.
-        ///     Also starts the LOD Bias fix coroutine.
+        ///     Also starts the LOD Bias fix coroutine and sets up the correct LOD level if there is a local avatar.
         /// </summary>
         protected override void OnEnable()
         {
             base.OnEnable();
 
-            UxrManager.AvatarMoved += UxrManager_AvatarMoved;
+            if (!_onlyFixLodBias)
+            {
+                UxrAvatar.GlobalAvatarMoved += UxrAvatar_GlobalAvatarMoved;
+            }
+            
             StartCoroutine(FixLodBiasCoroutine());
+
+            if (UxrAvatar.LocalAvatar && !_onlyFixLodBias)
+            {
+                if (UxrAvatar.LocalAvatar.CameraComponent)
+                {
+                    UnityLODGroup.EnableLevelRenderers(UnityLODGroup.GetVisibleLevel(UxrAvatar.LocalAvatar.CameraComponent));
+                }
+
+                UxrLocomotion locomotion = UxrLocomotion.EnabledComponentsInLocalAvatar.FirstOrDefault();
+
+                if (locomotion != null)
+                {
+                    _isSmoothLocomotionEnabled = locomotion.IsSmoothLocomotion;
+                    UnityLODGroup.enabled      = locomotion.IsSmoothLocomotion;
+                }
+            }
+
+            // Re-enable renderers that were initially enabled because when disabling and enabling this component again,
+            // the renderer states get saved incorrectly.
+
+            if (_reEnableRenderers && !_onlyFixLodBias)
+            {
+                foreach (var rendererState in _lodRenderers)
+                {
+                    if (rendererState.Key != null && rendererState.Value)
+                    {
+                        rendererState.Key.enabled = true;
+                    }
+                }
+
+                _reEnableRenderers = false;
+            }
         }
 
         /// <summary>
@@ -73,8 +135,12 @@ namespace UltimateXR.Rendering.LOD
         {
             base.OnDisable();
 
-            UxrManager.AvatarMoved -= UxrManager_AvatarMoved;
-            UnityLODGroup.enabled  =  true;
+            if (!_onlyFixLodBias)
+            {
+                UxrAvatar.GlobalAvatarMoved -= UxrAvatar_GlobalAvatarMoved;
+                UnityLODGroup.enabled       =  true;
+                _reEnableRenderers          =  true;
+            }
         }
 
         #endregion
@@ -121,7 +187,7 @@ namespace UltimateXR.Rendering.LOD
         /// <param name="locomotion">Locomotion component that was enabled</param>
         private void UxrLocomotion_Enabled(UxrLocomotion locomotion)
         {
-            if (locomotion.Avatar.AvatarMode == UxrAvatarMode.Local)
+            if (locomotion.Avatar.AvatarMode == UxrAvatarMode.Local && !_onlyFixLodBias)
             {
                 _isSmoothLocomotionEnabled = locomotion.IsSmoothLocomotion;
                 UnityLODGroup.enabled      = locomotion.IsSmoothLocomotion;
@@ -138,11 +204,13 @@ namespace UltimateXR.Rendering.LOD
         /// </summary>
         /// <param name="sender">Event sender</param>
         /// <param name="e">Event parameters</param>
-        private void UxrManager_AvatarMoved(object sender, UxrAvatarMoveEventArgs e)
+        private void UxrAvatar_GlobalAvatarMoved(object sender, UxrAvatarMoveEventArgs e)
         {
-            if (e.Avatar.AvatarMode == UxrAvatarMode.Local && !_isSmoothLocomotionEnabled)
+            UxrAvatar avatar = sender as UxrAvatar;
+
+            if (avatar == UxrAvatar.LocalAvatar && !_isSmoothLocomotionEnabled)
             {
-                UnityLODGroup.EnableLevelRenderers(UnityLODGroup.GetVisibleLevel(e.Avatar.CameraComponent));
+                UnityLODGroup.EnableLevelRenderers(UnityLODGroup.GetVisibleLevel(avatar.CameraComponent));
             }
         }
 
@@ -150,8 +218,10 @@ namespace UltimateXR.Rendering.LOD
 
         #region Private Types & Data
 
-        private static bool s_lodGroupChanged;
-        private        bool _isSmoothLocomotionEnabled = true;
+        private static   bool                       s_lodGroupChanged;
+        private readonly Dictionary<Renderer, bool> _lodRenderers              = new Dictionary<Renderer, bool>();
+        private          bool                       _isSmoothLocomotionEnabled = true;
+        private          bool                       _reEnableRenderers;
 
         #endregion
     }

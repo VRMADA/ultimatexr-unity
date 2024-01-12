@@ -4,6 +4,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System;
+using UltimateXR.Core.Settings;
 using UnityEngine;
 
 namespace UltimateXR.Core.Math
@@ -52,7 +53,10 @@ namespace UltimateXR.Core.Math
             
             if (axis < 0 || axis > 3)
             {
-                Debug.LogError($"Assigning invalid value to axis: {axis}");
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+                {
+                    Debug.LogError($"{UxrConstants.CoreModule} Assigning invalid value to axis: {axis}");
+                }
             }
             
 #endif
@@ -132,7 +136,11 @@ namespace UltimateXR.Core.Math
         {
             if (axis1 == axis2)
             {
-                Debug.LogError($"{nameof(UxrAxis)}: Got same axis for {nameof(OtherThan)} (axis1)");
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+                {
+                    Debug.LogError($"{UxrConstants.CoreModule} {nameof(UxrAxis)}: Got same axis for {nameof(OtherThan)} (axis1)");
+                }
+                
                 return axis1.Perpendicular;
             }
 

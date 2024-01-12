@@ -19,7 +19,7 @@ namespace UltimateXR.Devices.Integrations
         #region Public Overrides UxrControllerInput
 
         /// <inheritdoc />
-        public override string SDKDependency => UxrManager.SdkUnityInputSystem;
+        public override string SDKDependency => UxrConstants.SdkUnityInputSystem;
 
         /// <inheritdoc />
         public override UxrControllerSetupType SetupType => UxrControllerSetupType.Single;
@@ -276,7 +276,7 @@ namespace UltimateXR.Devices.Integrations
             SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.DPadLeft,  Input.GetKey(KeyCode.JoystickButton11));
             SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.DPadRight, Input.GetKey(KeyCode.JoystickButton12));
             SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.DPadUp,    Input.GetKey(KeyCode.JoystickButton13));
-            SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.DPadDown,  Input.GetKey(KeyCode.JoystickButton14));
+            SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.DPadDown,  Input.GetKey(KeyCode.JoystickButton14)));
 
 #else
             this.SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.Joystick,  Input.GetKey(KeyCode.JoystickButton8));

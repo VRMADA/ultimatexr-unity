@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 using UltimateXR.Core;
 using UltimateXR.Core.Components;
+using UltimateXR.Core.Math;
 using UltimateXR.Extensions.Unity;
 using UnityEngine;
 
@@ -19,10 +20,12 @@ namespace UltimateXR.Animation.Transforms
 
         [SerializeField] private UxrLookAtMode _mode = UxrLookAtMode.Target;
         [SerializeField] private Transform     _target;
-        [SerializeField] private Vector3       _direction          = Vector3.forward;
-        [SerializeField] private bool          _allowRotateAroundY = true;
-        [SerializeField] private bool          _allowRotateAroundX = true;
-        [SerializeField] private bool          _invertedForwardAxis;
+        [SerializeField] private UxrAxis       _lookAxis               = UxrAxis.Z;
+        [SerializeField] private UxrAxis       _upAxis                 = UxrAxis.Y;
+        [SerializeField] private UxrAxis       _matchDirection         = UxrAxis.Z;
+        [SerializeField] private bool          _allowRotateAroundUp    = true;
+        [SerializeField] private bool          _allowRotateAroundRight = true;
+        [SerializeField] private bool          _invertedLookAxis;
         [SerializeField] private bool          _onlyOnce;
 
         #endregion
@@ -34,28 +37,44 @@ namespace UltimateXR.Animation.Transforms
         /// </summary>
         /// <param name="gameObject">The object that will look at the target</param>
         /// <param name="target">The target</param>
-        /// <param name="allowRotateAroundVerticalAxis">
-        ///     Should the lookAt alter the rotation around the
-        ///     vertical axis?
+        /// <param name="lookAxis">The object look axis</param>
+        /// <param name="upAxis">The object up vector</param>
+        /// <param name="allowRotateAroundObjectUp">
+        ///     Should the lookAt alter the rotation around the vertical axis?
         /// </param>
-        /// <param name="allowRotateAroundHorizontalAxis">
-        ///     Should the lookAt alter the rotation around
-        ///     the horizontal axis?
+        /// <param name="allowRotateAroundObjectRight">
+        ///     Should the lookAt alter the rotation around the horizontal axis?
         /// </param>
-        /// <param name="invertedForwardAxis">
-        ///     If true, the target's forward axis will try to point at
-        ///     the opposite direction where the target is. By default this is false, meaning the forward
-        ///     vector will try to point at the target
+        /// <param name="invertedLookAxis">
+        ///     If true, the target's look axis will try to point at the opposite direction where the target is. By default this is
+        ///     false, meaning the look vector will try to point at the target
         /// </param>
-        public static void MakeLookAt(GameObject gameObject, Transform target, bool allowRotateAroundVerticalAxis, bool allowRotateAroundHorizontalAxis, bool invertedForwardAxis)
+        public static void MakeLookAt(GameObject gameObject,
+                                      Transform  target,
+                                      UxrAxis    lookAxis,
+                                      UxrAxis    upAxis,
+                                      bool       allowRotateAroundObjectUp    = true,
+                                      bool       allowRotateAroundObjectRight = true,
+                                      bool       invertedLookAxis             = false,
+                                      bool       onlyOnce                     = false)
         {
+            if (gameObject == null)
+            {
+                return;
+            }
+
             UxrLookAt lookAtComponent = gameObject.GetOrAddComponent<UxrLookAt>();
 
-            lookAtComponent._mode                = UxrLookAtMode.Target;
-            lookAtComponent._target              = target;
-            lookAtComponent._allowRotateAroundY  = allowRotateAroundVerticalAxis;
-            lookAtComponent._allowRotateAroundX  = allowRotateAroundHorizontalAxis;
-            lookAtComponent._invertedForwardAxis = invertedForwardAxis;
+            lookAtComponent._mode                   = UxrLookAtMode.Target;
+            lookAtComponent._target                 = target;
+            lookAtComponent._lookAxis               = lookAxis;
+            lookAtComponent._upAxis                 = upAxis;
+            lookAtComponent._allowRotateAroundUp    = allowRotateAroundObjectUp;
+            lookAtComponent._allowRotateAroundRight = allowRotateAroundObjectRight;
+            lookAtComponent._invertedLookAxis       = invertedLookAxis;
+            lookAtComponent._onlyOnce               = onlyOnce;
+
+            lookAtComponent.PerformLookAt(false);
         }
 
         /// <summary>
@@ -63,58 +82,94 @@ namespace UltimateXR.Animation.Transforms
         /// </summary>
         /// <param name="gameObject">The object that will look at the target</param>
         /// <param name="target">The target</param>
-        /// <param name="direction">The direction in target's coordinate system</param>
-        /// <param name="allowRotateAroundVerticalAxis">
-        ///     Should the lookAt alter the rotation around the
-        ///     vertical axis?
+        /// <param name="direction">The target axis</param>
+        /// <param name="lookAxis">The object look axis</param>
+        /// <param name="upAxis">The object up vector</param>
+        /// <param name="allowRotateAroundUp">
+        ///     Should the lookAt alter the rotation around the vertical axis?
         /// </param>
-        /// <param name="allowRotateAroundHorizontalAxis">
-        ///     Should the lookAt alter the rotation around
-        ///     the horizontal axis?
+        /// <param name="allowRotateAroundRight">
+        ///     Should the lookAt alter the rotation around the horizontal axis?
         /// </param>
         /// <param name="invertedForwardAxis">
-        ///     If true, the target's forward axis will try to point at
-        ///     the opposite direction where the target is. By default this is false, meaning the forward
-        ///     vector will try to point at the target
+        ///     If true, the target's forward axis will try to point at the opposite direction where the target is. By default this
+        ///     is false, meaning the forward vector will try to point at the target
         /// </param>
-        public static void MakeLookAt(GameObject gameObject, Transform target, Vector3 direction, bool allowRotateAroundVerticalAxis, bool allowRotateAroundHorizontalAxis, bool invertedForwardAxis)
+        /// <param name="onlyOnce">Whether to perform the look at only once</param>
+        public static void MatchTargetDirection(GameObject gameObject,
+                                                Transform  target,
+                                                UxrAxis    direction,
+                                                UxrAxis    lookAxis,
+                                                UxrAxis    upAxis,
+                                                bool       allowRotateAroundUp    = true,
+                                                bool       allowRotateAroundRight = true,
+                                                bool       invertedForwardAxis    = false,
+                                                bool       onlyOnce               = false)
         {
+            if (gameObject == null)
+            {
+                return;
+            }
+
             UxrLookAt lookAtComponent = gameObject.GetOrAddComponent<UxrLookAt>();
 
-            lookAtComponent._mode                = UxrLookAtMode.MatchTargetDirection;
-            lookAtComponent._target              = target;
-            lookAtComponent._allowRotateAroundY  = allowRotateAroundVerticalAxis;
-            lookAtComponent._allowRotateAroundX  = allowRotateAroundHorizontalAxis;
-            lookAtComponent._invertedForwardAxis = invertedForwardAxis;
+            lookAtComponent._mode                   = UxrLookAtMode.MatchTargetDirection;
+            lookAtComponent._target                 = target;
+            lookAtComponent._matchDirection         = direction;
+            lookAtComponent._lookAxis               = lookAxis;
+            lookAtComponent._upAxis                 = upAxis;
+            lookAtComponent._allowRotateAroundUp    = allowRotateAroundUp;
+            lookAtComponent._allowRotateAroundRight = allowRotateAroundRight;
+            lookAtComponent._invertedLookAxis       = invertedForwardAxis;
+            lookAtComponent._onlyOnce               = onlyOnce;
+
+            lookAtComponent.PerformLookAt(false);
         }
 
         /// <summary>
         ///     Makes an object look in a specific direction.
         /// </summary>
         /// <param name="gameObject">The object that will look at the given direction</param>
-        /// <param name="direction">The direction that the object will look at, in world space</param>
-        /// <param name="allowRotateAroundVerticalAxis">
-        ///     Should the lookAt alter the rotation around the
-        ///     vertical axis?
+        /// <param name="direction">The world direction that the object will look at</param>
+        /// <param name="lookAxis">The object look axis</param>
+        /// <param name="upAxis">The object up vector</param>
+        /// <param name="allowRotateAroundObjectUp">
+        ///     Should the lookAt alter the rotation around the vertical axis?
         /// </param>
-        /// <param name="allowRotateAroundHorizontalAxis">
-        ///     Should the lookAt alter the rotation around
-        ///     the horizontal axis?
+        /// <param name="allowRotateAroundObjectRight">
+        ///     Should the lookAt alter the rotation around the horizontal axis?
         /// </param>
         /// <param name="invertedForwardAxis">
-        ///     If true, the target's forward axis will try to point at
-        ///     the opposite direction where the target is. By default this is false, meaning the forward
-        ///     vector will try to point at the target
+        ///     If true, the target's forward axis will try to point at the opposite direction where the target is. By default this
+        ///     is false, meaning the forward vector will try to point at the target
         /// </param>
-        public static void MakeLookAt(GameObject gameObject, Vector3 direction, bool allowRotateAroundVerticalAxis, bool allowRotateAroundHorizontalAxis, bool invertedForwardAxis)
+        /// <param name="onlyOnce">Whether to perform the look at only once</param>
+        public static void MatchWorldDirection(GameObject gameObject,
+                                               UxrAxis    direction,
+                                               UxrAxis    lookAxis,
+                                               UxrAxis    upAxis,
+                                               bool       allowRotateAroundUp    = true,
+                                               bool       allowRotateAroundRight = true,
+                                               bool       invertedForwardAxis    = false,
+                                               bool       onlyOnce               = false)
         {
+            if (gameObject == null)
+            {
+                return;
+            }
+
             UxrLookAt lookAtComponent = gameObject.GetOrAddComponent<UxrLookAt>();
 
-            lookAtComponent._mode                = UxrLookAtMode.WorldDirection;
-            lookAtComponent._direction           = direction;
-            lookAtComponent._allowRotateAroundY  = allowRotateAroundVerticalAxis;
-            lookAtComponent._allowRotateAroundX  = allowRotateAroundHorizontalAxis;
-            lookAtComponent._invertedForwardAxis = invertedForwardAxis;
+            lookAtComponent._mode                   = UxrLookAtMode.MatchWorldDirection;
+            lookAtComponent._matchDirection         = direction;
+            lookAtComponent._lookAxis               = lookAxis;
+            lookAtComponent._upAxis                 = upAxis;
+            lookAtComponent._allowRotateAroundUp    = allowRotateAroundUp;
+            lookAtComponent._allowRotateAroundRight = allowRotateAroundRight;
+            lookAtComponent._invertedLookAxis       = invertedForwardAxis;
+            lookAtComponent._onlyOnce               = onlyOnce;
+
+            lookAtComponent.PerformLookAt(false);
         }
 
         /// <summary>
@@ -123,14 +178,16 @@ namespace UltimateXR.Animation.Transforms
         /// <param name="gameObject">The GameObject to remove the component from</param>
         public static void RemoveLookAt(GameObject gameObject)
         {
-            if (gameObject)
+            if (gameObject == null)
             {
-                UxrLookAt lookAtComponent = gameObject.GetComponent<UxrLookAt>();
+                return;
+            }
 
-                if (lookAtComponent)
-                {
-                    Destroy(lookAtComponent);
-                }
+            UxrLookAt lookAtComponent = gameObject.GetComponent<UxrLookAt>();
+
+            if (lookAtComponent)
+            {
+                Destroy(lookAtComponent);
             }
         }
 
@@ -139,7 +196,7 @@ namespace UltimateXR.Animation.Transforms
         /// </summary>
         public void ForceLookAt()
         {
-            PerformLookAt();
+            PerformLookAt(true);
         }
 
         #endregion
@@ -154,6 +211,8 @@ namespace UltimateXR.Animation.Transforms
             base.OnEnable();
 
             UxrManager.AvatarsUpdated += UxrManager_AvatarsUpdated;
+
+            _initialLocalRotation = gameObject.transform.localRotation;
         }
 
         /// <summary>
@@ -175,7 +234,7 @@ namespace UltimateXR.Animation.Transforms
         /// </summary>
         private void UxrManager_AvatarsUpdated()
         {
-            PerformLookAt();
+            PerformLookAt(false);
         }
 
         #endregion
@@ -183,47 +242,99 @@ namespace UltimateXR.Animation.Transforms
         #region Private Methods
 
         /// <summary>
-        ///     Performs look at
+        ///     Performs look at.
         /// </summary>
-        private void PerformLookAt()
+        private static void PerformLookAt(GameObject    gameObject,
+                                          Quaternion    initialLocalRotation,
+                                          UxrLookAtMode mode,
+                                          Transform     target,
+                                          UxrAxis       direction,
+                                          UxrAxis       lookAxis,
+                                          UxrAxis       upAxis,
+                                          bool          allowRotateAroundUp    = true,
+                                          bool          allowRotateAroundRight = true,
+                                          bool          invertedForwardAxis    = false)
         {
-            if (_repeat)
+            if (gameObject == null)
             {
-                Vector3 lookAt = _direction;
+                return;
+            }
 
-                if (_mode == UxrLookAtMode.Target)
+            if (!allowRotateAroundUp && !allowRotateAroundRight)
+            {
+                return;
+            }
+
+            Vector3 worldDir = Vector3.forward;
+
+            if (mode == UxrLookAtMode.Target)
+            {
+                if (target == null)
                 {
-                    if (_target == null)
-                    {
-                        return;
-                    }
-
-                    lookAt = _target.position - transform.position;
-                }
-                else if (_mode == UxrLookAtMode.MatchTargetDirection)
-                {
-                    if (_target == null)
-                    {
-                        return;
-                    }
-
-                    lookAt = _target.TransformDirection(_direction);
+                    return;
                 }
 
-                if (_allowRotateAroundX == false)
+                worldDir = target.position - gameObject.transform.position;
+            }
+            else if (mode == UxrLookAtMode.MatchTargetDirection)
+            {
+                if (target == null)
                 {
-                    lookAt.y = 0.0f;
+                    return;
                 }
 
-                if (_allowRotateAroundY == false)
-                {
-                    lookAt = Vector3.ProjectOnPlane(lookAt, transform.right);
-                }
+                worldDir = target.TransformDirection(direction);
+            }
+            else if (mode == UxrLookAtMode.MatchWorldDirection)
+            {
+                worldDir = direction;
+            }
 
-                if (lookAt != Vector3.zero)
-                {
-                    transform.rotation = Quaternion.LookRotation(_invertedForwardAxis ? -lookAt : lookAt);
-                }
+            if (invertedForwardAxis)
+            {
+                worldDir = -worldDir;
+            }
+
+            Quaternion sourceRot = TransformExt.GetWorldRotation(gameObject.transform.parent, initialLocalRotation);
+            Quaternion rotation  = Quaternion.identity;
+
+            if (allowRotateAroundUp && allowRotateAroundRight)
+            {
+                rotation = Quaternion.FromToRotation(sourceRot * lookAxis, worldDir);
+            }
+            else if (allowRotateAroundUp)
+            {
+                Vector3 axis = sourceRot * upAxis;
+                            
+                // Project on the up plane
+                worldDir = Vector3.ProjectOnPlane(worldDir, axis);
+                
+                float degrees = Vector3.SignedAngle(sourceRot * lookAxis, worldDir, axis);
+                rotation = Quaternion.AngleAxis(degrees, axis);
+            }
+            else if (allowRotateAroundRight)
+            {
+                Vector3 axis = sourceRot * Vector3.Cross(upAxis, lookAxis);
+                
+                // Project on the right plane
+                worldDir = Vector3.ProjectOnPlane(worldDir, axis);
+
+                float degrees = Vector3.SignedAngle(sourceRot * lookAxis, worldDir, axis);
+                rotation = Quaternion.AngleAxis(degrees, axis);
+            }
+
+            gameObject.transform.rotation = rotation * sourceRot;
+        }
+
+        /// <summary>
+        ///     Performs look at.
+        /// </summary>
+        /// <param name="force">Whether to force the look-at</param>
+        private void PerformLookAt(bool force)
+        {
+            if (_repeat || force)
+            {
+                PerformLookAt(gameObject, _initialLocalRotation, _mode, _target, _matchDirection, _lookAxis, _upAxis, _allowRotateAroundUp, _allowRotateAroundRight, _invertedLookAxis);
 
                 if (_onlyOnce)
                 {
@@ -236,7 +347,8 @@ namespace UltimateXR.Animation.Transforms
 
         #region Private Types & Data
 
-        private bool _repeat = true;
+        private bool       _repeat = true;
+        private Quaternion _initialLocalRotation;
 
         #endregion
     }

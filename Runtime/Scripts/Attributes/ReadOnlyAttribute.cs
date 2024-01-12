@@ -30,6 +30,11 @@ namespace UltimateXR.Attributes
         /// </summary>
         public bool HideInEditMode { get; set; } = false;
 
+        /// <summary>
+        ///     Whether to hide the variable during play-mode.
+        /// </summary>
+        public bool HideInPlayMode { get; set; } = false;
+
         #endregion
     }
 }

@@ -7,7 +7,7 @@ using UltimateXR.Core;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Editor.Sdks
+namespace UltimateXR.Editor.Sdks.InputTracking
 {
     /// <summary>
     ///     SDK Locator for the WaveXR SDK.
@@ -17,10 +17,13 @@ namespace UltimateXR.Editor.Sdks
         #region Public Overrides UxrSdkLocator
 
         /// <inheritdoc />
+        public override SupportType Support => SupportType.InputTracking;
+
+        /// <inheritdoc />
         public override string PackageName => "com.htc.upm.wave.xrsdk";
 
         /// <inheritdoc />
-        public override string Name => UxrManager.SdkWaveXR;
+        public override string Name => UxrConstants.SdkWaveXR;
 
         /// <inheritdoc />
         public override string MinimumUnityVersion => "2021.1";
@@ -108,7 +111,7 @@ namespace UltimateXR.Editor.Sdks
         /// <summary>
         ///     Allows to remove dependencies from the project in case the user removed SDK folders manually.
         /// </summary>
-        [MenuItem("Tools/UltimateXR/SDKs/Remove Symbols for WaveXR")]
+        [MenuItem(UxrConstants.Editor.MenuPathSdksInputTracking + "Remove Symbols for WaveXR", priority = UxrConstants.Editor.PriorityMenuPathSdksInputTracking)]
         private static void RemoveSymbols()
         {
             UxrSdkManager.RemoveSymbols(new UxrSdkLocatorWaveXR());

@@ -5012,6 +5012,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ac1f3fc45c4bd145acc5e43c81e68a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 321512a4-65a4-452a-9870-e17b3d2d2c4a
+  __prefabGuid: db139e2b46184474a9e3b3c4e68c0191
+  __isInPrefab: 1
   _allowRotateAroundY: 1
   _allowRotateAroundX: 1
   _invertedForwardAxis: 0
@@ -5146,6 +5149,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: daa942b3dd922ad4ca6eada519005e7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: ce2158b1-c1d2-4b24-b424-28a014618d85
+  __prefabGuid: db139e2b46184474a9e3b3c4e68c0191
+  __isInPrefab: 1
   _material: {fileID: 2100000, guid: 8db170110ac1b2b49b7b4b14171da2c6, type: 2}
   _textureColumns: 2
   _textureRows: 2
@@ -5165,4 +5171,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af3a08495f6a01846a24adb624144bb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: ed739ec3-1c3a-41d4-a53a-9c9173913b83
+  __prefabGuid: db139e2b46184474a9e3b3c4e68c0191
+  __isInPrefab: 1
   _seconds: 0.02

@@ -42,7 +42,7 @@ namespace UltimateXR.Avatar.Rig
         {
             foreach (var transform in transforms)
             {
-                transform.Value.ApplyTo(transform.Key);
+                transform.Value.ApplyLocalTo(transform.Key);
             }
         }
 

@@ -128,12 +128,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eba263f6ac85a8c4488cf1d4ae4eae98, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: c1f1ae51-e88d-4cad-82dd-b313cf389541
+  __prefabGuid: 63f542216714df8419951b150c6a29d5
+  __isInPrefab: 1
   _handSide: 0
+  _useControllerForward: 1
+  _targetTypes: 7
+  _triggerCollidersInteraction: 1
+  _blockingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   _clickInput: -2147483648
   _showLaserInput: 0
   _showLaserButtonEvent: 0
-  _optionalEnableWhenLaserOn: {fileID: 0}
-  _useControllerForward: 1
   _invisible: 1
   _rayLength: 300
   _rayWidth: 0.003
@@ -141,4 +148,5 @@ MonoBehaviour:
   _rayColorNonInteractive: {r: 1, g: 0, b: 0, a: 0.7}
   _rayHitMaterial: {fileID: 0}
   _rayHitSize: 0.004
+  _optionalEnableWhenLaserOn: {fileID: 0}
   _crosshair: {fileID: 1161960805658394}

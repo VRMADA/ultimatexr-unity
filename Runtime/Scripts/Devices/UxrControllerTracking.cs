@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UltimateXR.Animation.Interpolation;
 using UltimateXR.Core;
+using UltimateXR.Core.Settings;
 using UltimateXR.Extensions.Unity.Math;
 using UnityEngine;
 using UnityEngine.XR;
@@ -28,6 +29,20 @@ namespace UltimateXR.Devices
         [SerializeField]                                          private bool  _updateAvatarRightHand = true;
         [SerializeField] [Range(0, 1)]                            private float _smoothPosition;
         [SerializeField] [Range(0, 1)]                            private float _smoothRotation;
+
+        #endregion
+
+        #region Public Types & Data
+
+        /// <summary>
+        ///     Gets if the avatar's left hand needs to be updated each time we get new sensor data for it
+        /// </summary>
+        public bool UpdateAvatarLeftHand => _updateAvatarLeftHand;
+
+        /// <summary>
+        ///     Gets if the avatar's right hand needs to be updated each time we get new sensor data for it
+        /// </summary>
+        public bool UpdateAvatarRightHand => _updateAvatarRightHand;
 
         #endregion
 
@@ -111,12 +126,18 @@ namespace UltimateXR.Devices
 
             if (!SetupSensor(_leftHandSensor, Avatar.LeftHandBone, ref _localSensorLeftHandPos, ref _localSensorLeftHandRot))
             {
-                Debug.LogWarning(name + ": Avatar Rig has no left wrist setup or left sensor was not specified in the tracking component. Avatar's left hand position may not be updated.");
+                if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.DevicesModule} {name}: Avatar Rig has no left wrist setup or left sensor was not specified in the tracking component. Avatar's left hand position may not be updated.");
+                }
             }
 
             if (!SetupSensor(_rightHandSensor, Avatar.RightHandBone, ref _localSensorRightHandPos, ref _localSensorRightHandRot))
             {
-                Debug.LogWarning(name + ": Avatar Rig has no right wrist setup or right sensor was not specified in the tracking component. Avatar's right hand position may not be updated.");
+                if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.DevicesModule} {name}: Avatar Rig has no right wrist setup or right sensor was not specified in the tracking component. Avatar's right hand position may not be updated.");
+                }
             }
 
             // Start disabled and wait for input controllers to be connected. This way we don't have to check for controller presence in both input components and tracking components.
@@ -194,7 +215,12 @@ namespace UltimateXR.Devices
             if (RelatedControllerInputType != null && sender.GetType() == RelatedControllerInputType)
             {
                 // Compatible device.
-                Debug.Log($"Found compatible tracking component {GetType()}. Setting enabled to {e.IsConnected}");
+
+                if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Relevant)
+                {
+                    Debug.Log($"{UxrConstants.DevicesModule} Found compatible tracking component {GetType()}. Setting enabled to {e.IsConnected}");
+                }
+
                 enabled = e.IsConnected;
                 OnDeviceConnected(e);
             }
@@ -341,32 +367,22 @@ namespace UltimateXR.Devices
         #region Protected Types & Data
 
         /// <summary>
-        ///     Gets if the avatar's left hand needs to be updated each time we get new sensor data for it
-        /// </summary>
-        protected bool UpdateAvatarLeftHand => _updateAvatarLeftHand;
-
-        /// <summary>
-        ///     Gets if the avatar's right hand needs to be updated each time we get new sensor data for it
-        /// </summary>
-        protected bool UpdateAvatarRightHand => _updateAvatarRightHand;
-
-        /// <summary>
-        ///     The left hand sensor position in local avatar coordinates
+        ///     Gets the left hand sensor position in local avatar coordinates
         /// </summary>
         protected Vector3 LocalAvatarLeftHandSensorPos { get; private set; }
 
         /// <summary>
-        ///     The left hand sensor rotation in local avatar coordinates
+        ///     Gets the left hand sensor rotation in local avatar coordinates
         /// </summary>
         protected Quaternion LocalAvatarLeftHandSensorRot { get; private set; }
 
         /// <summary>
-        ///     The right hand sensor position in local avatar coordinates
+        ///     Gets the right hand sensor position in local avatar coordinates
         /// </summary>
         protected Vector3 LocalAvatarRightHandSensorPos { get; private set; }
 
         /// <summary>
-        ///     The right hand sensor rotation in local avatar coordinates
+        ///     Gets the right hand sensor rotation in local avatar coordinates
         /// </summary>
         protected Quaternion LocalAvatarRightHandSensorRot { get; private set; }
 

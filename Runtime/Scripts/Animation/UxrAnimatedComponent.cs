@@ -19,7 +19,7 @@ namespace UltimateXR.Animation
     ///     </list>
     /// </summary>
     /// <typeparam name="T">Type of animated component</typeparam>
-    public abstract class UxrAnimatedComponent<T> : UxrComponent where T : UxrAnimatedComponent<T>
+    public abstract class UxrAnimatedComponent<T> : UxrComponent<T> where T : UxrAnimatedComponent<T>
     {
         #region Inspector Properties/Serialized Fields
 

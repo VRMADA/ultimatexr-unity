@@ -3,14 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using System.Linq;
 using UltimateXR.Core;
 using UnityEditor;
-using UnityEditor.PackageManager;
-using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 
-namespace UltimateXR.Editor.Sdks
+namespace UltimateXR.Editor.Sdks.InputTracking
 {
     /// <summary>
     ///     SDK Locator for Oculus' SDK.
@@ -20,7 +17,10 @@ namespace UltimateXR.Editor.Sdks
         #region Public Overrides UxrSdkLocator
 
         /// <inheritdoc />
-        public override string Name => UxrManager.SdkOculus;
+        public override SupportType Support => SupportType.InputTracking;
+
+        /// <inheritdoc />
+        public override string Name => UxrConstants.SdkOculus;
 
         /// <inheritdoc />
         public override string MinimumUnityVersion => "2021.1";
@@ -51,8 +51,6 @@ namespace UltimateXR.Editor.Sdks
         /// <inheritdoc />
         public override void TryLocate()
         {
-#if UNITY_2018_3_OR_NEWER
-
             if (EditorUserBuildSettings.activeBuildTarget is BuildTarget.Android or BuildTarget.StandaloneWindows or BuildTarget.StandaloneWindows64)
             {
                 CurrentState = State.NotInstalled;
@@ -67,15 +65,12 @@ namespace UltimateXR.Editor.Sdks
             {
                 CurrentState = State.CurrentTargetNotSupported;
             }
-#else
-            CurrentState = State.NeedsHigherUnityVersion
-#endif
         }
 
         /// <inheritdoc />
         public override void TryGet()
         {
-            if (EditorUtility.DisplayDialog("Install integration?", $"Oculus integration asset needs to be installed. Proceed to the Asset Store?", "Yes", "Cancel"))
+            if (EditorUtility.DisplayDialog("Install integration?", $"Oculus integration asset needs to be installed. Proceed to the Asset Store?", UxrConstants.Editor.Yes, UxrConstants.Editor.Cancel))
             {
                 Application.OpenURL("https://assetstore.unity.com/packages/tools/integration/oculus-integration-82022");
             }
@@ -107,7 +102,7 @@ namespace UltimateXR.Editor.Sdks
         /// <summary>
         ///     Allows to remove dependencies from the project in case the user removed SDK folders manually.
         /// </summary>
-        [MenuItem("Tools/UltimateXR/SDKs/Remove Symbols for Oculus SDK")]
+        [MenuItem(UxrConstants.Editor.MenuPathSdksInputTracking + "Remove Symbols for Oculus SDK", priority = UxrConstants.Editor.PriorityMenuPathSdksInputTracking)]
         private static void RemoveSymbols()
         {
             UxrSdkManager.RemoveSymbols(new UxrSdkLocatorOvr());

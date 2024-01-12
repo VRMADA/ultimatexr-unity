@@ -186,15 +186,21 @@ namespace UltimateXR.Avatar.Rig
             bool isLeft = avatar.transform.InverseTransformPoint(forearm.position).x < 0.0f;
 
             float   elbowAngle = Vector3.Angle(armForward, forearmForward);
-            Vector3 elbowAxis  = Vector3.Cross(forearmForward, armForward).normalized;
+            Vector3 elbowAxis  = Vector3.Cross(forearmForward, isLeft ? -armForward : armForward).normalized;
 
-            if (elbowAngle < ElbowMinAngleThreshold)
+            Transform leftHand  = avatar.GetHandBone(UxrHandSide.Left);
+            Transform rightHand = avatar.GetHandBone(UxrHandSide.Right);
+
+            if (leftHand && rightHand)
             {
-                elbowAxis = Vector3.up; // Assume T-pose if elbow angle is too small
+                Vector3 avatarRight = (rightHand.position - leftHand.position).normalized;
+                Vector3 forward     = Vector3.Cross(avatarRight, Vector3.up);
+                elbowAxis = Vector3.Cross(isLeft ? forearmForward : -forearmForward, forward).normalized;
             }
-            else
+            else if (elbowAngle < ElbowMinAngleThreshold)
             {
-                elbowAxis = isLeft ? -elbowAxis : elbowAxis;
+                // Assume T-pose if elbow angle is too small
+                elbowAxis = Vector3.up;
             }
 
             return forearm.TransformDirection(forearm.InverseTransformDirection(elbowAxis).GetClosestAxis());
@@ -250,13 +256,13 @@ namespace UltimateXR.Avatar.Rig
                 Vector3 armForward            = (arm.Forearm.position - arm.UpperArm.position).normalized;
                 Vector3 forearmForward        = (arm.Hand.Wrist.position - arm.Forearm.position).normalized;
                 Vector3 elbowAxis             = GetWorldElbowAxis(avatar, arm.Forearm, armForward, forearmForward);
-                Vector3 armLocalForward       = arm.UpperArm.InverseTransformDirection(armForward);
-                Vector3 armLocalElbowAxis     = arm.UpperArm.InverseTransformDirection(elbowAxis);
-                Vector3 forearmLocalForward   = arm.Forearm.InverseTransformDirection(forearmForward);
-                Vector3 forearmLocalElbowAxis = arm.Forearm.InverseTransformDirection(elbowAxis);
+                Vector3 armLocalForward       = arm.UpperArm.InverseTransformDirection(armForward).GetClosestAxis();
+                Vector3 armLocalElbowAxis     = arm.UpperArm.InverseTransformDirection(elbowAxis).GetClosestAxis();
+                Vector3 forearmLocalForward   = arm.Forearm.InverseTransformDirection(forearmForward).GetClosestAxis();
+                Vector3 forearmLocalElbowAxis = arm.Forearm.InverseTransformDirection(elbowAxis).GetClosestAxis();
 
-                ArmUniversalLocalAxes     = UxrUniversalLocalAxes.FromUpForward(arm.UpperArm, armLocalElbowAxis.GetClosestAxis(), armLocalForward);
-                ForearmUniversalLocalAxes = UxrUniversalLocalAxes.FromUpForward(arm.Forearm,  armLocalElbowAxis.GetClosestAxis(), forearmLocalForward);
+                ArmUniversalLocalAxes     = UxrUniversalLocalAxes.FromUpForward(arm.UpperArm, armLocalElbowAxis, armLocalForward);
+                ForearmUniversalLocalAxes = UxrUniversalLocalAxes.FromUpForward(arm.Forearm,  armLocalElbowAxis, forearmLocalForward);
                 UpperArmLength            = Vector3.Distance(arm.UpperArm.position, arm.Forearm.position);
                 ForearmLength             = Vector3.Distance(arm.Forearm.position,  arm.Hand.Wrist.position);
 

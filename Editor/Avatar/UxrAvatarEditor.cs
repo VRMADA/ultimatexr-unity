@@ -9,6 +9,7 @@ using UltimateXR.Animation.IK;
 using UltimateXR.Avatar;
 using UltimateXR.Avatar.Controllers;
 using UltimateXR.Avatar.Rig;
+using UltimateXR.Core;
 using UltimateXR.Devices;
 using UltimateXR.Editor.Animation.IK;
 using UltimateXR.Editor.Avatar.Controllers;
@@ -83,17 +84,19 @@ namespace UltimateXR.Editor.Avatar
                 return;
             }
 
-            GameObject prefab       = null;
-            GameObject parentPrefab = null;
+            GameObject prefab                = null;
+            GameObject parentPrefab          = null;
+            bool       isPrefabStageSelected = false;
 
-            if (avatar.gameObject.IsPrefab())
+            if (avatar.gameObject.IsPrefabRoot())
             {
                 PrefabStage prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
 
                 if (prefabStage != null && prefabStage.prefabContentsRoot == avatar.gameObject)
                 {
-                    // Open in prefab window
-                    prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabStage.assetPath);
+                    // Get prefab from prefab window which is open
+                    prefab                = AssetDatabase.LoadAssetAtPath<GameObject>(prefabStage.assetPath);
+                    isPrefabStageSelected = true;
                 }
                 else
                 {
@@ -102,24 +105,24 @@ namespace UltimateXR.Editor.Avatar
             }
             else
             {
-                UxrEditorUtils.GetPrefab(avatar.gameObject, out prefab);
+                UxrEditorUtils.GetInParentPrefab(avatar.gameObject, out prefab);
                 
                 PrefabStage prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
 
                 if (prefabStage == null || prefabStage.prefabContentsRoot != avatar.gameObject)
                 {
-                    // Not open in prefab window.
+                    // It's not open in prefab window.
                     // Fix for avatar prefabs nested in another higher-level prefab
                     while (prefab != null && prefab.gameObject.transform.parent != null)
                     {
-                        UxrEditorUtils.GetPrefab(prefab.gameObject, out prefab);
+                        UxrEditorUtils.GetInParentPrefab(prefab.gameObject, out prefab);
                     }
                 }
             }
 
             if (prefab != null)
             {
-                UxrEditorUtils.GetPrefab(prefab.gameObject, out parentPrefab);
+                UxrEditorUtils.GetInParentPrefab(prefab.gameObject, out parentPrefab);
             }
 
             UxrAvatar avatarPrefab       = prefab != null ? prefab.GetComponent<UxrAvatar>() : null;
@@ -151,7 +154,7 @@ namespace UltimateXR.Editor.Avatar
                 }
 
                 // Force instances getting parent prefab from their source prefab
-                if (prefab != null && avatar.gameObject != prefab && propertyParentPrefab != null)
+                if (prefab != null && avatar.gameObject != prefab && propertyParentPrefab != null && _propertyParentPrefab.prefabOverride && !isPrefabStageSelected)
                 {
                     _propertyParentPrefab.prefabOverride = false;
                 }
@@ -203,7 +206,7 @@ namespace UltimateXR.Editor.Avatar
                 }
             }
 
-            if (!avatar.gameObject.IsPrefab())
+            if (!avatar.gameObject.IsPrefabRoot())
             {
                 // Assistant
 
@@ -220,7 +223,7 @@ namespace UltimateXR.Editor.Avatar
                         {
                             if (newInstance == null)
                             {
-                                EditorUtility.DisplayDialog("Error", "The prefab variant was created but it could not be instantiated in the scene. Try doing it manually.", "OK");
+                                EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "The prefab variant was created but it could not be instantiated in the scene. Try doing it manually.", UxrConstants.Editor.Ok);
                             }
                             else
                             {
@@ -344,7 +347,7 @@ namespace UltimateXR.Editor.Avatar
 
                                 if (!avatar.AvatarRig.HasFullHandData())
                                 {
-                                    EditorUtility.DisplayDialog("Missing data", "Could not try to figure out all hand and finger bone references. Try setting them up manually under the Avatar rig section.", "OK");
+                                    EditorUtility.DisplayDialog("Missing data", "Could not try to figure out all hand and finger bone references. Try setting them up manually under the Avatar rig section.", UxrConstants.Editor.Ok);
                                 }
                             }
                         }
@@ -473,7 +476,7 @@ namespace UltimateXR.Editor.Avatar
                     {
                         if (!avatar.SetupRigElementsFromAnimator())
                         {
-                            EditorUtility.DisplayDialog("Animator data is missing", "Could not find any Animator component with humanoid data. Please use a model with a humanoid avatar to use autofill.", "OK");
+                            EditorUtility.DisplayDialog("Animator data is missing", "Could not find any Animator component with humanoid data. Please use a model with a humanoid avatar to use autofill.", UxrConstants.Editor.Ok);
                         }
                         else
                         {
@@ -562,7 +565,7 @@ namespace UltimateXR.Editor.Avatar
                                     Selection.activeObject = AssetDatabase.LoadAssetAtPath<UxrHandPoseAsset>(AssetDatabase.GetAssetPath(pose));
                                 }
 
-                                if (!avatar.gameObject.IsPrefab())
+                                if (!avatar.IsInPrefab())
                                 {
                                     if (!avatar.IsHandPoseOverriden(pose) && GUILayout.Button(ContentOpenPose))
                                     {
@@ -580,7 +583,7 @@ namespace UltimateXR.Editor.Avatar
                     // EditorGUILayout.PropertyField(serializedObject.FindProperty("_handPoses"));
                 }
 
-                if (!string.IsNullOrEmpty(avatar.PrefabGuid) && !avatar.gameObject.IsPrefab() && !UxrHandPoseEditorWindow.IsVisible && UxrEditorUtils.CenteredButton(ContentOpenHandPoseEditor, -1))
+                if (!string.IsNullOrEmpty(avatar.PrefabGuid) && !avatar.IsInPrefab() && !UxrHandPoseEditorWindow.IsVisible && UxrEditorUtils.CenteredButton(ContentOpenHandPoseEditor, -1))
                 {
                     UxrHandPoseEditorWindow.Open(avatar);
                 }
@@ -594,7 +597,7 @@ namespace UltimateXR.Editor.Avatar
                 {
                     if (newInstance == null)
                     {
-                        EditorUtility.DisplayDialog("Error", "The prefab was created but it could not be instantiated in the scene. Try doing it manually.", "OK");
+                        EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "The prefab was created but it could not be instantiated in the scene. Try doing it manually.", UxrConstants.Editor.Ok);
                     }
                     else
                     {

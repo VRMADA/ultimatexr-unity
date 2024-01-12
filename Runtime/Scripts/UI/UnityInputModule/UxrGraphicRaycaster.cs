@@ -7,7 +7,7 @@ using UltimateXR.Core;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace UltimateXR
+namespace UltimateXR.UI.UnityInputModule
 {
     /// <summary>
     ///     Base Unity UI Graphic raycaster class.

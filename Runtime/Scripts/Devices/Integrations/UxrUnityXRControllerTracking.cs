@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
 using UltimateXR.Core;
+using UltimateXR.Core.Settings;
 using UnityEngine;
 using UnityEngine.XR;
 
@@ -24,7 +25,11 @@ namespace UltimateXR.Devices.Integrations
 
             if (Avatar.CameraComponent == null)
             {
-                Debug.LogWarning("No camera has been setup for this avatar");
+                if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.DevicesModule}: No camera has been setup for this avatar");
+                }
+                
                 return;
             }
 

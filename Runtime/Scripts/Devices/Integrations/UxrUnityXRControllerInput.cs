@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Core;
+using UltimateXR.Core.Settings;
 using UltimateXR.Haptics;
 using UnityEngine;
 using UnityEngine.XR;
@@ -177,7 +178,12 @@ namespace UltimateXR.Devices.Integrations
                 return;
             }
 
-            if (hapticClip.Clip == null)
+            if (!inputDevice.TryGetHapticCapabilities(out HapticCapabilities hapticCapabilities))
+            {
+                return;
+            }
+
+            if (hapticClip.Clip == null || !hapticCapabilities.supportsBuffer)
             {
                 SendHapticFeedback(handSide,
                                    hapticClip.FallbackClipType,
@@ -187,16 +193,16 @@ namespace UltimateXR.Devices.Integrations
                 return;
             }
 
-            if (!inputDevice.TryGetHapticCapabilities(out HapticCapabilities hapticCapabilities) || hapticCapabilities.numChannels == 0)
-            {
-                return;
-            }
-
             // Create haptics clip from audio
             byte[] hapticBuffer = CreateHapticBufferFromAudioClip(inputDevice, hapticClip.Clip);
 
             if (hapticBuffer == null)
             {
+                SendHapticFeedback(handSide,
+                                   hapticClip.FallbackClipType,
+                                   hapticClip.FallbackAmplitude,
+                                   hapticClip.FallbackDurationSeconds,
+                                   hapticClip.HapticMode);
                 return;
             }
 
@@ -212,7 +218,7 @@ namespace UltimateXR.Devices.Integrations
             // Send using replace or mix
             uint channel = 0;
 
-            if (hapticClip.HapticMode == UxrHapticMode.Mix)
+            if (hapticClip.HapticMode == UxrHapticMode.Mix && hapticCapabilities.numChannels > 0)
             {
                 if (handSide == UxrHandSide.Left)
                 {
@@ -250,7 +256,7 @@ namespace UltimateXR.Devices.Integrations
                 return;
             }
 
-            if (!inputDevice.TryGetHapticCapabilities(out HapticCapabilities hapticCapabilities) || hapticCapabilities.numChannels == 0)
+            if (!inputDevice.TryGetHapticCapabilities(out HapticCapabilities hapticCapabilities))
             {
                 return;
             }
@@ -258,7 +264,7 @@ namespace UltimateXR.Devices.Integrations
             // Setup using replace or mix
             uint channel = 0;
 
-            if (hapticMode == UxrHapticMode.Mix)
+            if (hapticMode == UxrHapticMode.Mix && hapticCapabilities.numChannels > 0)
             {
                 if (handSide == UxrHandSide.Left)
                 {
@@ -398,9 +404,9 @@ namespace UltimateXR.Devices.Integrations
                 {
                     // Left controller
 
-                    if (LogLevel >= UxrLogLevel.Relevant)
+                    if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Relevant)
                     {
-                        Debug.Log($"{InputClassName}::{nameof(InputDevices_DeviceConnected)}: Device name {inputDevice.name} was registered by {InputClassName} and is being processed as left controller. InputDevice.isValid={inputDevice.isValid}");
+                        Debug.Log($"{UxrConstants.DevicesModule} {InputClassName}::{nameof(InputDevices_DeviceConnected)}: Device name {inputDevice.name} was registered by {InputClassName} and is being processed as left controller. InputDevice.isValid={inputDevice.isValid}");
                     }
 
                     _deviceLeft  = inputDevice;
@@ -410,9 +416,9 @@ namespace UltimateXR.Devices.Integrations
                 {
                     // Right controller
 
-                    if (LogLevel >= UxrLogLevel.Relevant)
+                    if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Relevant)
                     {
-                        Debug.Log($"{InputClassName}::{nameof(InputDevices_DeviceConnected)}: Device name {inputDevice.name} was registered by {InputClassName} and is being processed as right controller. InputDevice.isValid={inputDevice.isValid}");
+                        Debug.Log($"{UxrConstants.DevicesModule} {InputClassName}::{nameof(InputDevices_DeviceConnected)}: Device name {inputDevice.name} was registered by {InputClassName} and is being processed as right controller. InputDevice.isValid={inputDevice.isValid}");
                     }
 
                     _deviceRight  = inputDevice;
@@ -439,18 +445,18 @@ namespace UltimateXR.Devices.Integrations
                 {
                     // Left controller
                     
-                    if (LogLevel >= UxrLogLevel.Relevant)
+                    if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Relevant)
                     {
-                        Debug.Log($"{InputClassName}::{nameof(InputDevices_DeviceConnected)}: Left device connected unknown: {inputDevice.name}. InputDevice.isValid={inputDevice.isValid}");
+                        Debug.Log($"{UxrConstants.DevicesModule} {InputClassName}::{nameof(InputDevices_DeviceConnected)}: Left device connected unknown: {inputDevice.name}. InputDevice.isValid={inputDevice.isValid}");
                     }
                 }
                 else if (IsRightController(inputDevice))
                 {
                     // Right controller
                     
-                    if (LogLevel >= UxrLogLevel.Relevant)
+                    if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Relevant)
                     {
-                        Debug.Log($"{InputClassName}::{nameof(InputDevices_DeviceConnected)}: Right device connected unknown: {inputDevice.name}. InputDevice.isValid={inputDevice.isValid}");
+                        Debug.Log($"{UxrConstants.DevicesModule} {InputClassName}::{nameof(InputDevices_DeviceConnected)}: Right device connected unknown: {inputDevice.name}. InputDevice.isValid={inputDevice.isValid}");
                     }
                 }
             }
@@ -467,9 +473,9 @@ namespace UltimateXR.Devices.Integrations
             {
                 if (string.Equals(inputDevice.serialNumber, _deviceLeft.serialNumber) || string.Equals(inputDevice.serialNumber, _deviceRight.serialNumber))
                 {
-                    if (LogLevel >= UxrLogLevel.Relevant)
+                    if (UxrGlobalSettings.Instance.LogLevelDevices >= UxrLogLevel.Relevant)
                     {
-                        Debug.Log($"{InputClassName}::{nameof(InputDevices_DeviceDisconnected)}: Device name {inputDevice.name} was registered by {InputClassName} and is being disconnected. InputDevice.isValid={inputDevice.isValid}");
+                        Debug.Log($"{UxrConstants.DevicesModule} {InputClassName}::{nameof(InputDevices_DeviceDisconnected)}: Device name {inputDevice.name} was registered by {InputClassName} and is being disconnected. InputDevice.isValid={inputDevice.isValid}");
                     }
                 }
 
@@ -610,11 +616,12 @@ namespace UltimateXR.Devices.Integrations
             if (leftJoystick != Vector2.zero && leftJoystick.magnitude > AnalogAsDPadThreshold)
             {
                 float joystickAngle = Input2DToAngle(leftJoystick);
+                bool  touchPadFix   = !MainJoystickIsTouchpad || buttonPressJoystickLeft;
 
-                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.JoystickLeft,  IsInput2dDPadLeft(joystickAngle));
-                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.JoystickRight, IsInput2dDPadRight(joystickAngle));
-                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.JoystickUp,    IsInput2dDPadUp(joystickAngle));
-                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.JoystickDown,  IsInput2dDPadDown(joystickAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.JoystickLeft,  touchPadFix && IsInput2dDPadLeft(joystickAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.JoystickRight, touchPadFix && IsInput2dDPadRight(joystickAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.JoystickUp,    touchPadFix && IsInput2dDPadUp(joystickAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.JoystickDown,  touchPadFix && IsInput2dDPadDown(joystickAngle));
             }
             else
             {
@@ -626,12 +633,13 @@ namespace UltimateXR.Devices.Integrations
 
             if (leftDPad != Vector2.zero && leftDPad.magnitude > AnalogAsDPadThreshold)
             {
-                float dPadAngle = Input2DToAngle(leftDPad);
+                float dPadAngle   = Input2DToAngle(leftDPad);
+                bool  touchPadFix = !MainJoystickIsTouchpad || buttonPressJoystickLeft;
 
-                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.DPadLeft,  IsInput2dDPadLeft(dPadAngle));
-                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.DPadRight, IsInput2dDPadRight(dPadAngle));
-                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.DPadUp,    IsInput2dDPadUp(dPadAngle));
-                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.DPadDown,  IsInput2dDPadDown(dPadAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.DPadLeft,  touchPadFix && IsInput2dDPadLeft(dPadAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.DPadRight, touchPadFix && IsInput2dDPadRight(dPadAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.DPadUp,    touchPadFix && IsInput2dDPadUp(dPadAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsLeft, UxrInputButtons.DPadDown,  touchPadFix && IsInput2dDPadDown(dPadAngle));
             }
             else
             {
@@ -647,11 +655,12 @@ namespace UltimateXR.Devices.Integrations
             if (rightJoystick != Vector2.zero && rightJoystick.magnitude > AnalogAsDPadThreshold)
             {
                 float joystickAngle = Input2DToAngle(rightJoystick);
+                bool  touchPadFix   = !MainJoystickIsTouchpad || buttonPressJoystickRight;
 
-                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.JoystickLeft,  IsInput2dDPadLeft(joystickAngle));
-                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.JoystickRight, IsInput2dDPadRight(joystickAngle));
-                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.JoystickUp,    IsInput2dDPadUp(joystickAngle));
-                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.JoystickDown,  IsInput2dDPadDown(joystickAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.JoystickLeft,  touchPadFix && IsInput2dDPadLeft(joystickAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.JoystickRight, touchPadFix && IsInput2dDPadRight(joystickAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.JoystickUp,    touchPadFix && IsInput2dDPadUp(joystickAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.JoystickDown,  touchPadFix && IsInput2dDPadDown(joystickAngle));
             }
             else
             {
@@ -663,12 +672,13 @@ namespace UltimateXR.Devices.Integrations
 
             if (rightDPad != Vector2.zero && rightDPad.magnitude > AnalogAsDPadThreshold)
             {
-                float dPadAngle = Input2DToAngle(rightDPad);
+                float dPadAngle   = Input2DToAngle(rightDPad);
+                bool  touchPadFix = !MainJoystickIsTouchpad || buttonPressJoystickRight;
 
-                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.DPadLeft,  IsInput2dDPadLeft(dPadAngle));
-                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.DPadRight, IsInput2dDPadRight(dPadAngle));
-                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.DPadUp,    IsInput2dDPadUp(dPadAngle));
-                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.DPadDown,  IsInput2dDPadDown(dPadAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.DPadLeft,  touchPadFix && IsInput2dDPadLeft(dPadAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.DPadRight, touchPadFix && IsInput2dDPadRight(dPadAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.DPadUp,    touchPadFix && IsInput2dDPadUp(dPadAngle));
+                SetButtonFlags(ButtonFlags.PressFlagsRight, UxrInputButtons.DPadDown,  touchPadFix && IsInput2dDPadDown(dPadAngle));
             }
             else
             {
@@ -720,7 +730,12 @@ namespace UltimateXR.Devices.Integrations
             float[] audioData = new float[audioClip.samples * audioClip.channels];
             audioClip.GetData(audioData, 0);
 
-            if (!inputDevice.TryGetHapticCapabilities(out HapticCapabilities hapticCapabilities))
+            if (!inputDevice.TryGetHapticCapabilities(out HapticCapabilities hapticCapabilities) || !hapticCapabilities.supportsBuffer)
+            {
+                return null;
+            }
+
+            if (hapticCapabilities.bufferFrequencyHz == 0)
             {
                 return null;
             }
@@ -816,7 +831,7 @@ namespace UltimateXR.Devices.Integrations
             }
             else if (button == UxrInputButtons.Joystick2)
             {
-
+                return false;
             }
             else if (button == UxrInputButtons.Trigger)
             {
@@ -843,7 +858,7 @@ namespace UltimateXR.Devices.Integrations
             }
             else if (button == UxrInputButtons.Trigger2)
             {
-
+                return false;
             }
             else if (button == UxrInputButtons.Grip)
             {
@@ -910,7 +925,7 @@ namespace UltimateXR.Devices.Integrations
             {
             }
 
-            return HasButtonContactOther(handSide, button, buttonContact);
+            return false;
         }
 
         #endregion

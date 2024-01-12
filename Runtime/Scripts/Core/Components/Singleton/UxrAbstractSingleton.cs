@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System;
 using System.Threading;
+using UltimateXR.Core.Settings;
 using UltimateXR.Core.Threading;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -99,6 +100,16 @@ namespace UltimateXR.Core.Components.Singleton
 
         #endregion
 
+        #region Protected Overrides UxrComponent
+
+        /// <summary>
+        ///     Singletons generate unique ID based on full type name. This ensures that the IDs are the same on all devices and
+        ///     message exchanges will work correctly.
+        /// </summary>
+        protected override bool UniqueIdIsTypeName => true;
+
+        #endregion
+
         #region Protected Methods
 
         /// <summary>
@@ -129,7 +140,11 @@ namespace UltimateXR.Core.Components.Singleton
 
             if (!(s_instance is null))
             {
-                Debug.LogWarning($"[{typeof(T).Name}] singleton already added. Destroying second instance @ {value.gameObject}", value);
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.CoreModule} {typeof(T).Name} singleton already added. Destroying second instance @ {value.gameObject}", value);
+                }
+                
                 Destroy(value);
                 return false;
             }
@@ -144,7 +159,11 @@ namespace UltimateXR.Core.Components.Singleton
             s_instance = (T)value;
             s_instance.Init();
 
-            Debug.Log($"[{typeof(T).Name}] singleton successfully initialized", s_instance);
+            if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Relevant)
+            {
+                Debug.Log($"{UxrConstants.CoreModule} {typeof(T).Name} singleton successfully initialized", s_instance);
+            }
+            
             return true;
         }
 

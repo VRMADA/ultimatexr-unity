@@ -35,7 +35,7 @@ namespace UltimateXR.Core.Components.Composite
         /// <summary>
         ///     Gets all the enabled components of this specific type that belong to the local avatar.
         /// </summary>
-        public static IEnumerable<T> EnabledComponentsInLocalAvatar => AllComponents.Where(c => c.Avatar != null && c.Avatar.AvatarMode == UxrAvatarMode.Local && c.enabled);
+        public static IEnumerable<T> EnabledComponentsInLocalAvatar => AllComponents.Where(c => c.Avatar != null && c.Avatar.AvatarMode == UxrAvatarMode.Local && c.isActiveAndEnabled);
 
         /// <summary>
         ///     Gets the local avatar or null if there is none.
@@ -102,7 +102,7 @@ namespace UltimateXR.Core.Components.Composite
             {
                 return AllComponents.Where(c => c.Avatar == avatar);
             }
-            return AllComponents.Where(c => c.Avatar == avatar && c.enabled);
+            return AllComponents.Where(c => c.Avatar == avatar && c.isActiveAndEnabled);
         }
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace UltimateXR.Core.Components.Composite
                 return AllComponents.OfType<TC>().Where(c => c.Avatar == avatar);
             }
 
-            return AllComponents.OfType<TC>().Where(c => c.Avatar == avatar && c.enabled);
+            return AllComponents.OfType<TC>().Where(c => c.Avatar == avatar && c.isActiveAndEnabled);
         }
 
         #endregion

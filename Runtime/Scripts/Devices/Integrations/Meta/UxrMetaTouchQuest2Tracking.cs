@@ -23,7 +23,7 @@ namespace UltimateXR.Devices.Integrations.Meta
         #region Public Overrides UxrTrackingDevice
 
         /// <inheritdoc />
-        public override string SDKDependency => UxrManager.SdkOculus;
+        public override string SDKDependency => UxrConstants.SdkOculus;
 
         #endregion
     }

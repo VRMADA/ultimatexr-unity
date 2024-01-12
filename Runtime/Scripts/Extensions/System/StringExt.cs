@@ -135,53 +135,6 @@ namespace UltimateXR.Extensions.System
         }
 
         /// <summary>
-        ///     Checks if a path is a child of another path.
-        ///     Adapted from https://stackoverflow.com/questions/8091829/how-to-check-if-one-path-is-a-child-of-another-path
-        /// </summary>
-        /// <param name="candidate">Path candidate</param>
-        /// <param name="other">Path to check against</param>
-        /// <param name="canBeSame">Whether to also consider the same directory as valid</param>
-        /// <returns>Whether the path is child of the parent path</returns>
-        public static bool IsSubDirectoryOf(this string candidate, string other, bool canBeSame = true)
-        {
-            var isChild = false;
-            try
-            {
-                // Some initial corrections to avoid false negatives:
-
-                var candidateInfo = new DirectoryInfo(candidate.Replace(@"\", @"/").TrimEnd('/'));
-                var otherInfo     = new DirectoryInfo(other.Replace(@"\", @"/").TrimEnd('/'));
-
-                // Check if same directory
-
-                if (canBeSame && string.Compare(candidateInfo.FullName, otherInfo.FullName, StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    return true;
-                }
-                
-                // Start traversing upwards
-
-                while (candidateInfo.Parent != null)
-                {
-                    if (string.Equals(candidateInfo.Parent.FullName, otherInfo.FullName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        isChild = true;
-                        break;
-                    }
-
-                    candidateInfo = candidateInfo.Parent;
-                }
-            }
-            catch (Exception error)
-            {
-                var message = $"Unable to check directories {candidate} and {other}: {error}";
-                Debug.LogError(message);
-            }
-
-            return isChild;
-        }
-
-        /// <summary>
         ///     Creates a random string.
         /// </summary>
         /// <param name="length">String length</param>

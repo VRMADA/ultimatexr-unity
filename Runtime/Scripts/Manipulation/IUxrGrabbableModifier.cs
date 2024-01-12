@@ -3,6 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace UltimateXR.Manipulation
@@ -20,6 +21,12 @@ namespace UltimateXR.Manipulation
         ///     modifier.
         /// </summary>
         UxrGrabbableModifierFlags GrabbableModifierFlags { get; }
+
+        /// <summary>
+        ///     Gets a list of additional grabbable objects affected by the modifier. These grabbable objects can only be up or
+        ///     down in the same hierarchy as the modifier.
+        /// </summary>
+        IEnumerable<UxrGrabbableObject> AdditionalTargets { get; }
 
         #endregion
     }

@@ -16,6 +16,8 @@ namespace UltimateXR.Core
         {
             #region Public Types & Data
 
+            public const string HiddenInternalColoredShader = "Hidden/Internal-Colored";
+
             public const string EmissionKeyword           = "_EMISSION";
             public const string AlphaTestOnKeyword        = "_ALPHATEST_ON";
             public const string AlphaBlendOnKeyword       = "_ALPHABLEND_ON";

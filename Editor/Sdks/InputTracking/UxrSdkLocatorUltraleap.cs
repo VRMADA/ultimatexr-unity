@@ -7,7 +7,7 @@ using UltimateXR.Core;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Editor.Sdks
+namespace UltimateXR.Editor.Sdks.InputTracking
 {
     /// <summary>
     ///     SDK Locator for the hand-tracking Ultraleap SDK.
@@ -17,7 +17,10 @@ namespace UltimateXR.Editor.Sdks
         #region Public Overrides UxrSdkLocator
 
         /// <inheritdoc />
-        public override string Name => UxrManager.SdkUltraleap;
+        public override SupportType Support => SupportType.InputTracking;
+
+        /// <inheritdoc />
+        public override string Name => UxrConstants.SdkUltraleap;
 
         /// <inheritdoc />
         public override string MinimumUnityVersion => "2021.1";
@@ -110,7 +113,7 @@ namespace UltimateXR.Editor.Sdks
         /// <summary>
         ///     Allows to remove dependencies from the project in case the user removed SDK folders manually.
         /// </summary>
-        [MenuItem("Tools/UltimateXR/SDKs/Remove Symbols for Ultraleap")]
+        [MenuItem(UxrConstants.Editor.MenuPathSdksInputTracking + "Remove Symbols for Ultraleap", priority = UxrConstants.Editor.PriorityMenuPathSdksInputTracking)]
         private static void RemoveSymbols()
         {
             UxrSdkManager.RemoveSymbols(new UxrSdkLocatorUltraleap());

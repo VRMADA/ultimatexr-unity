@@ -26,7 +26,9 @@ namespace UltimateXR.Editor.Attributes
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             var roAttr = (ReadOnlyAttribute)attribute;
-            return roAttr.HideInEditMode && !Application.isPlaying ? 0 : EditorGUIUtility.singleLineHeight;
+
+            return Application.isPlaying ? roAttr.HideInPlayMode ? 0 : EditorGUIUtility.singleLineHeight :
+                   roAttr.HideInEditMode ? 0 : EditorGUIUtility.singleLineHeight;
         }
 
         #endregion

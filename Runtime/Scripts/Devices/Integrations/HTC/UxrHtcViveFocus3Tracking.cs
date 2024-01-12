@@ -23,7 +23,7 @@ namespace UltimateXR.Devices.Integrations.HTC
         #region Public Overrides UxrTrackingDevice
 
         /// <inheritdoc />
-        public override string SDKDependency => UxrManager.SdkWaveXR;
+        public override string SDKDependency => UxrConstants.SdkWaveXR;
 
         #endregion
     }

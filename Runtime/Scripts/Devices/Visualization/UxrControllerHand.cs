@@ -75,11 +75,11 @@ namespace UltimateXR.Devices.Visualization
 
                 // Initialize IK
 
-                InitializeFinger(_thumb);
-                InitializeFinger(_index);
-                InitializeFinger(_middle);
-                InitializeFinger(_ring);
-                InitializeFinger(_little);
+                InitializeFinger(_thumb,  true);
+                InitializeFinger(_index,  true);
+                InitializeFinger(_middle, true);
+                InitializeFinger(_ring,   true);
+                InitializeFinger(_little, true);
 
                 // Restore transforms from snapshot
 
@@ -99,13 +99,8 @@ namespace UltimateXR.Devices.Visualization
                 return;
             }
 
-            if (_fingers.TryGetValue(finger, out FingerIK fingerInfo))
+            if (_fingers.TryGetValue(finger, out FingerIK fingerInfo) && fingerInfo.Initialized && fingerInfo.FingerIKSolver)
             {
-                if (fingerInfo.FingerIKSolver == null)
-                {
-                    return;
-                }
-
                 Transform fingerIKParent = fingerInfo.FingerIKSolver.Links[0].Bone.parent;
 
                 if (fingerInfo.CurrentFingerGoal != fingerContactInfo.Transform)
@@ -208,7 +203,7 @@ namespace UltimateXR.Devices.Visualization
         protected override void Reset()
         {
             base.Reset();
-            
+
             _hand = new UxrAvatarHand();
         }
 
@@ -255,12 +250,26 @@ namespace UltimateXR.Devices.Visualization
         ///     Initializes a finger.
         /// </summary>
         /// <param name="finger">The finger to initialize</param>
-        private void InitializeFinger(FingerIK finger)
+        /// <param name="recomputeLinkData">
+        ///     Whether to recompute the link data. This is required if the initial pose for the IK
+        ///     changed
+        /// </param>
+        private void InitializeFinger(FingerIK finger, bool recomputeLinkData = false)
         {
             if (finger.FingerIKSolver != null)
             {
-                // We recompute the link data because after the finger is initialized it has changed its animation pose
-                finger.FingerIKSolver.ComputeLinkData();
+                if (recomputeLinkData)
+                {
+                    finger.FingerIKSolver.ComputeLinkData();
+                }
+                else
+                {
+                    // Initializing the finger for the first time from the component itself.
+                    // This makes sure that the data is computed with the initial finger bone orientations.
+                    finger.FingerIKSolver.RestoreInitialRotations();
+                }
+
+                finger.Initialized             = true;
                 finger.FingerIKSolver.enabled  = finger.ComponentEnabled;
                 finger.LocalEffectorInitialPos = finger.FingerIKSolver.Links[0].Bone.parent.InverseTransformPoint(finger.FingerIKSolver.EndEffector.position);
                 finger.FingerIKSolver.Goal.SetPositionAndRotation(finger.FingerIKSolver.EndEffector.position, finger.FingerIKSolver.EndEffector.rotation);

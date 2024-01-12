@@ -4,6 +4,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using UltimateXR.Avatar;
+using UltimateXR.Core;
 using UltimateXR.Extensions.Unity;
 using UnityEditor;
 using UnityEngine;
@@ -15,63 +16,231 @@ namespace UltimateXR.Editor
         #region Public Methods
 
         /// <summary>
-        ///     Gets the prefab of an instance in the hierarchy.
+        ///     Checks if the given GameObject can be destroyed. GameObjects inside prefabs that are inherited from a parent prefab
+        ///     cannot be destroyed.
         /// </summary>
-        /// <param name="gameObject">GameObject in a scene</param>
+        /// <param name="self">GameObject to check</param>
+        /// <returns>Whether the GameObject can be destroyed</returns>
+        public static bool CanBeDestroyed(this GameObject gameObject)
+        {
+            if (!gameObject.IsInPrefab())
+            {
+                return true;
+            }
+
+            if (gameObject.IsPrefabRoot())
+            {
+                return false;
+            }
+
+            GameObject source       = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
+            GameObject parentSource = PrefabUtility.GetCorrespondingObjectFromSource(gameObject.transform.parent.gameObject);
+
+            if (source == null || parentSource == null)
+            {
+                return true;
+            }
+
+            return source.transform.parent != parentSource.transform;
+        }
+
+        /// <summary>
+        ///     Gets the gameObject in the parent prefab if it exists.
+        /// </summary>
+        /// <param name="gameObject">GameObject to process</param>
         /// <param name="prefab">
-        ///     The prefab the GameObject comes from. If it's not a prefab, it will get null. 3D models (.fbx files) are not
-        ///     considered prefabs by this method.
+        ///     The GameObject in the prefab it comes from. 3D models (.fbx files) are not considered prefabs by this method.
         /// </param>
         /// <returns>True if a prefab was found, false if not</returns>
-        public static bool GetPrefab(GameObject gameObject, out GameObject prefab)
+        public static bool GetInParentPrefab(GameObject gameObject, out GameObject prefab)
         {
+            prefab = null;
+
+            if (gameObject == null)
+            {
+                return false;
+            }
+
             prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
-            PrefabAssetType prefabAssetType = prefab != null ? PrefabUtility.GetPrefabAssetType(prefab) : PrefabAssetType.NotAPrefab; 
+            PrefabAssetType prefabAssetType = prefab != null ? PrefabUtility.GetPrefabAssetType(prefab) : PrefabAssetType.NotAPrefab;
 
             return prefab && (prefabAssetType == PrefabAssetType.Regular || prefabAssetType == PrefabAssetType.Variant);
         }
 
         /// <summary>
+        ///     Checks if the given GameObject is a prefab instance in a scene. 3D models do not count as prefabs.
+        /// </summary>
+        /// <param name="self">GameObject to check</param>
+        /// <returns>Whether the GameObject is a prefab instance in a scene</returns>
+        public static bool IsPrefabInstance(this GameObject gameObject)
+        {
+            if (gameObject.IsInPrefab())
+            {
+                return false;
+            }
+
+            GameObject      inParentPrefab  = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
+            PrefabAssetType prefabAssetType = inParentPrefab != null ? PrefabUtility.GetPrefabAssetType(inParentPrefab) : PrefabAssetType.NotAPrefab;
+
+            return prefabAssetType == PrefabAssetType.Regular || prefabAssetType == PrefabAssetType.Variant;
+        }
+
+        /// <summary>
         ///     Gets the innermost prefab in a hierarchy.
         /// </summary>
-        /// <param name="gameObject">GameObject, prefab or instance in a scene</param>
+        /// <param name="component">Component, from a prefab or instance in a scene</param>
         /// <param name="prefab">
-        ///     Will return the prefab the GameObject comes from. If it's a nested prefab, it will return the innermost one. If
-        ///     it's not a prefab, it will get null. 3D models (.fbx files) are not considered prefabs by this method.
+        ///     Returns the root GameObject in the prefab the component comes from. If it's a nested prefab, it will return the
+        ///     innermost one. If it's not a prefab, it will return null. 3D models (.fbx files) are not considered prefabs by this
+        ///     method.
         /// </param>
         /// <param name="prefabInstance">
-        ///     Will return the instance of the prefab in the scene, if <paramref name="gameObject" /> is
-        ///     an instance in a scene. If it's a prefab it will return null
+        ///     Returns the root GameObject of the instantiated <paramref name="prefab" />, in the scene or in a prefab.
+        /// </param>
+        /// <param name="componentInPrefab">
+        ///     Returns the component in the prefab or null if it's not part of a prefab.
         /// </param>
         /// <returns>True if a prefab was found, false if not</returns>
-        public static bool GetInnermostNon3DModelPrefabRoot(GameObject gameObject, out GameObject prefab, out GameObject prefabInstance)
+        public static bool GetInnermostNon3DModelPrefabRoot<T>(T              component,
+                                                               out GameObject prefab,
+                                                               out GameObject prefabInstance,
+                                                               out T          componentInPrefab) where T : Component
         {
-            // Find gameObject but in prefab hierarchy. CorrespondingObjectFromOriginalSource() gets the GameObject in the root prefab hierarchy.
+            // Find component but in prefab hierarchy. CorrespondingObjectFromOriginalSource() gets the component in the root prefab hierarchy.
 
-            prefab         = PrefabUtility.GetCorrespondingObjectFromOriginalSource(gameObject);
-            prefabInstance = gameObject;
+            prefab         = null;
+            prefabInstance = null;
 
-            // Now travel up to the prefab root if we aren't there already. We do the same with the prefabInstance to travel to the instance in the scene.
+            componentInPrefab = PrefabUtility.GetCorrespondingObjectFromOriginalSource(component);
 
-            while (prefab != null && prefab.transform.parent != null && prefabInstance.transform.parent != null)
+            if (componentInPrefab != null)
             {
-                prefab         = prefab.transform.parent.gameObject;
-                prefabInstance = prefabInstance.transform.parent.gameObject;
+                Transform current = componentInPrefab.transform;
+                prefabInstance = component.gameObject;
+
+                // Navigate to parent
+
+                while (current.parent != null)
+                {
+                    current        = current.parent;
+                    prefabInstance = prefabInstance.transform.parent.gameObject;
+                }
+
+                prefab = current.gameObject;
             }
 
-            // If gameObject was part of a prefab and not instantiated in the scene, set prefabInstance to null because it references a gameObject in a prefab hierarchy.
+            PrefabAssetType prefabAssetType = componentInPrefab != null ? PrefabUtility.GetPrefabAssetType(componentInPrefab) : PrefabAssetType.NotAPrefab;
 
-            if (gameObject.IsPrefab())
+            if (prefabAssetType == PrefabAssetType.Model)
             {
-                prefabInstance = null;
+                // Solve case where prefab is model. We want the immediately superior parent prefab in the hierarchy
+
+                T parentPrefabComponent    = PrefabUtility.GetCorrespondingObjectFromSource(component);
+                T prefabComponentCandidate = null;
+
+                // Navigate to the correct component in the last prefab parent before it's a model 
+
+                while (PrefabUtility.GetPrefabAssetType(parentPrefabComponent) == PrefabAssetType.Regular ||
+                       PrefabUtility.GetPrefabAssetType(parentPrefabComponent) == PrefabAssetType.Variant)
+                {
+                    prefabComponentCandidate = parentPrefabComponent;
+                    parentPrefabComponent    = PrefabUtility.GetCorrespondingObjectFromSource(parentPrefabComponent);
+                }
+
+                // Go up in the transform hierarchy to find prefab root
+
+                prefabInstance = component.gameObject;
+
+                if (prefabComponentCandidate != null)
+                {
+                    componentInPrefab = prefabComponentCandidate;
+                    prefab            = prefabComponentCandidate.transform.gameObject;
+
+                    while (prefab.transform.parent != null)
+                    {
+                        prefab = prefab.transform.parent.gameObject;
+
+                        if (prefabInstance != null && prefabInstance.transform.parent != null)
+                        {
+                            prefabInstance = prefabInstance.transform.parent.gameObject;
+                        }
+                    }
+
+                    prefabAssetType = PrefabUtility.GetPrefabAssetType(prefab);
+                }
             }
 
-            if (prefab != null)
+            return componentInPrefab && (prefabAssetType == PrefabAssetType.Regular || prefabAssetType == PrefabAssetType.Variant);
+        }
+
+        /// <summary>
+        ///     Gets the innermost prefab in a hierarchy that meets the requirements.
+        /// </summary>
+        /// <param name="component">Component, from a prefab or instance in a scene</param>
+        /// <param name="requiredBasePath">
+        ///     Allows to specify a project base path that the prefab needs to be in.
+        ///     Even if there are inner prefabs, it will look for the innermost that still is within the base path.
+        ///     Use null or empty to specify the whole project.
+        /// </param>
+        /// <param name="prefab">
+        ///     Returns the root GameObject in the prefab the component comes from. If it's a nested prefab, it will return the
+        ///     innermost one. If it's not a prefab, it will return null. 3D models (.fbx files) are not considered prefabs by this
+        ///     method.
+        /// </param>
+        /// <param name="prefabInstance">
+        ///     Returns the root GameObject of the instantiated <paramref name="prefab" />, in the scene or in a prefab.
+        /// </param>
+        /// <param name="componentInPrefab">
+        ///     Returns the component in the prefab or null if it's not part of a prefab.
+        /// </param>
+        /// <returns>True if a prefab was found, false if not</returns>
+        public static bool GetInnermostNon3DModelPrefabRoot<T>(T              component,
+                                                               string         requiredBasePath,
+                                                               bool           ignoreUltimateXRAssets,
+                                                               out GameObject prefab,
+                                                               out GameObject prefabInstance,
+                                                               out T          componentInPrefab) where T : Component
+        {
+            if (string.IsNullOrEmpty(requiredBasePath))
             {
-                // Debug.Log($"Root prefab of {prefabInstance.name} is {prefab.name}. Prefab type is {PrefabUtility.GetPrefabAssetType(prefab)}.");
+                return GetInnermostNon3DModelPrefabRoot(component, out prefab, out prefabInstance, out componentInPrefab);
             }
 
-            return prefab && (PrefabUtility.GetPrefabAssetType(prefab) == PrefabAssetType.Regular || PrefabUtility.GetPrefabAssetType(prefab) == PrefabAssetType.Variant);
+            bool IsValidComponent(T c)
+            {
+                return c != null &&
+                       (PrefabUtility.GetPrefabAssetType(c) == PrefabAssetType.Regular || PrefabUtility.GetPrefabAssetType(c) == PrefabAssetType.Variant) &&
+                       PathRequiresProcessing(requiredBasePath, AssetDatabase.GetAssetPath(c), ignoreUltimateXRAssets);
+            }
+            
+            // Traverse prefab chain looking for parent prefab that is still in valid base path:
+
+            componentInPrefab = PrefabUtility.GetCorrespondingObjectFromSource(component);
+            prefab            = null;
+            prefabInstance    = component.gameObject;
+            
+            T lastValidComponentInPrefab = null;
+
+            while (IsValidComponent(componentInPrefab))
+            {
+                lastValidComponentInPrefab = componentInPrefab;
+                componentInPrefab          = PrefabUtility.GetCorrespondingObjectFromSource(componentInPrefab);
+
+                prefab = componentInPrefab.gameObject;
+
+                while (prefab.transform.parent != null)
+                {
+                    prefab         = prefab.transform.parent.gameObject;
+                    prefabInstance = prefabInstance.transform.parent.gameObject;
+                }
+            }
+
+            if (lastValidComponentInPrefab == null)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -98,11 +267,11 @@ namespace UltimateXR.Editor
             {
                 if (PathIsInUltimateXR(path))
                 {
-                    EditorUtility.DisplayDialog("Error", "The file location can't be inside the UltimateXR framework to prevent it from being deleted", "OK");
+                    EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "The file location can't be inside the UltimateXR framework to prevent it from being deleted", UxrConstants.Editor.Ok);
                 }
                 else if (!PathIsInCurrentProject(path))
                 {
-                    EditorUtility.DisplayDialog("Error", "The file location can't be outside the project's Assets folder", "OK");
+                    EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "The file location can't be outside the project's Assets folder", UxrConstants.Editor.Ok);
                 }
                 else
                 {
@@ -110,14 +279,14 @@ namespace UltimateXR.Editor
 
                     if (!success || prefab == null)
                     {
-                        EditorUtility.DisplayDialog("Error", "There was an error generating the variant", "OK");
+                        EditorUtility.DisplayDialog(UxrConstants.Editor.Error, "There was an error generating the variant", UxrConstants.Editor.Ok);
                     }
                     else
                     {
                         prefab.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
                         prefab.transform.localScale = Vector3.one;
 
-                        if (!avatar.gameObject.IsPrefab())
+                        if (avatar.gameObject.CanBeDestroyed())
                         {
                             newInstance = PrefabUtility.InstantiatePrefab(prefab, avatar.transform.parent) as GameObject;
 

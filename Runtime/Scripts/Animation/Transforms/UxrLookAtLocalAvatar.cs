@@ -71,29 +71,48 @@ namespace UltimateXR.Animation.Transforms
         #region Public Methods
 
         /// <summary>
-        ///     Makes an object look at the local avatar.
+        ///     Makes an object look at the local avatar continuously over time.
         /// </summary>
         /// <param name="gameObject">The object that will look at the local avatar</param>
         /// <param name="allowRotateAroundVerticalAxis">
-        ///     Should the lookAt alter the rotation around the
-        ///     vertical axis?
+        ///     Should the lookAt alter the rotation around the vertical axis?
         /// </param>
         /// <param name="allowRotateAroundHorizontalAxis">
-        ///     Should the lookAt alter the rotation around
-        ///     the horizontal axis?
+        ///     Should the lookAt alter the rotation around the horizontal axis?
         /// </param>
         /// <param name="invertedForwardAxis">
-        ///     If true, the target's forward axis will try to point at
-        ///     the opposite direction where the avatar is. By default this is false, meaning the forward
-        ///     vector will try to point at the avatar
+        ///     If true, the target's forward axis will try to point at the opposite direction where the avatar is. By default this
+        ///     is false, meaning the forward vector will try to point at the avatar
         /// </param>
-        public static void MakeLookAt(GameObject gameObject, bool allowRotateAroundVerticalAxis, bool allowRotateAroundHorizontalAxis, bool invertedForwardAxis)
+        /// <returns>The look-at component</returns>
+        public UxrLookAtLocalAvatar MakeLookAt(GameObject gameObject, bool allowRotateAroundVerticalAxis, bool allowRotateAroundHorizontalAxis, bool invertedForwardAxis)
         {
             UxrLookAtLocalAvatar lookAtComponent = gameObject.GetOrAddComponent<UxrLookAtLocalAvatar>();
 
             lookAtComponent._allowRotateAroundY  = allowRotateAroundVerticalAxis;
             lookAtComponent._allowRotateAroundX  = allowRotateAroundHorizontalAxis;
             lookAtComponent._invertedForwardAxis = invertedForwardAxis;
+
+            return lookAtComponent;
+        }
+
+        /// <summary>
+        ///     Makes an object look at the local avatar a single time.
+        /// </summary>
+        /// <param name="gameObject">The object that will look at the local avatar</param>
+        /// <param name="allowRotateAroundVerticalAxis">
+        ///     Should the lookAt alter the rotation around the vertical axis?
+        /// </param>
+        /// <param name="allowRotateAroundHorizontalAxis">
+        ///     Should the lookAt alter the rotation around the horizontal axis?
+        /// </param>
+        /// <param name="invertedForwardAxis">
+        ///     If true, the target's forward axis will try to point at the opposite direction where the avatar is. By default this
+        ///     is false, meaning the forward vector will try to point at the avatar
+        /// </param>
+        public static void MakeLookAtOnlyOnce(GameObject gameObject, bool allowRotateAroundVerticalAxis, bool allowRotateAroundHorizontalAxis, bool invertedForwardAxis)
+        {
+            PerformLookAt(gameObject.transform, allowRotateAroundVerticalAxis, allowRotateAroundHorizontalAxis, invertedForwardAxis);
         }
 
         /// <summary>
@@ -146,7 +165,15 @@ namespace UltimateXR.Animation.Transforms
         /// </summary>
         private void UxrManager_AvatarsUpdated()
         {
-            PerformLookAt();
+            if (UxrManager.Instance && UxrAvatar.LocalAvatarCamera && _repeat)
+            {
+                PerformLookAt(transform, _allowRotateAroundY, _allowRotateAroundX, _invertedForwardAxis);
+
+                if (_onlyOnce)
+                {
+                    _repeat = false;
+                }
+            }
         }
 
         #endregion
@@ -154,32 +181,38 @@ namespace UltimateXR.Animation.Transforms
         #region Private Methods
 
         /// <summary>
-        ///     Performs look at
+        ///     Performs look at.
         /// </summary>
-        private void PerformLookAt()
+        /// <param name="transform">The Transform that will look at the local avatar</param>
+        /// <param name="allowRotateAroundVerticalAxis">
+        ///     Should the lookAt alter the rotation around the vertical axis?
+        /// </param>
+        /// <param name="allowRotateAroundHorizontalAxis">
+        ///     Should the lookAt alter the rotation around the horizontal axis?
+        /// </param>
+        /// <param name="invertedForwardAxis">
+        ///     If true, the target's forward axis will try to point at the opposite direction where the avatar is. By default this
+        ///     is false, meaning the forward vector will try to point at the avatar
+        /// </param>
+        private static void PerformLookAt(Transform transform, bool allowRotateAroundVerticalAxis, bool allowRotateAroundHorizontalAxis, bool invertedForwardAxis)
         {
-            if (UxrManager.Instance && UxrAvatar.LocalAvatarCamera && _repeat)
+            if (UxrManager.Instance && UxrAvatar.LocalAvatarCamera)
             {
                 Vector3 lookAt = UxrAvatar.LocalAvatar.CameraPosition - transform.position;
 
-                if (_allowRotateAroundX == false)
+                if (allowRotateAroundHorizontalAxis == false)
                 {
                     lookAt.y = 0.0f;
                 }
 
-                if (_allowRotateAroundY == false)
+                if (allowRotateAroundVerticalAxis == false)
                 {
                     lookAt = Vector3.ProjectOnPlane(lookAt, transform.right);
                 }
 
                 if (lookAt != Vector3.zero)
                 {
-                    transform.rotation = Quaternion.LookRotation(_invertedForwardAxis ? -lookAt : lookAt);
-                }
-
-                if (_onlyOnce)
-                {
-                    _repeat = false;
+                    transform.rotation = Quaternion.LookRotation(invertedForwardAxis ? -lookAt : lookAt);
                 }
             }
         }

@@ -32,7 +32,7 @@ namespace UltimateXR.Locomotion
         /// <summary>
         ///     Event raised when the user was teleported by using the spawn collider.
         /// </summary>
-        public event EventHandler<UxrAvatarMoveEventArgs> Teleported;
+        public event EventHandler<UxrTeleportSpawnUsedEventArgs> Teleported;
 
         /// <summary>
         ///     Gets or sets the <see cref="GameObject" /> that will be enabled while the component is being pointed at. This can
@@ -42,6 +42,63 @@ namespace UltimateXR.Locomotion
         {
             get => _enableWhenSelected;
             set => _enableWhenSelected = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the spawn point the avatar will be teleported to when using the component.
+        ///     In two-sided spawn setups -a ladder that will allow to climb up or down, for example- it represents one of the
+        ///     sides. In the ladder example, it will be either the ground or the top.
+        /// </summary>
+        public Transform SpawnPosOneSide
+        {
+            get => _spawnPosOneSide;
+            set => _spawnPosOneSide = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the other spawn point the avatar can be teleported to when using the component.
+        ///     In single point spawn setups this should be left null. In two-sided spawn setups -a ladder that will allow to climb
+        ///     up or down, for example- it represents the other side where the avatar can be teleported to.
+        ///     In the ladder example it will be either the ground or the top.
+        /// </summary>
+        public Transform SpawnPosOptionalOtherSide
+        {
+            get => _spawnPosOptionalOtherSide;
+            set => _spawnPosOptionalOtherSide = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the alternate target position for <see cref="SpawnPosOneSide" />.
+        ///     When non-null it will override the preview teleport target position for <see cref="SpawnPosOneSide" />.
+        ///     Overriding can be useful to draw the target position on top of a seat, even though the actual spawn position will
+        ///     be at the bottom of the seat.
+        /// </summary>
+        public Transform AltTargetPosOneSide
+        {
+            get => _altTargetPosOneSide;
+            set => _altTargetPosOneSide = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the alternate target position for <see cref="SpawnPosOptionalOtherSide" />.
+        ///     Same as <see cref="AltTargetPosOneSide" /> but for <see cref="SpawnPosOptionalOtherSide" />.
+        /// </summary>
+        public Transform AltTargetPosOtherSide
+        {
+            get => _altTargetPosOtherSide;
+            set => _altTargetPosOtherSide = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the additional factor that the height difference between <see cref="SpawnPosOneSide" /> and
+        ///     <see cref="SpawnPosOptionalOtherSide" /> will play in computing which spawn point is closer.
+        ///     In two-sided spawn setups, the collider will teleport the avatar to the farthest spawn point of the two. This
+        ///     factor helps give more weight to the spawn point that is at a farther ground level.
+        /// </summary>
+        public float HeightDistanceFactor
+        {
+            get => _heightDistanceFactor;
+            set => _heightDistanceFactor = value;
         }
 
         #endregion
@@ -62,29 +119,52 @@ namespace UltimateXR.Locomotion
         /// <returns>Farthest spawn position to the player available</returns>
         public Transform GetSpawnPos(UxrAvatar avatar, out Vector3 targetPosition)
         {
-            if (_spawnPosOneSide != null && _spawnPosOptionalOtherSide != null)
+            if (SpawnPosOneSide != null && SpawnPosOptionalOtherSide != null)
             {
                 Vector3 avatarPos     = avatar.CameraFloorPosition;
-                bool    isToOtherSide = Distance(avatarPos, _spawnPosOneSide.position) < Distance(avatarPos, _spawnPosOptionalOtherSide.position);
+                bool    isToOtherSide = Distance(avatarPos, SpawnPosOneSide.position) < Distance(avatarPos, SpawnPosOptionalOtherSide.position);
 
                 if (isToOtherSide)
                 {
-                    targetPosition = _altTargetPosOtherSide != null ? _altTargetPosOtherSide.position : _spawnPosOptionalOtherSide.position;
+                    targetPosition = AltTargetPosOtherSide != null ? AltTargetPosOtherSide.position : SpawnPosOptionalOtherSide.position;
                 }
                 else
                 {
-                    targetPosition = _altTargetPosOneSide != null ? _altTargetPosOneSide.position : _spawnPosOneSide.position;
+                    targetPosition = AltTargetPosOneSide != null ? AltTargetPosOneSide.position : SpawnPosOneSide.position;
                 }
 
-                return isToOtherSide ? _spawnPosOptionalOtherSide : _spawnPosOneSide;
+                return isToOtherSide ? SpawnPosOptionalOtherSide : SpawnPosOneSide;
             }
-            if (_spawnPosOneSide != null)
+            if (SpawnPosOneSide != null)
             {
-                targetPosition = _altTargetPosOneSide != null ? _altTargetPosOneSide.position : _spawnPosOneSide.position;
-                return _spawnPosOneSide;
+                targetPosition = AltTargetPosOneSide != null ? AltTargetPosOneSide.position : SpawnPosOneSide.position;
+                return SpawnPosOneSide;
             }
-            targetPosition = _altTargetPosOtherSide != null ? _altTargetPosOtherSide.position : _spawnPosOptionalOtherSide.position;
-            return _spawnPosOptionalOtherSide;
+            if (SpawnPosOptionalOtherSide != null)
+            {
+                targetPosition = AltTargetPosOtherSide != null ? AltTargetPosOtherSide.position : SpawnPosOptionalOtherSide.position;
+                return SpawnPosOptionalOtherSide;
+            }
+
+            targetPosition = transform.position;
+            return transform;
+        }
+
+        #endregion
+
+        #region Unity
+
+        /// <summary>
+        ///     Initializes the _enableWhenSelected GameObject if there is one.
+        /// </summary>
+        protected override void Start()
+        {
+            base.Start();
+
+            if (_enableWhenSelected != null)
+            {
+                _enableWhenSelected.gameObject.SetActive(false);
+            }
         }
 
         #endregion
@@ -95,9 +175,9 @@ namespace UltimateXR.Locomotion
         ///     Raises the <see cref="Teleported" /> event.
         /// </summary>
         /// <param name="e">Event parameters</param>
-        internal void RaiseTeleported(UxrAvatarMoveEventArgs e)
+        internal void RaiseTeleported(UxrAvatar avatar, UxrAvatarMoveEventArgs e)
         {
-            Teleported?.Invoke(this, e);
+            Teleported?.Invoke(this, new UxrTeleportSpawnUsedEventArgs(avatar, e));
         }
 
         #endregion
@@ -114,7 +194,7 @@ namespace UltimateXR.Locomotion
         /// <returns>Distance (horizontal + vertical).</returns>
         private float Distance(Vector3 avatarPosition, Vector3 spawnPosition)
         {
-            float verticalDistance = Mathf.Abs(avatarPosition.y - spawnPosition.y) * _heightDistanceFactor;
+            float verticalDistance = Mathf.Abs(avatarPosition.y - spawnPosition.y) * HeightDistanceFactor;
 
             Vector3 a = avatarPosition;
             Vector3 b = spawnPosition;

@@ -165,26 +165,26 @@ namespace UltimateXR.Editor.Animation.Transforms
 
         #region Private Types & Data
 
-        private GUIContent ContentTranslationMode                 { get; } = new GUIContent("Translation Mode",       "");
-        private GUIContent ContentTranslationSpace                { get; } = new GUIContent("Translation Space",      "");
-        private GUIContent ContentTranslationSpeed                { get; } = new GUIContent("Translation Speed",      "");
-        private GUIContent ContentTranslationStart                { get; } = new GUIContent("Start Position",         "");
-        private GUIContent ContentTranslationEnd                  { get; } = new GUIContent("End Position",           "");
-        private GUIContent ContentTranslationUseUnscaledTime      { get; } = new GUIContent("Use Unscaled Time",      "");
-        private GUIContent ContentTranslationInterpolationSetting { get; } = new GUIContent("Interpolation Settings", "");
-        private GUIContent ContentRotationMode                    { get; } = new GUIContent("Rotation Mode",          "");
-        private GUIContent ContentRotationSpace                   { get; } = new GUIContent("Rotation Space",         "");
-        private GUIContent ContentEulerSpeed                      { get; } = new GUIContent("Angular Speed",          "");
-        private GUIContent ContentEulerStart                      { get; } = new GUIContent("Start Angles",           "");
-        private GUIContent ContentEulerEnd                        { get; } = new GUIContent("End Angles",             "");
-        private GUIContent ContentRotationUseUnscaledTime         { get; } = new GUIContent("Use Unscaled Time",      "");
-        private GUIContent ContentRotationInterpolationSettings   { get; } = new GUIContent("Interpolation Settings", "");
-        private GUIContent ContentScalingMode                     { get; } = new GUIContent("Scaling Mode",           "");
-        private GUIContent ContentScalingSpeed                    { get; } = new GUIContent("Scaling Speed",          "");
-        private GUIContent ContentScalingStart                    { get; } = new GUIContent("Start Scale",            "");
-        private GUIContent ContentScalingEnd                      { get; } = new GUIContent("End Scale",              "");
-        private GUIContent ContentScalingUseUnscaledTime          { get; } = new GUIContent("Use Unscaled Time",      "");
-        private GUIContent ContentScalingInterpolationSettings    { get; } = new GUIContent("Interpolation Settings", "");
+        private GUIContent ContentTranslationMode                 { get; } = new GUIContent("Translation Mode",       "Selects the translation mode to use");
+        private GUIContent ContentTranslationSpace                { get; } = new GUIContent("Translation Space",      "Selects the space in which the translation will be performed");
+        private GUIContent ContentTranslationSpeed                { get; } = new GUIContent("Translation Speed",      "The number of units per second to move");
+        private GUIContent ContentTranslationStart                { get; } = new GUIContent("Start Position",         "The start position. In a looped animation, the start position of each loop");
+        private GUIContent ContentTranslationEnd                  { get; } = new GUIContent("End Position",           "The end position. In a looped animation, the end position of each loop");
+        private GUIContent ContentTranslationUseUnscaledTime      { get; } = new GUIContent("Use Unscaled Time",      "Whether to use unscaled time, which is the timer without considering time scaling for effects such as bullet-time");
+        private GUIContent ContentTranslationInterpolationSetting { get; } = new GUIContent("Interpolation Settings", "The translation interpolation settings");
+        private GUIContent ContentRotationMode                    { get; } = new GUIContent("Rotation Mode",          "Selects the rotation mode to use");
+        private GUIContent ContentRotationSpace                   { get; } = new GUIContent("Rotation Space",         "Selects the space in which the rotation will be performed");
+        private GUIContent ContentEulerSpeed                      { get; } = new GUIContent("Angular Speed",          "The number of degrees per second to rotate");
+        private GUIContent ContentEulerStart                      { get; } = new GUIContent("Start Angles",           "The start Euler angles. In a looped animation, the start Euler angles of each loop");
+        private GUIContent ContentEulerEnd                        { get; } = new GUIContent("End Angles",             "The end Euler angles. In a looped animation, the end Euler angles of each loop");
+        private GUIContent ContentRotationUseUnscaledTime         { get; } = new GUIContent("Use Unscaled Time",      "Whether to use unscaled time, which is the timer without considering time scaling for effects such as bullet-time");
+        private GUIContent ContentRotationInterpolationSettings   { get; } = new GUIContent("Interpolation Settings", "The rotation interpolation settings");
+        private GUIContent ContentScalingMode                     { get; } = new GUIContent("Scaling Mode",           "Selects the scaling mode to use");
+        private GUIContent ContentScalingSpeed                    { get; } = new GUIContent("Scaling Speed",          "The number of units per second to scale");
+        private GUIContent ContentScalingStart                    { get; } = new GUIContent("Start Scale",            "The start scale. In a looped animation, the start scale of each loop");
+        private GUIContent ContentScalingEnd                      { get; } = new GUIContent("End Scale",              "The end scale. In a looped animation, the end scale of each loop");
+        private GUIContent ContentScalingUseUnscaledTime          { get; } = new GUIContent("Use Unscaled Time",      "Whether to use unscaled time, which is the timer without considering time scaling for effects such as bullet-time");
+        private GUIContent ContentScalingInterpolationSettings    { get; } = new GUIContent("Interpolation Settings", "The scale interpolation settings");
 
         private SerializedProperty _propertyTranslationMode;
         private SerializedProperty _propertyTranslationSpace;

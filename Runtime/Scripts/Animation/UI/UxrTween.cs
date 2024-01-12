@@ -72,6 +72,16 @@ namespace UltimateXR.Animation.UI
         #region Public Methods
 
         /// <summary>
+        ///     Checks if the given behaviour has a running tween of any type.
+        /// </summary>
+        /// <returns>Whether there is a running tween animation.</returns>
+        public static bool HasActiveTween(Behaviour behaviour)
+        {
+            UxrTween[] tweens = behaviour.GetComponents<UxrTween>();
+            return tweens.Length > 0 && tweens.Any(t => !t.HasFinished);
+        }
+        
+        /// <summary>
         ///     Checks if the given behaviour has a running tween of a specific type.
         /// </summary>
         /// <typeparam name="T">Type of <see cref="UxrTween" />s to check for.</typeparam>
@@ -284,6 +294,7 @@ namespace UltimateXR.Animation.UI
 
         /// <summary>
         ///     Restarts the animation with the current parameters.
+        ///     It also forces the execution of the first frame. 
         /// </summary>
         protected void Restart()
         {
@@ -292,6 +303,8 @@ namespace UltimateXR.Animation.UI
                 _startTime       = CurrentTime;
                 _finishedActions = UxrTweenFinishedActions.None;
                 HasFinished      = false;
+
+                Interpolate(InterpolationSettings.GetInterpolationFactor(0.0f));
             }
         }
 

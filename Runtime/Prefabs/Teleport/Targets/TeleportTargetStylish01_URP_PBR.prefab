@@ -10022,6 +10022,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13667cb98c4098641b8742b16d227f54, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: fbebead8-0995-4f0c-88e0-2d6a353b886a
+  __prefabGuid: d5365bf27c177624e86d490843374cc5
+  __isInPrefab: 1
   _materialID: 1
 --- !u!1 &1861801771298452
 GameObject:
@@ -10155,6 +10158,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7a14046e346a1a4a80bc53b1c296bb0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 7765e3f0-ec23-49a4-93e8-d9e9b067a936
+  __prefabGuid: d5365bf27c177624e86d490843374cc5
+  __isInPrefab: 1
   _reorientArrowRoot: {fileID: 1015986601929962}
   _validColorStateIgnoreList:
   - {fileID: 1165302839582462}

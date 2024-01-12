@@ -238,7 +238,7 @@ namespace UltimateXR.Haptics.Helpers
                     SendHapticClip(UxrHandSide.Left);
                 }
 
-                yield return new WaitForSeconds(SampleDurationSeconds);
+                yield return new WaitForSeconds(UxrConstants.InputControllers.HapticSampleDurationSeconds);
             }
         }
 
@@ -257,7 +257,7 @@ namespace UltimateXR.Haptics.Helpers
                     SendHapticClip(UxrHandSide.Right);
                 }
 
-                yield return new WaitForSeconds(SampleDurationSeconds);
+                yield return new WaitForSeconds(UxrConstants.InputControllers.HapticSampleDurationSeconds);
             }
         }
 
@@ -329,6 +329,11 @@ namespace UltimateXR.Haptics.Helpers
 
             if (e.Grabber != null && e.Grabber.Avatar == UxrAvatar.LocalAvatar)
             {
+                // Set speed to 0 in case we go from two-handed grab to single grab and object has NeedsTwoHandsToRotate set.
+                // In this case the object will stop sending constrain events and we need a way to set the speed to 0.
+                _linearSpeed  = 0.0f;
+                _angularSpeed = 0.0f;
+
                 if (e.Grabber.Side == UxrHandSide.Left && _leftHapticsCoroutine != null)
                 {
                     StopCoroutine(_leftHapticsCoroutine);
@@ -352,11 +357,14 @@ namespace UltimateXR.Haptics.Helpers
         /// <param name="e">Event parameters</param>
         protected override void OnObjectConstraintsFinished(UxrApplyConstraintsEventArgs e)
         {
-            _linearSpeed  = Vector3.Distance(_previousLocalPosition, e.Grabber.GrabbedObject.transform.localPosition) / Time.deltaTime;
-            _angularSpeed = Quaternion.Angle(_previousLocalRotation, e.Grabber.GrabbedObject.transform.localRotation) / Time.deltaTime;
+            Vector3    localPosition = UxrAvatar.LocalAvatar.transform.InverseTransformPoint(e.GrabbableObject.transform.position);
+            Quaternion localRotation = Quaternion.Inverse(UxrAvatar.LocalAvatar.transform.rotation) * e.GrabbableObject.transform.rotation;
+            
+            _linearSpeed  = Vector3.Distance(_previousLocalPosition, localPosition) / Time.deltaTime;
+            _angularSpeed = Quaternion.Angle(_previousLocalRotation, localRotation) / Time.deltaTime;
 
-            _previousLocalPosition = e.Grabber.GrabbedObject.transform.localPosition;
-            _previousLocalRotation = e.Grabber.GrabbedObject.transform.localRotation;
+            _previousLocalPosition = localPosition;
+            _previousLocalRotation = localRotation;
         }
 
         #endregion
@@ -365,7 +373,7 @@ namespace UltimateXR.Haptics.Helpers
 
         /// <summary>
         ///     Sends the continuous haptic feedback clip for a short amount of time defined by
-        ///     <see cref="SampleDurationSeconds" />.
+        ///     <see cref="UxrConstants.InputControllers.HapticSampleDurationSeconds" />.
         /// </summary>
         /// <param name="handSide">Target hand</param>
         private void SendHapticClip(UxrHandSide handSide)
@@ -388,16 +396,14 @@ namespace UltimateXR.Haptics.Helpers
                 float frequencyRot = Mathf.Lerp(_minFrequency, _maxFrequency, Mathf.Clamp01(quantityRot));
                 float amplitudeRot = Mathf.Lerp(_minAmplitude, _maxAmplitude, Mathf.Clamp01(quantityRot));
 
-                UxrAvatar.LocalAvatarInput.SendHapticFeedback(handSide, Mathf.Max(frequencyPos, frequencyRot), Mathf.Max(amplitudePos, amplitudeRot), SampleDurationSeconds, _hapticMixMode);
+                UxrAvatar.LocalAvatarInput.SendHapticFeedback(handSide, Mathf.Max(frequencyPos, frequencyRot), Mathf.Max(amplitudePos, amplitudeRot), UxrConstants.InputControllers.HapticSampleDurationSeconds, _hapticMixMode);
             }
         }
 
         #endregion
 
         #region Private Types & Data
-
-        private const float SampleDurationSeconds = 0.1f;
-
+ 
         private Coroutine  _leftHapticsCoroutine;
         private Coroutine  _rightHapticsCoroutine;
         private Vector3    _previousLocalPosition;

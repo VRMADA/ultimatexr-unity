@@ -11,12 +11,14 @@ using UnityEngine;
 namespace UltimateXR.Core.Threading.TaskControllers
 {
     /// <summary>
-    ///     Parent abstract class for <see cref="UxrLoopController" /> and <see cref="UxrTaskController" />.
+    ///     Parent abstract class that simplifies running a job which can be canceled through a
+    ///     <see cref="CancellationToken" />.<br />
+    ///     It wraps a <see cref="CancellationTokenSource" /> into a <see cref="Start()" /> and <see cref="Stop" /> pattern,
+    ///     ensuring that the
+    ///     <see cref="Stop" /> is called if the application quits abruptly or the Unity editor exits playmode.
     /// </summary>
-    /// <remarks>
-    ///     Wraps a <see cref="CancellationTokenSource" /> into a <see cref="Start()" /> and <see cref="Stop" /> pattern,
-    ///     ensuring that <see cref="Stop" /> is called when the application quits.
-    /// </remarks>
+    /// <seealso cref="UxrTaskController" />
+    /// <seealso cref="UxrLoopController" />
     public abstract class UxrCancellableController
     {
         #region Public Types & Data
@@ -48,65 +50,66 @@ namespace UltimateXR.Core.Threading.TaskControllers
         #region Public Methods
 
         /// <summary>
-        ///     Starts running inner job until completion or <see cref="Stop" /> is called.
+        ///     Starts running the inner job until completion or <see cref="Stop" /> is called.
         /// </summary>
         public void Start()
         {
-            Stop();
-            _cts = new CancellationTokenSource();
-            StartInternal(_cts.Token, OnCompleted);
+            Start(0, 0);
         }
 
         /// <summary>
-        ///     Similar to <see cref="Start()" />, but adding an initial <paramref name="delay" />.
+        ///     Starts using an initial <paramref name="delayMilliseconds" />.
         /// </summary>
-        /// <param name="delay">
+        /// <param name="delayMilliseconds">
         ///     Delay in milliseconds before <see cref="Start()" /> is automatically called.
         /// </param>
-        public async void StartAfter(int delay)
+        public void StartAfterMilliseconds(int delayMilliseconds)
         {
-            if (delay <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(delay), delay, "Delay must be a value in milliseconds greater than zero.");
-            }
-
-            Stop();
-
-            _cts = new CancellationTokenSource(delay);
-            await TaskExt.Delay(delay, _cts.Token);
-            StartInternal(_cts.Token, OnCompleted);
+            Start(delayMilliseconds, 0);
         }
 
 
         /// <summary>
-        ///     Similar to <see cref="Start()" />, but it automatically calls <see cref="Stop" /> after
-        ///     <paramref name="duration" /> milliseconds.
+        ///     Calls <see cref="Start()" /> and will automatically call <see cref="Stop" /> after
+        ///     <paramref name="durationMilliseconds" /> milliseconds.
         /// </summary>
-        /// <param name="duration">
+        /// <param name="durationMilliseconds">
         ///     Allowed running time until <see cref="Stop" /> is automatically called, in milliseconds
         /// </param>
-        public void Start(int duration)
+        public void StartAndRunForMilliseconds(int durationMilliseconds)
         {
-            if (duration <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(duration), duration, "Time before cancelling must be a value in milliseconds greater than zero.");
-            }
-
-            Stop();
-            _cts = new CancellationTokenSource(duration);
-            StartInternal(_cts.Token, OnCompleted);
+            Start(0, durationMilliseconds);
         }
 
         /// <summary>
-        ///     Similar to <see cref="Start()" />, but it automatically calls <see cref="Stop" /> after
-        ///     <paramref name="duration" /> seconds.
+        ///     Combines functionality of <see cref="StartAfterMilliseconds" /> and <see cref="StartAndRunForMilliseconds" />,
+        ///     allowing to <see cref="Start()" /> after a delay and run for a certain amount of time.
         /// </summary>
-        /// <param name="duration">
-        ///     Allowed running time until <see cref="Stop" /> is automatically called, in seconds
+        /// <param name="delayMilliseconds">
+        ///     Delay in milliseconds before <see cref="Start()" /> is automatically called.
         /// </param>
-        public void Start(float duration)
+        /// <param name="durationMilliseconds">
+        ///     Allowed running time starting after the initial delay until <see cref="Stop" /> is automatically called, in
+        ///     milliseconds.
+        /// </param>
+        public async void Start(int delayMilliseconds, int durationMilliseconds)
         {
-            Start(Mathf.RoundToInt(duration * 1000f));
+            if (delayMilliseconds > 0)
+            {
+                Stop();
+                _cts = new CancellationTokenSource(delayMilliseconds);
+                await TaskExt.Delay(delayMilliseconds, _cts.Token);
+
+                if (_cts.IsCancellationRequested)
+                {
+                    return;
+                }
+            }
+
+            Stop();
+            _cts = durationMilliseconds > 0 ? new CancellationTokenSource(durationMilliseconds) : new CancellationTokenSource();
+
+            StartInternal(_cts.Token, OnCompleted);
         }
 
         /// <summary>
@@ -122,6 +125,25 @@ namespace UltimateXR.Core.Threading.TaskControllers
             _cts.Cancel();
             _cts.Dispose();
             _cts = null;
+        }
+
+        /// <summary>
+        ///     Creates a linked <see cref="CancellationTokenSource" /> using the internal controller token source.
+        ///     This allows to create token sources that will be cancelled if the controller gets cancelled.
+        /// </summary>
+        /// <returns>Linked cancellation token source</returns>
+        /// <exception cref="InvalidOperationException">
+        ///     The Task was not started, which means that there is no internal cancellation token source available yet. The Task
+        ///     must have been started to create a linked cancellation token source.
+        /// </exception>
+        public CancellationTokenSource CreateLinkedTokenSource()
+        {
+            if (_cts == null)
+            {
+                throw new InvalidOperationException($"{nameof(GetType)}: Cannot create linked token source when Task is not running.");
+            }
+
+            return CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
         }
 
         #endregion
@@ -164,7 +186,8 @@ namespace UltimateXR.Core.Threading.TaskControllers
         ///     <see cref="CancellationToken.IsCancellationRequested" />, when <see cref="Stop" /> has been requested.
         /// </param>
         /// <param name="onCompleted">
-        ///     Optional callback when the logic has completed, so that the base class can free resources.
+        ///     Optional callback when the logic has completed, so that the base class can free resources. The callback is only
+        ///     invoked if the logic fully completed. If the logic was stopped manually, the callback is not invoked.
         /// </param>
         /// <remarks>
         ///     In case the implementation can finish on its own, please invoke <paramref name="onCompleted" /> instead of

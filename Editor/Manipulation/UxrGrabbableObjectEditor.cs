@@ -32,6 +32,7 @@ namespace UltimateXR.Editor.Manipulation
     {
         #region Public Types & Data
 
+        public const string PropertyIsDummyGrabbableParent          = "_isDummyGrabbableParent";
         public const string PropertyIgnoreGrabbableParentDependency = "_ignoreGrabbableParentDependency";
         public const string PropertyControlParentDirection          = "_controlParentDirection";
         public const string PropertyPriority                        = "_priority";
@@ -63,6 +64,7 @@ namespace UltimateXR.Editor.Manipulation
         public const string PropertyAdditionalGrabPoints            = "_additionalGrabPoints";
         public const string PropertyUseParenting                    = "_useParenting";
         public const string PropertyAutoCreateStartAnchor           = "_autoCreateStartAnchor";
+        public const string PropertyAutoAnchorMaxPlaceDistance      = "_autoAnchorMaxPlaceDistance";
         public const string PropertyStartAnchor                     = "_startAnchor";
         public const string PropertyTag                             = "_tag";
         public const string PropertyDropAlignTransformUseSelf       = "_dropAlignTransformUseSelf";
@@ -139,7 +141,7 @@ namespace UltimateXR.Editor.Manipulation
 
             foreach (UxrGrabbableObjectPreviewMesh previewMeshComponent in previewMeshComponents)
             {
-                MeshFilter meshFilter = previewMeshComponent.GetComponent<MeshFilter>();
+                MeshFilter meshFilter = previewMeshComponent.MeshFilterComponent;
 
                 if (ReferenceEquals(meshFilter.sharedMesh, oldMesh))
                 {
@@ -285,48 +287,50 @@ namespace UltimateXR.Editor.Manipulation
 
             _hideModifierParameters = EditorPrefs.GetBool(PrefHideModifierParameters, true);
 
-            _propIgnoreGrabbableParentDependency = serializedObject.FindProperty("_ignoreGrabbableParentDependency");
-            _propControlParentDirection          = serializedObject.FindProperty("_controlParentDirection");
+            _propIsDummyGrabbableParent          = serializedObject.FindProperty(PropertyIsDummyGrabbableParent);
+            _propIgnoreGrabbableParentDependency = serializedObject.FindProperty(PropertyIgnoreGrabbableParentDependency);
+            _propControlParentDirection          = serializedObject.FindProperty(PropertyControlParentDirection);
 
-            _propPriority       = serializedObject.FindProperty("_priority");
-            _propAllowMultiGrab = serializedObject.FindProperty("_allowMultiGrab");
+            _propPriority       = serializedObject.FindProperty(PropertyPriority);
+            _propAllowMultiGrab = serializedObject.FindProperty(PropertyAllowMultiGrab);
 
-            _propTranslationConstraintMode = serializedObject.FindProperty("_translationConstraintMode");
-            _propRestrictToBox             = serializedObject.FindProperty("_restrictToBox");
-            _propRestrictToSphere          = serializedObject.FindProperty("_restrictToSphere");
-            _propTranslationLimitsMin      = serializedObject.FindProperty("_translationLimitsMin");
-            _propTranslationLimitsMax      = serializedObject.FindProperty("_translationLimitsMax");
-            _propRotationConstraintMode    = serializedObject.FindProperty("_rotationConstraintMode");
-            _propRotationAngleLimitsMin    = serializedObject.FindProperty("_rotationAngleLimitsMin");
-            _propRotationAngleLimitsMax    = serializedObject.FindProperty("_rotationAngleLimitsMax");
-            _propAutoRotationProvider      = serializedObject.FindProperty("_autoRotationProvider");
-            _propRotationProvider          = serializedObject.FindProperty("_rotationProvider");
-            _propRotationLongitudinalAxis  = serializedObject.FindProperty("_rotationLongitudinalAxis");
-            _propNeedsTwoHandsToRotate     = serializedObject.FindProperty("_needsTwoHandsToRotate");
-            _propLockedGrabReleaseDistance = serializedObject.FindProperty("_lockedGrabReleaseDistance");
-            _propTranslationResistance     = serializedObject.FindProperty("_translationResistance");
-            _propRotationResistance        = serializedObject.FindProperty("_rotationResistance");
+            _propTranslationConstraintMode = serializedObject.FindProperty(PropertyTranslationConstraintMode);
+            _propRestrictToBox             = serializedObject.FindProperty(PropertyRestrictToBox);
+            _propRestrictToSphere          = serializedObject.FindProperty(PropertyRestrictToSphere);
+            _propTranslationLimitsMin      = serializedObject.FindProperty(PropertyTranslationLimitsMin);
+            _propTranslationLimitsMax      = serializedObject.FindProperty(PropertyTranslationLimitsMax);
+            _propRotationConstraintMode    = serializedObject.FindProperty(PropertyRotationConstraintMode);
+            _propRotationAngleLimitsMin    = serializedObject.FindProperty(PropertyRotationAngleLimitsMin);
+            _propRotationAngleLimitsMax    = serializedObject.FindProperty(PropertyRotationAngleLimitsMax);
+            _propAutoRotationProvider      = serializedObject.FindProperty(PropertyAutoRotationProvider);
+            _propRotationProvider          = serializedObject.FindProperty(PropertyRotationProvider);
+            _propRotationLongitudinalAxis  = serializedObject.FindProperty(PropertyRotationLongitudinalAxis);
+            _propNeedsTwoHandsToRotate     = serializedObject.FindProperty(PropertyNeedsTwoHandsToRotate);
+            _propLockedGrabReleaseDistance = serializedObject.FindProperty(PropertyLockedGrabReleaseDistance);
+            _propTranslationResistance     = serializedObject.FindProperty(PropertyTranslationResistance);
+            _propRotationResistance        = serializedObject.FindProperty(PropertyRotationResistance);
 
-            _propRigidBodySource             = serializedObject.FindProperty("_rigidBodySource");
-            _propRigidBodyDynamicOnRelease   = serializedObject.FindProperty("_rigidBodyDynamicOnRelease");
-            _propVerticalReleaseMultiplier   = serializedObject.FindProperty("_verticalReleaseMultiplier");
-            _propHorizontalReleaseMultiplier = serializedObject.FindProperty("_horizontalReleaseMultiplier");
+            _propRigidBodySource             = serializedObject.FindProperty(PropertyRigidBodySource);
+            _propRigidBodyDynamicOnRelease   = serializedObject.FindProperty(PropertyRigidBodyDynamicOnRelease);
+            _propVerticalReleaseMultiplier   = serializedObject.FindProperty(PropertyVerticalReleaseMultiplier);
+            _propHorizontalReleaseMultiplier = serializedObject.FindProperty(PropertyHorizontalReleaseMultiplier);
 
-            _propPreviewGrabPosesMode          = serializedObject.FindProperty("_previewGrabPosesMode");
-            _propPreviewPosesRegenerationType  = serializedObject.FindProperty("_previewPosesRegenerationType");
-            _propPreviewPosesRegenerationIndex = serializedObject.FindProperty("_previewPosesRegenerationIndex");
-            _propFirstGrabPointIsMain          = serializedObject.FindProperty("_firstGrabPointIsMain");
+            _propPreviewGrabPosesMode          = serializedObject.FindProperty(PropertyPreviewGrabPosesMode);
+            _propPreviewPosesRegenerationType  = serializedObject.FindProperty(PropertyPreviewPosesRegenerationType);
+            _propPreviewPosesRegenerationIndex = serializedObject.FindProperty(PropertyPreviewPosesRegenerationIndex);
+            _propFirstGrabPointIsMain          = serializedObject.FindProperty(PropertyFirstGrabPointIsMain);
             _propGrabPoint                     = serializedObject.FindProperty(PropertyGrabPoint);
             _propAdditionalGrabPoints          = serializedObject.FindProperty(PropertyAdditionalGrabPoints);
-            _propUseParenting                  = serializedObject.FindProperty("_useParenting");
-            _propAutoCreateStartAnchor         = serializedObject.FindProperty("_autoCreateStartAnchor");
-            _propStartAnchor                   = serializedObject.FindProperty("_startAnchor");
-            _propTag                           = serializedObject.FindProperty("_tag");
-            _propDropAlignTransformUseSelf     = serializedObject.FindProperty("_dropAlignTransformUseSelf");
-            _propDropAlignTransform            = serializedObject.FindProperty("_dropAlignTransform");
-            _propDropSnapMode                  = serializedObject.FindProperty("_dropSnapMode");
-            _propDropProximityTransformUseSelf = serializedObject.FindProperty("_dropProximityTransformUseSelf");
-            _propDropProximityTransform        = serializedObject.FindProperty("_dropProximityTransform");
+            _propUseParenting                  = serializedObject.FindProperty(PropertyUseParenting);
+            _propAutoCreateStartAnchor         = serializedObject.FindProperty(PropertyAutoCreateStartAnchor);
+            _propAutoAnchorMaxPlaceDistance    = serializedObject.FindProperty(PropertyAutoAnchorMaxPlaceDistance);
+            _propStartAnchor                   = serializedObject.FindProperty(PropertyStartAnchor);
+            _propTag                           = serializedObject.FindProperty(PropertyTag);
+            _propDropAlignTransformUseSelf     = serializedObject.FindProperty(PropertyDropAlignTransformUseSelf);
+            _propDropAlignTransform            = serializedObject.FindProperty(PropertyDropAlignTransform);
+            _propDropSnapMode                  = serializedObject.FindProperty(PropertyDropSnapMode);
+            _propDropProximityTransformUseSelf = serializedObject.FindProperty(PropertyDropProximityTransformUseSelf);
+            _propDropProximityTransform        = serializedObject.FindProperty(PropertyDropProximityTransform);
 
             // Try to remember the grip selection we have if possible, considering we may start the inspector in multi-editing mode
 
@@ -462,18 +466,42 @@ namespace UltimateXR.Editor.Manipulation
                 }
             }
 
+            // Dummy parent
+
+            IEnumerable<UxrGrabbableObject> childrenLookAts = grabbableObject.GetComponentsInChildren<UxrGrabbableObject>(true).Where(c => c.UsesGrabbableParentDependency && c.GrabbableParent == grabbableObject && c.ControlParentDirection);
+
+            if (!(_hideModifierParameters && modifierFlags.HasFlag(UxrGrabbableModifierFlags.DummyParentGrabbable)))
+            {
+                if (childrenLookAts.Any())
+                {
+                    EditorGUILayout.HelpBox($"Object has also the following child grabbable object(s) that allow manipulating this object indirectly: {string.Join(", ", childrenLookAts.Select(c => c.name))}.", MessageType.Info);
+                    EditorGUILayout.PropertyField(_propIsDummyGrabbableParent, ContentIsDummyGrabbableParent);
+                }
+                else
+                {
+                    if (!grabbableObject.IsInPrefab())
+                    {
+                        _propIsDummyGrabbableParent.boolValue = false;
+                    }
+                }
+            }
+
+            // When viewing the component in a prefab, childrenLookAts will always be null. We rely on the property directly.
+
+            bool isDummyGrabbableParent = (childrenLookAts.Any() || grabbableObject.IsInPrefab()) && _propIsDummyGrabbableParent.boolValue;
+
             // Parent dependency
 
-            Transform grabbableParentDependency = grabbableObject.GrabbableParentDependency;
+            UxrGrabbableObject grabbableParent = grabbableObject.GrabbableParent;
 
-            if (grabbableParentDependency != null)
+            if (grabbableParent != null)
             {
                 EditorGUILayout.Space();
 
                 if (_propTranslationConstraintMode.enumValueIndex != (int)UxrTranslationConstraintMode.Free && _propIgnoreGrabbableParentDependency.boolValue == false)
                 {
-                    EditorGUILayout.HelpBox("Object will be constrained by " + grabbableParentDependency.name + " because this object has translation constraints applied. You may even use it to control its direction with the parameter below", MessageType.Info);
-                    EditorGUILayout.PropertyField(_propControlParentDirection, new GUIContent("Control " + grabbableParentDependency.name + " Direction", "Allows to control the direction of the parent grabbable object when this object is grabbed"));
+                    EditorGUILayout.HelpBox("Object will be constrained by " + grabbableParent.name + " because this object has translation constraints applied. You may even use it to control its direction with the parameter below", MessageType.Info);
+                    EditorGUILayout.PropertyField(_propControlParentDirection, new GUIContent("Control " + grabbableParent.name + " Direction", "Allows to control the direction of the parent grabbable object when this object is grabbed"));
                 }
 
                 if (_propTranslationConstraintMode.enumValueIndex != (int)UxrTranslationConstraintMode.Free)
@@ -491,7 +519,7 @@ namespace UltimateXR.Editor.Manipulation
 
             // General parameters
 
-            if (!(_hideModifierParameters && modifierFlags.HasFlag(UxrGrabbableModifierFlags.Priority) && modifierFlags.HasFlag(UxrGrabbableModifierFlags.MultiGrab)))
+            if (!(_hideModifierParameters && modifierFlags.HasFlag(UxrGrabbableModifierFlags.Priority) && modifierFlags.HasFlag(UxrGrabbableModifierFlags.MultiGrab)) && !isDummyGrabbableParent)
             {
                 UxrGrabPointShape grabPointShape = grabbableObject.GetComponent<UxrGrabPointShape>();
 
@@ -521,6 +549,9 @@ namespace UltimateXR.Editor.Manipulation
             }
 
             // Constraints parameters
+
+            bool rotatesUsingHandPositionAroundPivot = _propTranslationConstraintMode.enumValueIndex != (int)UxrTranslationConstraintMode.Free &&
+                                                       _propRotationProvider.enumValueIndex == (int)UxrRotationProvider.HandPositionAroundPivot;
 
             if (!(_hideModifierParameters &&
                   modifierFlags.HasFlag(UxrGrabbableModifierFlags.TranslationConstraint) &&
@@ -559,8 +590,6 @@ namespace UltimateXR.Editor.Manipulation
                     // Rotation constraint
 
                     GUI.enabled = !modifierFlags.HasFlag(UxrGrabbableModifierFlags.RotationConstraint);
-
-                    bool rotatesUsingHandPositionAroundPivot = _propTranslationConstraintMode.enumValueIndex != (int)UxrTranslationConstraintMode.Free && _propRotationProvider.enumValueIndex == (int)UxrRotationProvider.HandPositionAroundPivot;
 
                     if (!(_hideModifierParameters && modifierFlags.HasFlag(UxrGrabbableModifierFlags.RotationConstraint)))
                     {
@@ -628,8 +657,8 @@ namespace UltimateXR.Editor.Manipulation
                         }
 
                         rotatesUsingHandPositionAroundPivot = _propTranslationConstraintMode.enumValueIndex != (int)UxrTranslationConstraintMode.Free && _propRotationProvider.enumValueIndex == (int)UxrRotationProvider.HandPositionAroundPivot;
-
-                        if (!grabbableObject.UsesGrabbableParentDependency && rotatesUsingHandPositionAroundPivot && _propAdditionalGrabPoints.arraySize > 0)
+                        
+                        if (rotatesUsingHandPositionAroundPivot && _propAdditionalGrabPoints.arraySize > 0)
                         {
                             EditorGUILayout.PropertyField(_propNeedsTwoHandsToRotate, ContentNeedsTwoHandsToRotate);
                         }
@@ -666,7 +695,7 @@ namespace UltimateXR.Editor.Manipulation
             {
                 GUI.enabled = !modifierFlags.HasFlag(UxrGrabbableModifierFlags.Anchored);
 
-                if (!grabbableObject.UsesGrabbableParentDependency && _propTranslationConstraintMode.enumValueIndex == (int)UxrTranslationConstraintMode.Free)
+                if (grabbableObject.CanUseRigidBody)
                 {
                     EditorGUILayout.Space();
                     _foldoutPhysics = UxrEditorUtils.FoldoutStylish("Physics", _foldoutPhysics);
@@ -704,9 +733,12 @@ namespace UltimateXR.Editor.Manipulation
             UxrAvatar        avatarRegister = null;
             List<GameObject> commonAvatars  = GetCommonSelectedAvatars();
 
-            _foldoutAvatarGrips = UxrEditorUtils.FoldoutStylish("Avatar grips", _foldoutAvatarGrips);
+            if (!isDummyGrabbableParent)
+            {
+                _foldoutAvatarGrips = UxrEditorUtils.FoldoutStylish("Avatar grips", _foldoutAvatarGrips);
+            }
 
-            if (_foldoutAvatarGrips)
+            if (_foldoutAvatarGrips && !isDummyGrabbableParent)
             {
                 avatarRegister = EditorGUILayout.ObjectField(ContentRegisterAvatar, null, typeof(UxrAvatar), true) as UxrAvatar;
 
@@ -720,7 +752,7 @@ namespace UltimateXR.Editor.Manipulation
                     }
 
                     EditorGUI.BeginChangeCheck();
-                    IEnumerable<string> avatarList = new List<string> { UxrGrabbableObject.DefaultAvatarName }.Concat(commonAvatars.Select(a => a.name));
+                    IEnumerable<string> avatarList = new List<string> { UxrConstants.DefaultAvatarName }.Concat(commonAvatars.Select(a => a.name));
                     _selectedAvatarGripPoseIndex = EditorGUILayout.Popup(ContentSelectAvatar, _selectedAvatarGripPoseIndex, UxrEditorUtils.ToGUIContentArray(avatarList));
                     if (EditorGUI.EndChangeCheck())
                     {
@@ -782,14 +814,17 @@ namespace UltimateXR.Editor.Manipulation
             int additionalPointsBefore = _propAdditionalGrabPoints.arraySize;
             int additionalPointsAfter  = additionalPointsBefore;
 
-            bool foldOutGrabPointsBefore = _foldoutGrabPoints;
-            _foldoutGrabPoints = UxrEditorUtils.FoldoutStylish("Grab points", _foldoutGrabPoints);
-            if (foldOutGrabPointsBefore != _foldoutGrabPoints)
+            if (!isDummyGrabbableParent)
             {
-                MarkRegenerationRequired();
+                bool foldOutGrabPointsBefore = _foldoutGrabPoints;
+                _foldoutGrabPoints = UxrEditorUtils.FoldoutStylish("Grab points", _foldoutGrabPoints);
+                if (foldOutGrabPointsBefore != _foldoutGrabPoints)
+                {
+                    MarkRegenerationRequired();
+                }
             }
 
-            if (_foldoutGrabPoints)
+            if (_foldoutGrabPoints && !isDummyGrabbableParent)
             {
                 EditorGUI.indentLevel += 2;
 
@@ -798,7 +833,7 @@ namespace UltimateXR.Editor.Manipulation
                     listGrabAlignTransformsBefore = listGrabAlignTransformsBefore.Concat((targetObject as UxrGrabbableObject).Editor_GetAllRegisteredAvatarGrabAlignTransforms());
                 }
 
-                if (_propAdditionalGrabPoints.arraySize > 0)
+                if (_propAdditionalGrabPoints.arraySize > 0 && !rotatesUsingHandPositionAroundPivot)
                 {
                     EditorGUILayout.PropertyField(_propFirstGrabPointIsMain, ContentFirstGrabPointIsMain, true);
                 }
@@ -833,7 +868,7 @@ namespace UltimateXR.Editor.Manipulation
 
             // Object placement parameters
 
-            if (!(_hideModifierParameters && modifierFlags.HasFlag(UxrGrabbableModifierFlags.Anchored)))
+            if (!(_hideModifierParameters && modifierFlags.HasFlag(UxrGrabbableModifierFlags.Anchored)) && !isDummyGrabbableParent)
             {
                 if (!grabbableObject.UsesGrabbableParentDependency && _propTranslationConstraintMode.enumValueIndex != (int)UxrTranslationConstraintMode.Locked)
                 {
@@ -847,7 +882,11 @@ namespace UltimateXR.Editor.Manipulation
                         EditorGUILayout.PropertyField(_propUseParenting,          ContentUseParenting);
                         EditorGUILayout.PropertyField(_propAutoCreateStartAnchor, ContentAutoCreateStartAnchor);
 
-                        if (!_propAutoCreateStartAnchor.boolValue)
+                        if (_propAutoCreateStartAnchor.boolValue)
+                        {
+                            EditorGUILayout.PropertyField(_propAutoAnchorMaxPlaceDistance, ContentAutoAnchorMaxPlaceDistance);                            
+                        }
+                        else
                         {
                             EditorGUILayout.PropertyField(_propStartAnchor, ContentStartAnchor);
                         }
@@ -1130,23 +1169,23 @@ namespace UltimateXR.Editor.Manipulation
 
             if (avatar.GetAvatarPrefab() == null)
             {
-                if (EditorUtility.DisplayDialog("Avatar has no prefab", "The given avatar doesn't have a source prefab. A prefab is required to register the avatar. Do you want to create one now?", "Yes", "Cancel"))
+                if (EditorUtility.DisplayDialog("Avatar has no prefab", "The given avatar doesn't have a source prefab. A prefab is required to register the avatar. Do you want to create one now?", UxrConstants.Editor.Yes, UxrConstants.Editor.Cancel))
                 {
                     if (UxrEditorUtils.CreateAvatarPrefab(avatar, "Save prefab", avatar.name, out GameObject prefab, out GameObject newInstance))
                     {
                         if (newInstance != null)
                         {
                             avatar = newInstance.GetComponent<UxrAvatar>();
-                        }
 
-                        SerializedObject   serializedAvatar   = new SerializedObject(avatar);
-                        SerializedProperty propertyPrefabGuid = serializedAvatar.FindProperty(UxrAvatarEditor.PropertyPrefabGuid);
+                            SerializedObject   serializedAvatar   = new SerializedObject(avatar);
+                            SerializedProperty propertyPrefabGuid = serializedAvatar.FindProperty(UxrAvatarEditor.PropertyPrefabGuid);
 
-                        if (propertyPrefabGuid != null)
-                        {
-                            serializedAvatar.Update();
-                            propertyPrefabGuid.stringValue = UxrAvatarEditorExt.GetGuid(prefab);
-                            serializedAvatar.ApplyModifiedProperties();
+                            if (propertyPrefabGuid != null)
+                            {
+                                serializedAvatar.Update();
+                                propertyPrefabGuid.stringValue = UxrAvatarEditorExt.GetGuid(prefab);
+                                serializedAvatar.ApplyModifiedProperties();
+                            }
                         }
                     }
                     else
@@ -1359,7 +1398,7 @@ namespace UltimateXR.Editor.Manipulation
                             if (GetPreviewGrabPosesMode(previewGrabPosesProperty).HasFlag(UxrPreviewGrabPoses.ShowLeftHand))
                             {
                                 Mesh                          oldMeshLeft          = grabbableObject.GetGrabPoint(i).GetGripPoseInfo(selectedAvatar).GrabPoseMeshLeft;
-                                UxrGrabbableObjectPreviewMesh previewMeshComponent = grabbableObject.GetComponentsInChildren<UxrGrabbableObjectPreviewMesh>().FirstOrDefault(m => m.GetComponent<MeshFilter>().sharedMesh == oldMeshLeft);
+                                UxrGrabbableObjectPreviewMesh previewMeshComponent = grabbableObject.GetComponentsInChildren<UxrGrabbableObjectPreviewMesh>().FirstOrDefault(m => m.MeshFilterComponent.sharedMesh == oldMeshLeft);
 
                                 if (previewMeshComponent != null && previewMeshComponent.PreviewMesh is UxrPreviewHandGripMesh previewMeshLeft)
                                 {
@@ -1370,7 +1409,7 @@ namespace UltimateXR.Editor.Manipulation
                             if (GetPreviewGrabPosesMode(previewGrabPosesProperty).HasFlag(UxrPreviewGrabPoses.ShowRightHand))
                             {
                                 Mesh                          oldMeshRight         = grabbableObject.GetGrabPoint(i).GetGripPoseInfo(selectedAvatar).GrabPoseMeshRight;
-                                UxrGrabbableObjectPreviewMesh previewMeshComponent = grabbableObject.GetComponentsInChildren<UxrGrabbableObjectPreviewMesh>().FirstOrDefault(m => m.GetComponent<MeshFilter>().sharedMesh == oldMeshRight);
+                                UxrGrabbableObjectPreviewMesh previewMeshComponent = grabbableObject.GetComponentsInChildren<UxrGrabbableObjectPreviewMesh>().FirstOrDefault(m => m.MeshFilterComponent.sharedMesh == oldMeshRight);
 
                                 if (previewMeshComponent != null && previewMeshComponent.PreviewMesh is UxrPreviewHandGripMesh previewMeshRight)
                                 {
@@ -1428,7 +1467,7 @@ namespace UltimateXR.Editor.Manipulation
                         if (GetPreviewGrabPosesMode(previewGrabPosesProperty).HasFlag(UxrPreviewGrabPoses.ShowLeftHand))
                         {
                             Mesh                          oldMeshLeft          = grabbableObject.GetGrabPoint(i).GetGripPoseInfo(selectedAvatar).GrabPoseMeshLeft;
-                            UxrGrabbableObjectPreviewMesh previewMeshComponent = grabbableObject.GetComponentsInChildren<UxrGrabbableObjectPreviewMesh>().FirstOrDefault(m => m.GetComponent<MeshFilter>().sharedMesh == oldMeshLeft);
+                            UxrGrabbableObjectPreviewMesh previewMeshComponent = grabbableObject.GetComponentsInChildren<UxrGrabbableObjectPreviewMesh>().FirstOrDefault(m => m.MeshFilterComponent.sharedMesh == oldMeshLeft);
 
                             if (previewMeshComponent != null && previewMeshComponent.PreviewMesh is UxrPreviewHandGripMesh previewMeshLeft)
                             {
@@ -1439,7 +1478,7 @@ namespace UltimateXR.Editor.Manipulation
                         if (GetPreviewGrabPosesMode(previewGrabPosesProperty).HasFlag(UxrPreviewGrabPoses.ShowRightHand))
                         {
                             Mesh                          oldMeshRight         = grabbableObject.GetGrabPoint(i).GetGripPoseInfo(selectedAvatar).GrabPoseMeshRight;
-                            UxrGrabbableObjectPreviewMesh previewMeshComponent = grabbableObject.GetComponentsInChildren<UxrGrabbableObjectPreviewMesh>().FirstOrDefault(m => m.GetComponent<MeshFilter>().sharedMesh == oldMeshRight);
+                            UxrGrabbableObjectPreviewMesh previewMeshComponent = grabbableObject.GetComponentsInChildren<UxrGrabbableObjectPreviewMesh>().FirstOrDefault(m => m.MeshFilterComponent.sharedMesh == oldMeshRight);
 
                             if (previewMeshComponent != null && previewMeshComponent.PreviewMesh is UxrPreviewHandGripMesh previewMeshRight)
                             {
@@ -1575,7 +1614,8 @@ namespace UltimateXR.Editor.Manipulation
         private GUIContent ContentHideModifierParameters          { get; } = new GUIContent("Hide Modifier Parameters",          $"Hides the parameters controlled by the modifier(s) in this {nameof(GameObject)}, to simplify the view.");
         private GUIContent ContentRegisterAvatar                  { get; } = new GUIContent("Register Avatar For Grips",         "Registers an avatar to have the possibility to have different grip parameters for each avatar. This allows to fine-tune how different hand shapes and sizes wrap around the same object. Parameters that can be adjusted for each avatar will be colored to help in the process.");
         private GUIContent ContentSelectAvatar                    { get; } = new GUIContent("Selected Avatar Grips:",            "Switches the avatar currently selected to edit its grip parameters. Being able to register different avatars allows to fine-tune how different hand shapes and sizes wrap around the same object. Parameters that can be adjusted for each avatar will be colored to help in the process.");
-        private GUIContent ContentIgnoreGrabbableParentDependency { get; } = new GUIContent("Ignore Parent Dependency",          "Mark this to ignore the parent constraint and tell this object is independent.");
+        private GUIContent ContentIsDummyGrabbableParent          { get; } = new GUIContent("Is Dummy Grabbable Parent",         "Dummy grabbable parents are grabbable objects that can be manipulated only through the children. An example: door (dummy grabbable parent) and door handle (child grabbable, with ControlParentDirection checked).");
+        private GUIContent ContentIgnoreGrabbableParentDependency { get; } = new GUIContent("Ignore Parent Dependency",          "Whether to ignore the parent constraint and allow to move this object freely without being constrained by the parent.");
         private GUIContent ContentPriority                        { get; } = new GUIContent("Priority",                          "By default, closer objects will be always grabbed over far objects. Using priority, objects with higher priority will always be grabbed if they are in range.");
         private GUIContent ContentTranslationConstraintMode       { get; } = new GUIContent("Translation Constraint Mode",       "Allows to constrain the translation of this object while being grabbed.");
         private GUIContent ContentRestrictToBox                   { get; } = new GUIContent("Restrict To Box",                   "Allowed volume where this object's pivot will be allowed to move while being grabbed.");
@@ -1602,6 +1642,7 @@ namespace UltimateXR.Editor.Manipulation
         private GUIContent ContentAdditionalGrabPoints            { get; } = new GUIContent("Additional Grab Points",            "Parameters of the additional grabbing points which enables grabbing the object using more than one hand.");
         private GUIContent ContentUseParenting                    { get; } = new GUIContent("Parent When Placing",               "Will parent this GameObject to the anchor when placing it.");
         private GUIContent ContentAutoCreateStartAnchor           { get; } = new GUIContent("Create Anchor at Startup",          $"Will generate an {nameof(UxrGrabbableObjectAnchor)} at startup and place this object on it, keeping the position and rotation. If the object has an Anchor Compatible Tag assigned, the tag will be the only compatible tag allowed by the anchor. This is useful to have a fixed anchor where the object can be placed back again after picking it up.");
+        private GUIContent ContentAutoAnchorMaxPlaceDistance      { get; } = new GUIContent("Anchor Max Place Distance",         $"Determines, for the {nameof(UxrGrabbableObjectAnchor)} created automatically at startup, the maximum distance the object can be released from the anchor to be placed on it.");
         private GUIContent ContentStartAnchor                     { get; } = new GUIContent("Start Anchor",                      $"If this object is initially placed on an {nameof(UxrGrabbableObjectAnchor)}, select here which anchor it is placed on.");
         private GUIContent ContentTag                             { get; } = new GUIContent("Anchor Compatible Tag",             $"String identifier that can be used to filter which objects can be placed on which {nameof(UxrGrabbableObjectAnchor)} objects.");
         private GUIContent ContentDropAlignTransform              { get; } = new GUIContent("Anchor Snap",                       "The transform where objects will be snapped to when being placed.");
@@ -1631,6 +1672,7 @@ namespace UltimateXR.Editor.Manipulation
 
         private bool _hideModifierParameters;
 
+        private SerializedProperty _propIsDummyGrabbableParent;
         private SerializedProperty _propIgnoreGrabbableParentDependency;
         private SerializedProperty _propControlParentDirection;
 
@@ -1667,6 +1709,7 @@ namespace UltimateXR.Editor.Manipulation
 
         private SerializedProperty _propUseParenting;
         private SerializedProperty _propAutoCreateStartAnchor;
+        private SerializedProperty _propAutoAnchorMaxPlaceDistance;
         private SerializedProperty _propStartAnchor;
         private SerializedProperty _propTag;
         private SerializedProperty _propDropAlignTransformUseSelf;

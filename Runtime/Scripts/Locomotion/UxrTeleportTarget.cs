@@ -36,6 +36,21 @@ namespace UltimateXR.Locomotion
         /// </summary>
         public Vector3 ReorientArrowForward => _reorientArrowRoot != null ? _reorientArrowRoot.transform.forward : Vector3.zero;
 
+        /// <summary>
+        ///     Gets or sets the local rotation of the reorient arrow.
+        /// </summary>
+        public Quaternion ReorientArrowLocalRotation
+        {
+            get => _reorientArrowRoot != null ? _reorientArrowRoot.transform.localRotation : Quaternion.identity;
+            set
+            {
+                if (_reorientArrowRoot != null)
+                {
+                    _reorientArrowRoot.transform.localRotation = value;
+                }   
+            }
+        }
+
         #endregion
 
         #region Public Methods

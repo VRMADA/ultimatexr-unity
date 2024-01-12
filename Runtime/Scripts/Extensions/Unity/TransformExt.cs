@@ -6,8 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UltimateXR.Core;
 using UltimateXR.Core.Math;
 using UltimateXR.Extensions.System;
+using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity.Math;
 using UltimateXR.Extensions.Unity.Render;
 using UnityEngine;
@@ -52,7 +54,7 @@ namespace UltimateXR.Extensions.Unity
         /// <summary>
         ///     Destroys all children using Destroy().
         /// </summary>
-        /// <param name="transform">Transform to destroy all children from</param>
+        /// <param name="transform">Transform to destroy all children of</param>
         public static void DestroyAllChildren(this Transform transform)
         {
             for (int i = 0; i < transform.childCount; ++i)
@@ -64,7 +66,7 @@ namespace UltimateXR.Extensions.Unity
         /// <summary>
         ///     Destroys all children GameObjects using Destroy() that have a given component type.
         /// </summary>
-        /// <param name="transform">Transform to destroy all children from</param>
+        /// <param name="transform">Transform to destroy all children of</param>
         /// <param name="includeInactive">Also delete children with inactive components?</param>
         public static void DestroyAllChildren<T>(this Transform transform, bool includeInactive = true)
                     where T : Component
@@ -83,7 +85,7 @@ namespace UltimateXR.Extensions.Unity
         /// <summary>
         ///     Destroys all children using DestroyImmediate().
         /// </summary>
-        /// <param name="transform">Transform to destroy all children from</param>
+        /// <param name="transform">Transform to destroy all children of</param>
         public static void DestroyImmediateAllChildren(this Transform transform)
         {
             for (int i = 0; i < transform.childCount; ++i)
@@ -95,7 +97,7 @@ namespace UltimateXR.Extensions.Unity
         /// <summary>
         ///     Destroys all children GameObjects using DestroyImmediate() that have a given component type.
         /// </summary>
-        /// <param name="transform">Transform to destroy all children from</param>
+        /// <param name="transform">Transform to destroy all children of</param>
         /// <param name="includeInactive">Also delete children with inactive components?</param>
         public static void DestroyImmediateAllChildren<T>(this Transform transform, bool includeInactive = true)
                     where T : Component
@@ -115,26 +117,26 @@ namespace UltimateXR.Extensions.Unity
         ///     Assigns a transform the same position and rotation from another.
         /// </summary>
         /// <param name="self">Transform to change</param>
-        /// <param name="target">Target to get the position and rotation from</param>
+        /// <param name="target">Target to set the position and rotation of</param>
         public static void SetPositionAndRotation(this Transform self, Transform target)
         {
             self.SetPositionAndRotation(target.position, target.rotation);
         }
-		
+
 #if !(UNITY_2021_3_11 || UNITY_2022_2 || UNITY_2023_1)
-		
-		/// <summary>
+
+        /// <summary>
         ///     Sets the local position and local rotation in one go.
         /// </summary>
         /// <param name="self">Transform to change</param>
         /// <param name="localPosition">New local position</param>
-		/// <param name="localRotation">New local rotation</param>
+        /// <param name="localRotation">New local rotation</param>
         public static void SetLocalPositionAndRotation(this Transform self, Vector3 localPosition, Quaternion localRotation)
         {
             self.localPosition = localPosition;
-			self.localRotation = localRotation;
+            self.localRotation = localRotation;
         }
-		
+
 #endif
 
         /// <summary>
@@ -437,69 +439,73 @@ namespace UltimateXR.Extensions.Unity
         }
 
         /// <summary>
-        ///     Applies the transformation required to make <paramref name="sourceAlign" /> align with
+        ///     Applies to <paramref name="self" />, the transformation required to make <paramref name="sourceAlign" /> align with
         ///     <paramref name="targetAlign" />.
         /// </summary>
         /// <param name="self">Transform to apply the alignment to</param>
         /// <param name="sourceAlign">Source reference that will try to match <paramref name="targetAlign" /></param>
         /// <param name="targetAlign">Target reference</param>
-        /// <param name="rotate">Allows to control whether to rotate or not</param>
-        /// <param name="translate">Allows to control whether to translate or not</param>
+        /// <param name="transformations">
+        ///     Whether to apply rotation or translation transformations. By default it will rotate and
+        ///     translate.
+        /// </param>
         /// <param name="t">Optional interpolation value</param>
-        public static void ApplyAlignment(this Transform self,
-                                          Transform      sourceAlign,
-                                          Transform      targetAlign,
-                                          bool           rotate    = true,
-                                          bool           translate = true,
-                                          float          t         = 1.0f)
+        public static void ApplyAlignment(this Transform     self,
+                                          Transform          sourceAlign,
+                                          Transform          targetAlign,
+                                          UxrTransformations transformations = UxrTransformations.All,
+                                          float              t               = 1.0f)
         {
-            if (rotate)
+            if (transformations.HasFlag(UxrTransformations.Rotate))
             {
                 ApplyAlignment(self, sourceAlign.rotation, targetAlign.rotation, t);
             }
 
-            if (translate)
+            if (transformations.HasFlag(UxrTransformations.Translate))
             {
                 self.position += (targetAlign.position - sourceAlign.position) * t;
             }
         }
 
         /// <summary>
-        ///     Applies the transformation to make a transform defined by <paramref name="sourcePosition" /> and
-        ///     <paramref name="sourceRotation" /> move and rotate to <paramref name="targetPosition" /> and
-        ///     <paramref name="targetRotation" />.
+        ///     Applies to <paramref name="self" /> the transformation to make a transform defined by
+        ///     <paramref name="sourcePosition" /> and <paramref name="sourceRotation" /> move and rotate to
+        ///     <paramref name="targetPosition" /> and <paramref name="targetRotation" />.
         /// </summary>
-        /// <param name="transform">Transform to apply the alignment to</param>
+        /// <param name="self">Transform to apply the alignment to</param>
         /// <param name="sourcePosition">Source position that will try to match <paramref name="targetPosition" /></param>
         /// <param name="sourceRotation">Source rotation that will try to match <paramref name="targetRotation" /></param>
         /// <param name="targetPosition">Target position</param>
         /// <param name="targetRotation">Target rotation</param>
-        /// <param name="rotate">Allows to control whether to rotate or not</param>
-        /// <param name="translate">Allows to control whether to translate or not</param>
+        /// <param name="transformations">
+        ///     Whether to apply rotation or translation transformations. By default it will rotate and
+        ///     translate.
+        /// </param>
         /// <param name="t">Optional interpolation value [0.0, 1.0]</param>
-        public static void ApplyAlignment(this Transform transform,
-                                          Vector3        sourcePosition,
-                                          Quaternion     sourceRotation,
-                                          Vector3        targetPosition,
-                                          Quaternion     targetRotation,
-                                          bool           rotate,
-                                          bool           translate,
-                                          float          t = 1.0f)
+        public static void ApplyAlignment(this Transform     self,
+                                          Vector3            sourcePosition,
+                                          Quaternion         sourceRotation,
+                                          Vector3            targetPosition,
+                                          Quaternion         targetRotation,
+                                          UxrTransformations transformations = UxrTransformations.All,
+                                          float              t               = 1.0f)
         {
-            if (rotate)
+            if (transformations.HasFlag(UxrTransformations.Rotate))
             {
-                ApplyAlignment(transform, sourceRotation, targetRotation, t);
+                Vector3 sourceLocalPos = self.InverseTransformPoint(sourcePosition);
+                ApplyAlignment(self, sourceRotation, targetRotation, t);
+                sourcePosition = self.TransformPoint(sourceLocalPos);
             }
 
-            if (translate)
+            if (transformations.HasFlag(UxrTransformations.Translate))
             {
-                transform.position += (targetPosition - sourcePosition) * t;
+                self.position += (targetPosition - sourcePosition) * t;
             }
         }
 
         /// <summary>
-        ///     Applies the transformation to make a rotation defined by <paramref name="sourceRotation" /> rotate towards
-        ///     <paramref name="targetRotation" />.
+        ///     Applies to <paramref name="self" /> the transformation to make a rotation defined by
+        ///     <paramref name="sourceRotation" /> rotate towards <paramref name="targetRotation" />.
         /// </summary>
         /// <param name="self">Transform to apply the alignment to</param>
         /// <param name="sourceRotation">Source rotation that will try to match <paramref name="targetRotation" /></param>
@@ -514,49 +520,50 @@ namespace UltimateXR.Extensions.Unity
         }
 
         /// <summary>
-        ///     Moves <paramref name="rootPosition" /> and rotates <paramref name="rootRotation" /> so that a child
-        ///     defined by <paramref name="childPosition" /> and <paramref name="childRotation" /> gets aligned to
+        ///     Moves <paramref name="position" /> and rotates <paramref name="rotation" /> so that a transform defined by
+        ///     <paramref name="sourcePosition" /> and <paramref name="sourceRotation" /> gets aligned to
         ///     <paramref name="targetPosition" /> and <paramref name="targetRotation" />.
         /// </summary>
-        /// <param name="rootPosition">Position of the root object</param>
-        /// <param name="rootRotation">Rotation of the root object</param>
-        /// <param name="childPosition">
-        ///     Position of the child object that will try to align to <paramref name="targetPosition" />
+        /// <param name="position">Position to align</param>
+        /// <param name="rotation">Rotation to align</param>
+        /// <param name="sourcePosition">
+        ///     Reference position to align to <paramref name="targetPosition" />
         /// </param>
-        /// <param name="childRotation">
-        ///     Rotation of the child object that will try to align to <paramref name="targetRotation" />
+        /// <param name="sourceRotation">
+        ///     Reference rotation to align to <paramref name="targetRotation" />
         /// </param>
         /// <param name="targetPosition">Target position</param>
         /// <param name="targetRotation">Target rotation</param>
-        /// <param name="rotate">Allows to control whether to rotate or not</param>
-        /// <param name="translate">Allows to control whether to translate or not</param>
+        /// <param name="transformations">
+        ///     Whether to apply rotation or translation transformations. By default it will rotate and
+        ///     translate.
+        /// </param>
         /// <param name="t">Optional interpolation value [0.0, 1.0]</param>
-        public static void ApplyAlignment(ref Vector3    rootPosition,
-                                          ref Quaternion rootRotation,
-                                          Vector3        childPosition,
-                                          Quaternion     childRotation,
-                                          Vector3        targetPosition,
-                                          Quaternion     targetRotation,
-                                          bool           rotate,
-                                          bool           translate,
-                                          float          t = 1.0f)
+        public static void ApplyAlignment(ref Vector3        position,
+                                          ref Quaternion     rotation,
+                                          Vector3            sourcePosition,
+                                          Quaternion         sourceRotation,
+                                          Vector3            targetPosition,
+                                          Quaternion         targetRotation,
+                                          UxrTransformations transformations = UxrTransformations.All,
+                                          float              t               = 1.0f)
         {
-            Matrix4x4 matrix      = Matrix4x4.TRS(rootPosition, rootRotation, Vector3.one);
-            Vector3   relativePos = matrix.inverse.MultiplyPoint(childPosition);
+            Matrix4x4 matrix      = Matrix4x4.TRS(position, rotation, Vector3.one);
+            Vector3   relativePos = matrix.inverse.MultiplyPoint(sourcePosition);
 
-            if (rotate)
+            if (transformations.HasFlag(UxrTransformations.Rotate))
             {
-                Quaternion rotationTowards = Quaternion.RotateTowards(childRotation, targetRotation, 180.0f);
-                Quaternion relative        = Quaternion.Inverse(childRotation) * rootRotation;
-                rootRotation = Quaternion.Slerp(rootRotation, rotationTowards * relative, t);
+                Quaternion rotationTowards = Quaternion.RotateTowards(sourceRotation, targetRotation, 180.0f);
+                Quaternion relative        = Quaternion.Inverse(sourceRotation) * rotation;
+                rotation = Quaternion.Slerp(rotation, rotationTowards * relative, t);
 
-                Matrix4x4 newMatrix = Matrix4x4.TRS(rootPosition, rootRotation, Vector3.one);
-                childPosition = newMatrix.MultiplyPoint(relativePos);
+                Matrix4x4 newMatrix = Matrix4x4.TRS(position, rotation, Vector3.one);
+                sourcePosition = newMatrix.MultiplyPoint(relativePos);
             }
 
-            if (translate)
+            if (transformations.HasFlag(UxrTransformations.Translate))
             {
-                rootPosition += (targetPosition - childPosition) * t;
+                position += (targetPosition - sourcePosition) * t;
             }
         }
 
@@ -584,7 +591,7 @@ namespace UltimateXR.Extensions.Unity
             {
                 return false;
             }
-            
+
             if (self == parent)
             {
                 return true;
@@ -610,7 +617,7 @@ namespace UltimateXR.Extensions.Unity
             {
                 return false;
             }
-            
+
             if (current == child)
             {
                 return true;
@@ -788,16 +795,50 @@ namespace UltimateXR.Extensions.Unity
         }
 
         /// <summary>
+        ///     Gets the sibling index taking scene root GameObjects into account.
+        ///     Fixes https://issuetracker.unity3d.com/issues/getsiblingindex-always-returns-zero-in-standalone-builds
+        /// </summary>
+        /// <param name="self">Transform to get sibling index of</param>
+        /// <returns>Sibling index, including those of root GameObjects</returns>
+        public static int GetCorrectSiblingIndex(this Transform self)
+        {
+            if (self.parent == null)
+            {
+                if (self.gameObject.scene.name != null)
+                {
+#if UNITY_EDITOR
+                    UnityEditor.SceneManagement.PrefabStage prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+
+                    if (prefabStage != null)
+                    {
+                        return 0;
+                    }
+#endif
+                    int index = self.gameObject.scene.GetRootGameObjects().IndexOf(self.gameObject);
+                    return index != -1 ? index : 0;
+                }
+
+                return 0;
+            }
+
+            return self.GetSiblingIndex();
+        }
+
+        /// <summary>
         ///     Gets the full GameObject path of a Transform in the hierarchy.
         /// </summary>
-        /// <param name="self">Transform to get the full path from</param>
+        /// <param name="self">Transform to get the full path of</param>
+        /// <param name="relativeTo">
+        ///     Optional Transform to get the path relative to. If it's not the same Transform or a Transform up in the hierarchy
+        ///     it will return the full path
+        /// </param>
         /// <returns>Full path of the GameObject</returns>
-        public static string GetPathUnderScene(this Transform self)
+        public static string GetPathUnderScene(this Transform self, Transform relativeTo = null)
         {
             self.ThrowIfNull(nameof(self));
             string path = self.name;
 
-            while (self.parent is not null)
+            while (self.parent != null && self != relativeTo)
             {
                 self = self.parent;
                 path = $"{self.name}/{path}";
@@ -810,13 +851,38 @@ namespace UltimateXR.Extensions.Unity
         ///     Gets a unique path name of Transform in the hierarchy. Adds a sibling index to the path to assure that siblings
         ///     with the same name create different path names.
         /// </summary>
-        /// <param name="self">Transform to get a unique path from</param>
+        /// <param name="self">Transform to get a unique path of</param>
+        /// <param name="relativeTo">
+        ///     Optional Transform to get the path relative to. If it's not the same Transform or a Transform up in the hierarchy
+        ///     it will return the full path
+        /// </param>
         /// <returns>Unique full path that includes sibling index information to make it different from others</returns>
-        public static string GetUniqueScenePath(this Transform self)
+        public static string GetUniqueScenePath(this Transform self, Transform relativeTo = null)
         {
             self.ThrowIfNull(nameof(self));
-            string prePath = self.parent is not null ? self.parent.GetUniqueScenePath() : $"{self.gameObject.scene.name}:";
-            return $"{prePath}/{self.GetSiblingIndex():00}.-{self.name}";
+
+            string prePath = null;
+
+            if (relativeTo != null)
+            {
+                if (relativeTo != self)
+                {
+                    // Recurse up
+                    prePath = self.parent.GetUniqueScenePath(relativeTo);
+                }
+                else
+                {
+                    // Start relative string
+                    prePath = string.Empty;
+                }
+            }
+            else
+            {
+                string sceneString = !string.IsNullOrEmpty(self.gameObject.scene.name) ? self.gameObject.scene.name : string.Empty;
+                prePath = self.parent != null ? self.parent.GetUniqueScenePath() : sceneString;
+            }
+
+            return $"{prePath}/{self.GetCorrectSiblingIndex():000}-{self.name}";
         }
 
         /// <summary>
@@ -909,6 +975,41 @@ namespace UltimateXR.Extensions.Unity
         public static Vector3 GetWorldDirection(Transform transform, Vector3 localDirection)
         {
             return transform != null ? transform.rotation * localDirection : localDirection;
+        }
+
+        /// <summary>
+        ///     Calculates the position and rotation a <see cref="Transform" /> would have if it were rotated around a pivot and
+        ///     axis.
+        /// </summary>
+        /// <param name="transform">Transform to calculate the rotation for</param>
+        /// <param name="pivot">Rotation pivot</param>
+        /// <param name="axis">Rotation axis</param>
+        /// <param name="angle">Rotation angle in degrees</param>
+        /// <param name="position">Returns the new position</param>
+        /// <param name="rotation">Returns the new rotation</param>
+        public static void GetRotationAround(this Transform transform, Vector3 pivot, Vector3 axis, float angle, out Vector3 position, out Quaternion rotation)
+        {
+            rotation =  Quaternion.AngleAxis(angle, axis);
+            position =  pivot + rotation * (transform.position - pivot);
+            rotation *= transform.rotation;
+        }
+
+        /// <summary>
+        ///     Calculates the position and rotation a Transform would have if it were rotated around a pivot and
+        ///     axis.
+        /// </summary>
+        /// <param name="position">Transform position</param>
+        /// <param name="rotation">Transform rotation</param>
+        /// <param name="pivot">Rotation pivot</param>
+        /// <param name="axis">Rotation axis</param>
+        /// <param name="angle">Rotation angle in degrees</param>
+        /// <param name="position">Returns the new position</param>
+        /// <param name="rotation">Returns the new rotation</param>
+        public static void GetRotationAround(Vector3 position, Quaternion rotation, Vector3 pivot, Vector3 axis, float angle, out Vector3 resultPosition, out Quaternion resultRotation)
+        {
+            Quaternion q = Quaternion.AngleAxis(angle, axis);
+            resultPosition = pivot + q * (position - pivot);
+            resultRotation = q * rotation;
         }
 
         /// <summary>

@@ -71,6 +71,7 @@ namespace UltimateXR.Animation.IK
                             _links[i].MtxToLocalParent = _links[i].Bone.parent.worldToLocalMatrix;
                         }
 
+                        _links[i].Initialized                     = true;
                         _links[i].InitialLocalRotation            = _links[i].Bone.localRotation;
                         _links[i].LocalSpaceAxis1ZeroAngleVector  = _links[i].RotationAxis1.GetPerpendicularVector();
                         _links[i].LocalSpaceAxis2ZeroAngleVector  = _links[i].RotationAxis2.GetPerpendicularVector();
@@ -79,6 +80,23 @@ namespace UltimateXR.Animation.IK
                         _links[i].ParentSpaceAxis1ZeroAngleVector = _links[i].MtxToLocalParent.MultiplyVector(_links[i].Bone.TransformDirection(_links[i].LocalSpaceAxis1ZeroAngleVector));
                         _links[i].ParentSpaceAxis2ZeroAngleVector = _links[i].MtxToLocalParent.MultiplyVector(_links[i].Bone.TransformDirection(_links[i].LocalSpaceAxis2ZeroAngleVector));
                         _links[i].LinkLength                      = i == _links.Count - 1 ? Vector3.Distance(_links[i].Bone.position, _endEffector.position) : Vector3.Distance(_links[i].Bone.position, _links[i + 1].Bone.position);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Restores the initial link rotations.
+        /// </summary>
+        public void RestoreInitialRotations()
+        {
+            if (_links != null)
+            {
+                foreach (UxrCcdLink link in _links)
+                {
+                    if (link.Bone != null && link.Initialized)
+                    {
+                        link.Bone.transform.localRotation = link.InitialLocalRotation;
                     }
                 }
             }
@@ -128,7 +146,7 @@ namespace UltimateXR.Animation.IK
         protected override void Start()
         {
             base.Start();
-            
+
             if (_goal.HasParent(_endEffector) || _links.Any(l => _goal.HasParent(l.Bone)))
             {
                 _goal.SetParent(transform);
@@ -144,8 +162,8 @@ namespace UltimateXR.Animation.IK
         /// </summary>
         protected override void InternalSolveIK()
         {
-            Vector3    goalPosition = _goal.position;
-            Vector3    goalForward  = _goal.forward;
+            Vector3 goalPosition = _goal.position;
+            Vector3 goalForward  = _goal.forward;
 
             for (int i = 0; i < _maxIterations; ++i)
             {
@@ -208,8 +226,10 @@ namespace UltimateXR.Animation.IK
 
             bool linksRotated = false;
 
-            foreach (UxrCcdLink link in links)
+            for (var i = links.Count - 1; i >= 0; i--)
             {
+                UxrCcdLink link = links[i];
+
                 if (Vector3.Distance(goalPosition, endEffector.position) <= minDistanceToGoal)
                 {
                     return IterationResult.GoalReached;

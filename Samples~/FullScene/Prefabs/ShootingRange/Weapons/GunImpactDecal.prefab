@@ -129,6 +129,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d84dd744b1aa82b459278eda7f83ebf3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 30d936d8-f72e-4cd4-b2ba-ff51f05fc3d1
+  __prefabGuid: d783c455f7508644986f5c1e9c32614e
+  __isInPrefab: 1
   _ignoreDynamicObjects: 1
   _decalOffset: 0.005
   _decalRenderers:
@@ -235,6 +238,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13ede170b3667dc4882754072020a994, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _uxrUniqueId: 303d3c97-cf67-46c6-9245-b081f50ed93a
+  __prefabGuid: d783c455f7508644986f5c1e9c32614e
+  __isInPrefab: 1
   _animateSelf: 1
   _targetGameObject: {fileID: 0}
   _scaleOffsetVarName: _MainTex_ST

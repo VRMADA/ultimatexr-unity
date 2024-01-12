@@ -9,5 +9,8 @@ namespace UltimateXR.Editor
     ///     Progress updater delegate used by <see cref="UxrEditorUtils.ProcessAllProjectComponents{T}" />.
     ///     The progress updater is responsible for giving feedback about the current processing progress.
     /// </summary>
-    public delegate void UxrProgressUpdater(UxrProgressInfo progressInfo);
+    /// <returns>
+    ///     Boolean telling whether the progress should cancel because the user pressed the cancel button.
+    /// </returns>
+    public delegate bool UxrProgressUpdater(UxrProgressInfo progressInfo);
 }
