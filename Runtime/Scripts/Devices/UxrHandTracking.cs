@@ -202,7 +202,7 @@ namespace UltimateXR.Devices
         /// </summary>
         private void UxrManager_AvatarsUpdating()
         {
-#if ULTIMATEXR_USE_OCULUS_SDK
+#if ULTIMATEXR_OCULUS_PACKAGE
 
             if (enabled != IsAvailable && Avatar.AvatarController != null && Avatar.AvatarController.AllowHandTracking)
             {
