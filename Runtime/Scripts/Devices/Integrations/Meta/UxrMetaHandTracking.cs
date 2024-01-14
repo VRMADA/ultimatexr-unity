@@ -4,7 +4,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using UltimateXR.Core;
-#if ULTIMATEXR_USE_OCULUS_SDK
+#if ULTIMATEXR_OCULUS_PACKAGE
 using UltimateXR.Avatar.Rig;
 using UltimateXR.Core.Math;
 using UltimateXR.Extensions.Unity.Math;
@@ -32,7 +32,7 @@ namespace UltimateXR.Devices.Integrations.Meta
         {
             get
             {
-#if ULTIMATEXR_USE_OCULUS_SDK
+#if ULTIMATEXR_OCULUS_PACKAGE
                 if (OVRPlugin.GetHandState(OVRPlugin.Step.Render, OVRPlugin.Hand.HandLeft, ref _leftHandState))
                 {
                     _isLeftHandAvailable = _leftHandState.Status.HasFlag(OVRPlugin.HandStatus.HandTracked);
@@ -53,7 +53,7 @@ namespace UltimateXR.Devices.Integrations.Meta
         {
             get
             {
-#if ULTIMATEXR_USE_OCULUS_SDK
+#if ULTIMATEXR_OCULUS_PACKAGE
                 if (OVRPlugin.GetHandState(OVRPlugin.Step.Render, OVRPlugin.Hand.HandRight, ref _rightHandState))
                 {
                     _isRightHandAvailable = _rightHandState.Status.HasFlag(OVRPlugin.HandStatus.HandTracked);
@@ -80,7 +80,7 @@ namespace UltimateXR.Devices.Integrations.Meta
         {
             base.Awake();
 
-#if ULTIMATEXR_USE_OCULUS_SDK
+#if ULTIMATEXR_OCULUS_PACKAGE
             // Initialize axis system
 
             if (Avatar != null && Avatar.LeftHand.HasFullHandData())
@@ -104,7 +104,7 @@ namespace UltimateXR.Devices.Integrations.Meta
         /// <inheritdoc />
         protected override void UpdateSensors()
         {
-#if ULTIMATEXR_USE_OCULUS_SDK
+#if ULTIMATEXR_OCULUS_PACKAGE
             _isLeftHandAvailable  = OVRPlugin.GetHandState(OVRPlugin.Step.Render, OVRPlugin.Hand.HandLeft,  ref _leftHandState);
             _isRightHandAvailable = OVRPlugin.GetHandState(OVRPlugin.Step.Render, OVRPlugin.Hand.HandRight, ref _rightHandState);
 #endif
@@ -113,7 +113,7 @@ namespace UltimateXR.Devices.Integrations.Meta
         /// <inheritdoc />
         protected override void UpdateAvatar()
         {
-#if ULTIMATEXR_USE_OCULUS_SDK
+#if ULTIMATEXR_OCULUS_PACKAGE
 
             Transform wristLeft  = Avatar.LeftHandBone;
             Transform wristRight = Avatar.RightHandBone;
@@ -169,7 +169,7 @@ namespace UltimateXR.Devices.Integrations.Meta
 
         #endregion
 
-#if ULTIMATEXR_USE_OCULUS_SDK
+#if ULTIMATEXR_OCULUS_PACKAGE
 
         /// <summary>
         ///     Updates a finger using tracking information.
@@ -250,7 +250,7 @@ namespace UltimateXR.Devices.Integrations.Meta
 
 #endif
 
-#if ULTIMATEXR_USE_OCULUS_SDK
+#if ULTIMATEXR_OCULUS_PACKAGE
 
         private bool                _isLeftHandAvailable;
         private bool                _isRightHandAvailable;
