@@ -42,6 +42,16 @@ namespace UltimateXR.Devices
         {
             get
             {
+                #if UNITY_ANDROID && !UNITY_EDITOR
+                var androidDeviceNameMappings = new Dictionary<string, string> {
+                    { "Quest 3", "Meta Quest 3" }
+                };
+
+                if (androidDeviceNameMappings.TryGetValue(SystemInfo.deviceName, out var deviceName)) {
+                    return deviceName;
+                }
+                #endif
+
                 var inputDevices = new List<InputDevice>();
                 InputDevices.GetDevices(inputDevices);
 
