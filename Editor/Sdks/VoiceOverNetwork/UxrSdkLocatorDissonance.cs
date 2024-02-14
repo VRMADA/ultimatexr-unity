@@ -8,7 +8,7 @@ using UltimateXR.Core;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Editor.Sdks.Multiplayer
+namespace UltimateXR.Editor.Sdks.VoiceOverNetwork
 {
     /// <summary>
     ///     SDK Locator for the Dissonance Voice Chat SDK.

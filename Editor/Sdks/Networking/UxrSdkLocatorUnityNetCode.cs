@@ -8,7 +8,7 @@ using UltimateXR.Core;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Editor.Sdks.Multiplayer
+namespace UltimateXR.Editor.Sdks.Networking
 {
     /// <summary>
     ///     SDK Locator for the Unity NetCode package.
