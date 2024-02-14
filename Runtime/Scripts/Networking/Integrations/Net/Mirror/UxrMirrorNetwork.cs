@@ -136,6 +136,7 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
             networkTransform.syncPosition    = networkTransformFlags.HasFlag(UxrNetworkTransformFlags.PositionX) | networkTransformFlags.HasFlag(UxrNetworkTransformFlags.PositionY) | networkTransformFlags.HasFlag(UxrNetworkTransformFlags.PositionZ);
             networkTransform.syncRotation    = networkTransformFlags.HasFlag(UxrNetworkTransformFlags.RotationX) | networkTransformFlags.HasFlag(UxrNetworkTransformFlags.RotationY) | networkTransformFlags.HasFlag(UxrNetworkTransformFlags.RotationZ);
             networkTransform.syncScale       = networkTransformFlags.HasFlag(UxrNetworkTransformFlags.ScaleX) | networkTransformFlags.HasFlag(UxrNetworkTransformFlags.ScaleY) | networkTransformFlags.HasFlag(UxrNetworkTransformFlags.ScaleZ);
+            networkTransform.positionSensitivity = 0.001f;
             yield return networkTransform;
 
             if (networkIdentity)
