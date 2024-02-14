@@ -3,7 +3,9 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-namespace UltimateXR.Core.StateSync
+using UltimateXR.Core.StateSync;
+
+namespace UltimateXR.Core.Serialization
 {
     /// <summary>
     ///     Enumerates the variable types supported by serialization, for example
@@ -29,6 +31,7 @@ namespace UltimateXR.Core.StateSync
         String       = 12,
         Enum         = 13,
         Type         = 20,
+        Guid         = 21,
 
         // C# collections
 
@@ -50,7 +53,8 @@ namespace UltimateXR.Core.StateSync
 
         // UXR
 
-        UxrComponent     = 200,
-        IUxrSerializable = 201
+        IUxrUnique       = 200,
+        IUxrSerializable = 201,
+        UxrAxis          = 202
     }
 }

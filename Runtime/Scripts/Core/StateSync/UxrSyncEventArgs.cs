@@ -5,8 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System;
 using System.IO;
-using UltimateXR.Avatar;
-using UltimateXR.Core.Components;
+using System.Runtime.Serialization;
 using UltimateXR.Core.Serialization;
 using UltimateXR.Core.Settings;
 using UltimateXR.Extensions.System;
@@ -24,10 +23,9 @@ namespace UltimateXR.Core.StateSync
         #region Public Types & Data
 
         /// <summary>
-        ///     Whether this event should be synced through network. Some events like <see cref="UxrAvatarMoveEventArgs" /> might
-        ///     not be required to be synced since it's usually a NetworkTransform component that can synchronize it better.
+        ///     Gets which environments the sync event should be used in. See <see cref="UxrStateSyncEnvironments" /> flags.
         /// </summary>
-        public virtual bool ShouldSyncNetworkEvent => true;
+        public UxrStateSyncEnvironments TargetEnvironments { get; set; } = UxrStateSyncEnvironments.All;
 
         #endregion
 
@@ -75,12 +73,11 @@ namespace UltimateXR.Core.StateSync
 
                     try
                     {
-                        Type         syncEventType   = reader.ReadType(serializationVersion, out string typeName, out string assemblyName);
-                        UxrComponent targetComponent = reader.ReadUxrComponent(serializationVersion);
-                        object       eventObject     = System.Runtime.Serialization.FormatterServices.GetUninitializedObject(syncEventType); // Creates instance without calling constructor
+                        Type syncEventType = reader.ReadType(serializationVersion, out string typeName, out string assemblyName);
+                        stateSync = reader.ReadAnyVar(serializationVersion) as IUxrStateSync;
+                        object eventObject = FormatterServices.GetUninitializedObject(syncEventType); // Creates instance without calling constructor
 
                         eventArgs = eventObject as UxrSyncEventArgs;
-                        stateSync = targetComponent;
 
                         if (eventArgs == null)
                         {
@@ -100,7 +97,7 @@ namespace UltimateXR.Core.StateSync
 
                         if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
                         {
-                            Debug.LogError($"{UxrConstants.CoreModule} {logPrefix}: Error creating/deserializing event. Exception message: {e}");
+                            Debug.LogError($"{UxrConstants.CoreModule} {errorMessage}");
                         }
 
                         return false;
@@ -115,9 +112,12 @@ namespace UltimateXR.Core.StateSync
         /// <summary>
         ///     Serializes the event to a byte array so that it can be sent through the network or saved to disk.
         /// </summary>
-        /// <param name="sourceComponent">Component that generated the event</param>
+        /// <param name="sourceComponent">
+        ///     Component that generated the event. It should be either an <see cref="UxrComponent" /> or
+        ///     a component that implements the <see cref="IUxrSerializable" /> interface
+        /// </param>
         /// <returns>Byte array representing the event</returns>
-        public byte[] SerializeEventBinary(UxrComponent sourceComponent)
+        public byte[] SerializeEventBinary(IUxrStateSync sourceComponent)
         {
             using (MemoryStream stream = new MemoryStream())
             {
@@ -126,11 +126,11 @@ namespace UltimateXR.Core.StateSync
                     // Serialize event type to be able to instantiate event object using reflection
                     writer.Write(GetType());
 
-                    // Serialize the ID of the component that generated the event 
-                    BinaryWriterExt.Write(writer, sourceComponent);
+                    // Serialize the component that generated the event 
+                    writer.WriteAnyVar(sourceComponent);
 
                     // Serialize the event data
-                    SerializeEventInternal(new UxrBinarySerializer(writer, UxrConstants.Serialization.CurrentBinaryVersion));
+                    SerializeEventInternal(new UxrBinarySerializer(writer));
                 }
                 stream.Flush();
                 return stream.ToArray();

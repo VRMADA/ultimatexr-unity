@@ -12,9 +12,9 @@ namespace UltimateXR.Core
     {
         #region Public Types & Data
 
-        public const int MajorVersion = 0;
-        public const int MinorVersion = 9;
-        public const int PatchVersion = 6;
+        public const int MajorVersion = 1;
+        public const int MinorVersion = 0;
+        public const int PatchVersion = 0;
 
         public const string UltimateXR = "UltimateXR";
 

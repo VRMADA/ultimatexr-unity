@@ -35,6 +35,11 @@ namespace UltimateXR.Avatar.Controllers
         #region Public Types & Data
 
         /// <summary>
+        ///     Gets whether the avatar controller finished startup and can be updated.
+        /// </summary>
+        public abstract bool Initialized { get; }
+
+        /// <summary>
         ///     Gets or sets whether hand tracking is used when available.
         /// </summary>
         public bool AllowHandTracking
@@ -76,7 +81,7 @@ namespace UltimateXR.Avatar.Controllers
             // hiding the functionality so that it is handled by the framework in the correct order.
             UpdateAvatarAnimation();
         }
-        
+
         /// <inheritdoc />
         void IUxrAvatarControllerUpdater.UpdateAvatarPostProcess()
         {

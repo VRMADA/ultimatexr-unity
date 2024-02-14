@@ -4,17 +4,17 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
-using System.Linq;
 using UltimateXR.Avatar;
 using UltimateXR.Core;
-using UltimateXR.Extensions.Unity;
-using UltimateXR.Manipulation;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 #if ULTIMATEXR_USE_MIRROR_SDK
+using System.Linq;
 using UltimateXR.Core.Settings;
+using UltimateXR.Extensions.Unity;
+using UltimateXR.Manipulation;
 using Mirror;
 using kcp2k;
 #endif
@@ -93,7 +93,7 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
             IEnumerable<Behaviour> avatarComponents    = SetupNetworkTransform(avatar.gameObject,                                  true, UxrNetworkTransformFlags.ChildAll);
             IEnumerable<Behaviour> cameraComponents    = SetupNetworkTransform(avatar.CameraComponent.gameObject,                  true, UxrNetworkTransformFlags.ChildPositionAndRotation);
             IEnumerable<Behaviour> leftHandComponents  = SetupNetworkTransform(avatar.GetHand(UxrHandSide.Left).Wrist.gameObject,  true, UxrNetworkTransformFlags.ChildPositionAndRotation);
-            IEnumerable<Behaviour> rightHandComponents = SetupNetworkTransform(avatar.GetHand(UxrHandSide.Right).Wrist.gameObject, true, UxrNetworkTransformFlags.ChildAll);
+            IEnumerable<Behaviour> rightHandComponents = SetupNetworkTransform(avatar.GetHand(UxrHandSide.Right).Wrist.gameObject, true, UxrNetworkTransformFlags.ChildPositionAndRotation);
 
             newComponents.AddRange(avatarComponents.ToList().Concat(cameraComponents).Concat(leftHandComponents).Concat(rightHandComponents));
             newComponents.Add(avatarNetworkIdentity);
@@ -291,6 +291,16 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
                 }
             }
 
+#endif
+        }
+
+        /// <inheritdoc />
+        public override bool HasNetworkTransformSyncComponents(GameObject gameObject)
+        {
+#if ULTIMATEXR_USE_MIRROR_SDK
+            return gameObject.GetComponent<NetworkTransformUnreliable>() != null || gameObject.GetComponent<NetworkRigidbodyUnreliable>() != null;
+#else
+            return false;
 #endif
         }
 

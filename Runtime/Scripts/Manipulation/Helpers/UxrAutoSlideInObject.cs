@@ -33,7 +33,7 @@ namespace UltimateXR.Manipulation.Helpers
     ///         <item>It will fall back by itself when released while sliding along the axis.</item>
     ///     </list>
     /// </summary>
-    public class UxrAutoSlideInObject : UxrGrabbableObjectComponent<UxrAutoSlideInObject>
+    public partial class UxrAutoSlideInObject : UxrGrabbableObjectComponent<UxrAutoSlideInObject>
     {
         [SerializeField] private Vector3 _translationConstraintMin = Vector3.zero;
         [SerializeField] private Vector3 _translationConstraintMax = Vector3.forward * 0.1f;
@@ -150,7 +150,7 @@ namespace UltimateXR.Manipulation.Helpers
                 }
             }
 
-            if (GrabbableObject.CurrentAnchor != null)
+            if (GrabbableObject.CurrentAnchor != null && _insertAxis != null)
             {
                 // Object can only move in a specific axis but if it is grabbed past this distance it becomes free
 

@@ -9,10 +9,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using UltimateXR.Core;
-using UltimateXR.Core.Components;
+using UltimateXR.Core.Math;
 using UltimateXR.Core.Serialization;
-using UltimateXR.Core.StateSync;
+using UltimateXR.Core.Unique;
 using UnityEngine;
 
 namespace UltimateXR.Extensions.System.IO
@@ -50,12 +49,30 @@ namespace UltimateXR.Extensions.System.IO
         }
 
         /// <summary>
+        ///     Outputs a string with null support. Strings should be read back using
+        ///     <see cref="BinaryReaderExt.ReadStringWithNullCheck" />.
+        /// </summary>
+        /// <param name="writer">Writer</param>
+        /// <param name="value">String value or null</param>
+        public static void WriteStringWithNullCheck(this BinaryWriter writer, string value)
+        {
+            // Serialized as: null-check (bool), string
+
+            writer.Write(value != null);
+
+            if (value != null)
+            {
+                writer.Write(value);
+            }
+        }
+
+        /// <summary>
         ///     Outputs a type. It will output two strings: the type full name and the assembly name. If the type belongs to the
         ///     UltimateXR assembly, the assembly will be an empty string.
         /// </summary>
         /// <param name="writer">Writer</param>
         /// <param name="type">The type</param>
-        public static void Write(this BinaryWriter writer, in Type type)
+        public static void Write(this BinaryWriter writer, Type type)
         {
             if (type == null)
             {
@@ -70,6 +87,16 @@ namespace UltimateXR.Extensions.System.IO
         }
 
         /// <summary>
+        ///     Outputs a Guid as a 16 byte array.
+        /// </summary>
+        /// <param name="writer">Writer</param>
+        /// <param name="guid">The Guid</param>
+        public static void Write(this BinaryWriter writer, Guid guid)
+        {
+            writer.Write(guid.ToByteArray());
+        }
+
+        /// <summary>
         ///     Outputs an array.
         /// </summary>
         /// <param name="writer">Writer</param>
@@ -80,7 +107,7 @@ namespace UltimateXR.Extensions.System.IO
         ///     A method obtained through reflection that was required for serialization could
         ///     not be found
         /// </exception>
-        public static void Write<T>(this BinaryWriter writer, in T[] values)
+        public static void Write<T>(this BinaryWriter writer, T[] values)
         {
             // Serialized as: null-check (bool), count (int32), elements
 
@@ -107,7 +134,7 @@ namespace UltimateXR.Extensions.System.IO
         ///     A method obtained through reflection that was required for serialization could
         ///     not be found
         /// </exception>
-        public static void Write(this BinaryWriter writer, in object[] values)
+        public static void Write(this BinaryWriter writer, object[] values)
         {
             // Serialized as: null-check (bool), count (int32), elements
 
@@ -135,7 +162,7 @@ namespace UltimateXR.Extensions.System.IO
         ///     A method obtained through reflection that was required for serialization could
         ///     not be found
         /// </exception>
-        public static void Write<T>(this BinaryWriter writer, in List<T> values)
+        public static void Write<T>(this BinaryWriter writer, List<T> values)
         {
             // Serialized as: null-check (bool), count (int32), elements
 
@@ -162,7 +189,7 @@ namespace UltimateXR.Extensions.System.IO
         ///     A method obtained through reflection that was required for serialization could
         ///     not be found
         /// </exception>
-        public static void Write(this BinaryWriter writer, in List<object> values)
+        public static void Write(this BinaryWriter writer, List<object> values)
         {
             // Serialized as: null-check (bool), count (int32), elements
 
@@ -191,7 +218,7 @@ namespace UltimateXR.Extensions.System.IO
         ///     A method obtained through reflection that was required for serialization could
         ///     not be found
         /// </exception>
-        public static void Write<TKey, TValue>(this BinaryWriter writer, in Dictionary<TKey, TValue> dictionary)
+        public static void Write<TKey, TValue>(this BinaryWriter writer, Dictionary<TKey, TValue> dictionary)
         {
             // Serialized as: null-check (bool), count (int32), elements (pairs)
 
@@ -313,18 +340,17 @@ namespace UltimateXR.Extensions.System.IO
         }
 
         /// <summary>
-        ///     Outputs a <see cref="UxrComponent" />. Only the unique ID will be serialized. The component can be retrieved using
-        ///     the ID with <see cref="UxrComponent.TryGetComponentById" />. It has support for null references.
+        ///     Outputs a component with the <see cref="IUxrUniqueId" /> interface. Only the unique ID will be serialized.
+        ///     The component can be retrieved using the ID with <see cref="UxrUniqueIdImplementer.TryGetComponentById" />. It has
+        ///     support for null references.
         /// </summary>
         /// <param name="writer">Writer</param>
-        /// <param name="UxrComponent">UltimateXR component</param>
-        public static void WriteUxrComponent(this BinaryWriter writer, UxrComponent component)
+        /// <param name="component">Component with the <see cref="IUxrUniqueId" /> interface</param>
+        public static void WriteUniqueComponent(this BinaryWriter writer, IUxrUniqueId component)
         {
-            if (component == null)
-            {
-                writer.Write(string.Empty);
-            }
-            else
+            writer.Write(component != null);
+
+            if (component != null)
             {
                 writer.Write(component.UniqueId);
             }
@@ -335,7 +361,7 @@ namespace UltimateXR.Extensions.System.IO
         ///     references.
         /// </summary>
         /// <param name="writer">Writer</param>
-        /// <param name="IUxrSerializable">Interface</param>
+        /// <param name="serializable">Object with the <see cref="IUxrSerializable" /> interface</param>
         /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
         /// <exception cref="NotSupportedException">
         ///     A method obtained through reflection that was required for serialization could
@@ -358,26 +384,37 @@ namespace UltimateXR.Extensions.System.IO
             writer.Write(serializable.GetType());
 
             // Serialization using interface
-            serializable.Serialize(new UxrBinarySerializer(writer, UxrConstants.Serialization.CurrentBinaryVersion), serializable.SerializationVersion);
+            serializable.Serialize(new UxrBinarySerializer(writer), serializable.SerializationVersion);
         }
 
         /// <summary>
-        ///     Outputs an <see cref="object" /> supported by <see cref="UxrVarType" /> together with its type, so that it can be
-        ///     deserialized using <see cref="BinaryReaderExt.ReadAnyVar" />. This can be useful when the serialized object type is
-        ///     only known at runtime.
+        ///     Outputs an UxrAxis value.
         /// </summary>
         /// <param name="writer">Writer</param>
-        /// <param name="value">Value</param>
+        /// <param name="axis"><see cref="UxrAxis" /> value</param>
+        public static void WriteAxis(this BinaryWriter writer, UxrAxis axis)
+        {
+            // Serialize as a compressed int (0, 1 or 2).
+            writer.WriteCompressedInt32((int)(axis ?? 0));
+        }
+
+        /// <summary>
+        ///     Outputs an object supported by <see cref="UxrVarType" /> together with its type, so that it can be
+        ///     deserialized using <see cref="BinaryReaderExt.ReadAnyVar(System.IO.BinaryReader,int)" />. This can be useful when
+        ///     the serialized object type is only known at runtime.
+        /// </summary>
+        /// <param name="writer">Writer</param>
+        /// <param name="obj">Value</param>
         /// <exception cref="ArgumentOutOfRangeException">The type is not supported</exception>
         /// <exception cref="NotSupportedException">
         ///     A method obtained through reflection that was required for serialization could
         ///     not be found
         /// </exception>
-        public static void WriteAnyVar(this BinaryWriter writer, in object value)
+        public static void WriteAnyVar<T>(this BinaryWriter writer, T obj)
         {
-            // First write type as int
+            // First write type
 
-            UxrVarType varType = UxrVarTypeExt.GetType(value);
+            UxrVarType varType = UxrVarTypeExt.GetType(obj);
             writer.Write((byte)varType);
 
             if (varType == UxrVarType.Unknown)
@@ -387,9 +424,9 @@ namespace UltimateXR.Extensions.System.IO
 
             // Write additional data for some types
 
-            Type type = value.GetType();
+            Type type = obj.GetType();
 
-            if (value is Enum enumValue)
+            if (obj is Enum enumValue)
             {
                 // Enum type
                 writer.Write(enumValue.GetType());
@@ -416,97 +453,97 @@ namespace UltimateXR.Extensions.System.IO
 
             // Write value
 
-            writer.Write(value, type);
+            writer.Write(obj, type);
         }
 
         /// <summary>
         ///     Generic method that outputs an object supported by <see cref="UxrVarType" />.
         /// </summary>
         /// <param name="writer">Writer</param>
-        /// <param name="value">The object</param>
+        /// <param name="obj">The object</param>
         /// <typeparam name="T">The type</typeparam>
         /// <exception cref="ArgumentOutOfRangeException">The type is not supported</exception>
         /// <exception cref="NotSupportedException">
         ///     A method obtained through reflection that was required for serialization could
         ///     not be found
         /// </exception>
-        public static void Write<T>(this BinaryWriter writer, in T value)
+        public static void Write<T>(this BinaryWriter writer, T obj)
         {
             Type type = typeof(T);
 
             if (type == typeof(bool))
             {
-                writer.Write(value is true);
+                writer.Write(obj is true);
                 return;
             }
 
             if (type == typeof(sbyte))
             {
-                writer.Write(value is sbyte sbyteValue ? sbyteValue : (sbyte)0);
+                writer.Write(obj is sbyte sbyteValue ? sbyteValue : (sbyte)0);
                 return;
             }
 
             if (type == typeof(byte))
             {
-                writer.Write(value is byte byteValue ? byteValue : (byte)0);
+                writer.Write(obj is byte byteValue ? byteValue : (byte)0);
                 return;
             }
 
             if (type == typeof(char))
             {
-                writer.Write(value is char charValue ? charValue : (char)0);
+                writer.Write(obj is char charValue ? charValue : (char)0);
                 return;
             }
 
             if (type == typeof(int))
             {
-                writer.Write(value is int intValue ? intValue : 0);
+                writer.Write(obj is int intValue ? intValue : 0);
                 return;
             }
 
             if (type == typeof(uint))
             {
-                writer.Write(value is uint uintValue ? uintValue : 0);
+                writer.Write(obj is uint uintValue ? uintValue : 0);
                 return;
             }
 
             if (type == typeof(long))
             {
-                writer.Write(value is long longValue ? longValue : 0);
+                writer.Write(obj is long longValue ? longValue : 0);
                 return;
             }
 
             if (type == typeof(ulong))
             {
-                writer.Write(value is ulong ulongValue ? ulongValue : 0);
+                writer.Write(obj is ulong ulongValue ? ulongValue : 0);
                 return;
             }
 
             if (type == typeof(float))
             {
-                writer.Write(value is float floatValue ? floatValue : 0);
+                writer.Write(obj is float floatValue ? floatValue : 0);
                 return;
             }
 
             if (type == typeof(double))
             {
-                writer.Write(value is double doubleValue ? doubleValue : 0);
+                writer.Write(obj is double doubleValue ? doubleValue : 0);
                 return;
             }
 
             if (type == typeof(decimal))
             {
-                writer.Write(value is decimal decimalValue ? decimalValue : 0);
+                writer.Write(obj is decimal decimalValue ? decimalValue : 0);
                 return;
             }
 
             if (type == typeof(string))
             {
-                writer.Write(value as string ?? string.Empty);
+                writer.Write(obj as string ?? string.Empty);
                 return;
             }
 
-            if (value is Enum enumValue)
+            if (obj is Enum enumValue)
             {
                 writer.WriteEnum(enumValue);
                 return;
@@ -514,20 +551,27 @@ namespace UltimateXR.Extensions.System.IO
 
             if (type == typeof(Type))
             {
-                writer.Write(value as Type);
+                writer.Write(obj as Type);
+                return;
+            }
+
+            if (type == typeof(Guid))
+            {
+                writer.Write(obj is Guid guid ? guid : default);
                 return;
             }
 
             if (type.IsArray)
             {
-                if (type.GetElementType() != typeof(object))
+                Type elementType = type.GetElementType();
+
+                if (elementType != typeof(object))
                 {
-                    Type elementType = type.GetElementType();
-                    GetGenericWriteArrayMethod().MakeGenericMethod(elementType).Invoke(writer, new object[] { writer, value });
+                    GetGenericWriteArrayMethod().MakeGenericMethod(elementType).Invoke(writer, new object[] { writer, obj });
                 }
                 else
                 {
-                    writer.Write(value as object[]);
+                    writer.Write(obj as object[]);
                 }
 
                 return;
@@ -535,14 +579,15 @@ namespace UltimateXR.Extensions.System.IO
 
             if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
             {
-                if (type.GetElementType() != typeof(object))
+                Type elementType = type.GetGenericArguments()[0];
+
+                if (elementType != typeof(object))
                 {
-                    Type elementType = type.GetElementType();
-                    GetGenericWriteListMethod().MakeGenericMethod(elementType).Invoke(writer, new object[] { writer, value });
+                    GetGenericWriteListMethod().MakeGenericMethod(elementType).Invoke(writer, new object[] { writer, obj });
                 }
                 else
                 {
-                    writer.Write(value as List<object>);
+                    writer.Write(obj as List<object>);
                 }
 
                 return;
@@ -552,65 +597,71 @@ namespace UltimateXR.Extensions.System.IO
             {
                 Type keyType   = type.GetGenericArguments()[0];
                 Type valueType = type.GetGenericArguments()[1];
-                GetDictionaryWriteMethod().MakeGenericMethod(keyType, valueType).Invoke(writer, new object[] { writer, value });
+                GetDictionaryWriteMethod().MakeGenericMethod(keyType, valueType).Invoke(writer, new object[] { writer, obj });
                 return;
             }
 
             if (type == typeof(Vector2))
             {
-                writer.Write(value is Vector2 vector2 ? vector2 : default);
+                writer.Write(obj is Vector2 vector2 ? vector2 : default);
                 return;
             }
 
             if (type == typeof(Vector3))
             {
-                writer.Write(value is Vector3 vector3 ? vector3 : default);
+                writer.Write(obj is Vector3 vector3 ? vector3 : default);
                 return;
             }
 
             if (type == typeof(Vector4))
             {
-                writer.Write(value is Vector4 vector4 ? vector4 : default);
+                writer.Write(obj is Vector4 vector4 ? vector4 : default);
                 return;
             }
 
             if (type == typeof(Color))
             {
-                writer.Write(value is Color color ? color : default);
+                writer.Write(obj is Color color ? color : default);
                 return;
             }
 
             if (type == typeof(Color32))
             {
-                writer.Write(value is Color32 color ? color : default);
+                writer.Write(obj is Color32 color ? color : default);
                 return;
             }
 
             if (type == typeof(Quaternion))
             {
-                writer.Write(value is Quaternion quaternion ? quaternion : default);
+                writer.Write(obj is Quaternion quaternion ? quaternion : default);
                 return;
             }
 
             if (type == typeof(Matrix4x4))
             {
-                writer.Write(value is Matrix4x4 matrix ? matrix : default);
+                writer.Write(obj is Matrix4x4 matrix ? matrix : default);
                 return;
             }
 
-            if (typeof(UxrComponent).IsAssignableFrom(type))
+            if (typeof(IUxrUniqueId).IsAssignableFrom(type))
             {
-                writer.WriteUxrComponent(value as UxrComponent);
+                writer.WriteUniqueComponent(obj as IUxrUniqueId);
                 return;
             }
 
             if (typeof(IUxrSerializable).IsAssignableFrom(type))
             {
-                writer.WriteUxrSerializable(type as IUxrSerializable);
+                writer.WriteUxrSerializable(obj as IUxrSerializable);
                 return;
             }
 
-            throw new ArgumentOutOfRangeException(nameof(value), value, $"Serializing unknown target type {typeof(T).FullName}");
+            if (type == typeof(UxrAxis))
+            {
+                writer.WriteAxis(obj as UxrAxis);
+                return;
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(obj), obj, $"Serializing unknown target type {typeof(T).FullName}");
         }
 
         #endregion
@@ -621,14 +672,14 @@ namespace UltimateXR.Extensions.System.IO
         ///     Outputs an object supported by <see cref="UxrVarType" />.
         /// </summary>
         /// <param name="writer">Writer</param>
-        /// <param name="value">The object</param>
+        /// <param name="obj">The object</param>
         /// <param name="type">The type of the object</param>
         /// <exception cref="ArgumentOutOfRangeException">The type is not supported</exception>
         /// <exception cref="NotSupportedException">
         ///     A method obtained through reflection that was required for serialization could
         ///     not be found
         /// </exception>
-        private static void Write(this BinaryWriter writer, in object value, Type type)
+        private static void Write<T>(this BinaryWriter writer, T obj, Type type)
         {
             if (s_genericWriteMethod == null)
             {
@@ -647,7 +698,7 @@ namespace UltimateXR.Extensions.System.IO
                 }
             }
 
-            s_genericWriteMethod.MakeGenericMethod(type).Invoke(writer, new[] { writer, value });
+            s_genericWriteMethod.MakeGenericMethod(type).Invoke(writer, new object[] { writer, obj });
         }
 
         /// <summary>
@@ -702,6 +753,7 @@ namespace UltimateXR.Extensions.System.IO
                                                                                        m.IsGenericMethod &&
                                                                                        m.GetGenericArguments().Count() == 1 &&
                                                                                        m.GetParameters().Count() == 2 &&
+                                                                                       m.GetParameters()[1].ParameterType.IsGenericType &&
                                                                                        m.GetParameters()[1].ParameterType.GetGenericTypeDefinition() == typeof(List<>)).FirstOrDefault();
 
             if (s_genericWriteListMethod == null)
@@ -733,6 +785,7 @@ namespace UltimateXR.Extensions.System.IO
                                                                                       m.IsGenericMethod &&
                                                                                       m.GetGenericArguments().Count() == 2 &&
                                                                                       m.GetParameters().Count() == 2 &&
+                                                                                      m.GetParameters()[1].ParameterType.IsGenericType &&
                                                                                       m.GetParameters()[1].ParameterType.GetGenericTypeDefinition() == typeof(Dictionary<,>)).FirstOrDefault();
 
             if (s_dictionaryWriteMethod == null)

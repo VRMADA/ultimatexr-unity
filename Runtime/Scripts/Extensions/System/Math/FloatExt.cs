@@ -3,6 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Core;
 using UnityEngine;
 
 namespace UltimateXR.Extensions.System.Math
@@ -13,6 +14,23 @@ namespace UltimateXR.Extensions.System.Math
     public static class FloatExt
     {
         #region Public Methods
+
+        /// <summary>
+        ///     Compares two <c>float</c> values for equality with a specified precision threshold.
+        /// </summary>
+        /// <param name="a">The first <c>float</c> to compare</param>
+        /// <param name="b">The second <c>float</c> to compare</param>
+        /// <param name="precisionThreshold">
+        ///     The precision threshold for <c>float</c> comparisons. Defaults to
+        ///     <see cref="UxrConstants.Math.DefaultPrecisionThreshold" />.
+        /// </param>
+        /// <returns>
+        ///     <c>true</c> if the <c>float</c> are equal; otherwise, <c>false</c>.
+        /// </returns>
+        public static bool EqualsUsingPrecision(this float a, float b, float precisionThreshold = UxrConstants.Math.DefaultPrecisionThreshold)
+        {
+            return Mathf.Abs(a - b) <= precisionThreshold;
+        }
 
         /// <summary>
         ///     Converts a float value representing time in seconds to a formatted string value.

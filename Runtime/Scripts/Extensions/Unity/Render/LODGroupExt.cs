@@ -31,7 +31,7 @@ namespace UltimateXR.Extensions.Unity.Render
 
             int lodIndex = lodGroup.lodCount - 1;
 
-            for (var i = 0; i < lods.Length; i++)
+            for (int i = 0; i < lods.Length; i++)
             {
                 var lod = lods[i];
 
@@ -54,7 +54,7 @@ namespace UltimateXR.Extensions.Unity.Render
         {
             var lods = lodGroup.GetLODs();
 
-            for (var i = 0; i < lods.Length; i++)
+            for (int i = 0; i < lods.Length; i++)
             {
                 foreach (Renderer renderer in lods[i].renderers)
                 {

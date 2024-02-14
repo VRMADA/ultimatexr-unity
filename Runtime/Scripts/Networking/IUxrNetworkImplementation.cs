@@ -55,7 +55,7 @@ namespace UltimateXR.Networking
         /// <param name="worldSpace">Whether to synchronize world space coordinates (true) or local space (false)</param>
         /// <param name="networkTransformFlags">Which elements to synchronize</param>
         /// <returns>List of components that were added</returns>
-        IEnumerable<Behaviour> AddNetworkTransform(GameObject gameObject, bool worldSpace, UxrNetworkTransformFlags networkTransformFlags = UxrNetworkTransformFlags.All);
+        IEnumerable<Behaviour> AddNetworkTransform(GameObject gameObject, bool worldSpace, UxrNetworkTransformFlags networkTransformFlags);
 
         /// <summary>
         ///     Adds network synchronization functionality to a <see cref="Rigidbody" />.
@@ -64,7 +64,7 @@ namespace UltimateXR.Networking
         /// <param name="worldSpace">Whether to synchronize world space coordinates (true) or local space (false)</param>
         /// <param name="networkRigidbodyFlags">Options</param>
         /// <returns>List of components that were added</returns>
-        IEnumerable<Behaviour> AddNetworkRigidbody(GameObject gameObject, bool worldSpace, UxrNetworkRigidbodyFlags networkRigidbodyFlags = UxrNetworkRigidbodyFlags.None);
+        IEnumerable<Behaviour> AddNetworkRigidbody(GameObject gameObject, bool worldSpace, UxrNetworkRigidbodyFlags networkRigidbodyFlags);
 
         /// <summary>
         ///     Enables or disables a network transform component.
@@ -104,6 +104,16 @@ namespace UltimateXR.Networking
         /// </summary>
         /// <param name="gameObject">The GameObject with a <see cref="UxrGrabbableOBject" /> component</param>
         void CheckReassignGrabAuthority(GameObject gameObject);
+
+        /// <summary>
+        ///     Gets whether an object has networking components (NetworkTransform/NetworkRigidbody) to sync its transform.
+        /// </summary>
+        /// <param name="gameObject">GameObject to check</param>
+        /// <returns>
+        ///     Boolean telling whether the object has any NetworkTransform/NetworkRigidbody components using the
+        ///     implementation.
+        /// </returns>
+        bool HasNetworkTransformSyncComponents(GameObject gameObject);
 
         #endregion
     }

@@ -5,11 +5,12 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using UltimateXR.Core.Components;
+using UltimateXR.Core.Math;
 using UltimateXR.Core.Settings;
+using UltimateXR.Core.Unique;
 using UnityEngine;
 
-namespace UltimateXR.Core.StateSync
+namespace UltimateXR.Core.Serialization
 {
     /// <summary>
     ///     Extensions for <see cref="UxrVarType" />.
@@ -23,7 +24,7 @@ namespace UltimateXR.Core.StateSync
         /// </summary>
         /// <param name="obj">Object to get the type of</param>
         /// <returns>Type from <see cref="UxrVarType" /> or <see cref="UxrVarType.Unknown" /> if not supported</returns>
-        public static UxrVarType GetType(object obj)
+        public static UxrVarType GetType<T>(T obj)
         {
             if (obj == null)
             {
@@ -160,14 +161,19 @@ namespace UltimateXR.Core.StateSync
             
             // UXR types
 
+            if (obj is IUxrUniqueId)
+            {
+                return UxrVarType.IUxrUnique;
+            }
+
             if (obj is IUxrSerializable)
             {
                 return UxrVarType.IUxrSerializable;
             }
 
-            if (obj is UxrComponent)
+            if (obj is UxrAxis)
             {
-                return UxrVarType.UxrComponent;
+                return UxrVarType.UxrAxis;
             }
 
             if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)

@@ -31,8 +31,13 @@ namespace UltimateXR.Core
         Relevant = 3,
 
         /// <summary>
-        ///     All loggable information.
+        ///     All loggable information, except for <see cref="Debug"/>
         /// </summary>
-        Verbose = 4
+        Verbose = 4,
+
+        /// <summary>
+        ///     All loggable information
+        /// </summary>
+        Debug = 5
     }
 }

@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="UxrNetworkAvatar.cs" company="VRMADA">
+// <copyright file="IUxrNetworkAvatar.cs" company="VRMADA">
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
@@ -29,6 +29,11 @@ namespace UltimateXR.Networking
         event Action AvatarDespawned;
 
         /// <summary>
+        ///     Gets whether this avatar is the avatar controller by the user (true) or a remote avatar (false).
+        /// </summary>
+        bool IsLocal { get; }
+
+        /// <summary>
         ///     Gets the avatar component.
         /// </summary>
         UxrAvatar Avatar { get; }
@@ -49,7 +54,7 @@ namespace UltimateXR.Networking
         #region Public Methods
 
         /// <summary>
-        ///     Initializes an avatar. Should be called right after the avatar was spawned.
+        ///     Initializes an avatar. Should be called by the implementation right after the avatar was spawned.
         /// </summary>
         /// <param name="avatar">Avatar component</param>
         /// <param name="isLocal">Whether the avatar is local</param>

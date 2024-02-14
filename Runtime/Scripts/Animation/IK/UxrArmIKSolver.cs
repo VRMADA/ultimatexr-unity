@@ -20,8 +20,7 @@ namespace UltimateXR.Animation.IK
     {
         #region Inspector Properties/Serialized Fields
 
-        [Header("General")] [SerializeField] private UxrHandSide          _side;
-        [SerializeField]                     private UxrArmOverExtendMode _overExtendMode = UxrArmOverExtendMode.LimitHandReach;
+        [Header("General")] [SerializeField] private UxrArmOverExtendMode _overExtendMode = UxrArmOverExtendMode.LimitHandReach;
 
         [Header("Clavicle")] [SerializeField] [Range(0, 1)] private float   _clavicleDeformation          = DefaultClavicleDeformation;
         [SerializeField]                                    private float   _clavicleRangeOfMotionAngle   = DefaultClavicleRangeOfMotionAngle;
@@ -68,11 +67,7 @@ namespace UltimateXR.Animation.IK
         /// <summary>
         ///     Gets whether it is the left or right arm.
         /// </summary>
-        public UxrHandSide Side
-        {
-            get => _side;
-            set => _side = value;
-        }
+        public UxrHandSide Side => _side;
 
         /// <summary>
         ///     Gets or sets how far [0.0, 1.0] the elbow will from the body when solving the IK. Lower values will bring the elbow
@@ -94,6 +89,13 @@ namespace UltimateXR.Animation.IK
             get => _overExtendMode;
             set => _overExtendMode = value;
         }
+
+        #endregion
+
+        #region Public Overrides UxrIKSolver
+
+        /// <inheritdoc />
+        public override bool Initialized => _initialized;
 
         #endregion
 
@@ -226,14 +228,22 @@ namespace UltimateXR.Animation.IK
             // Possible range is from bottom to exterior (far left or far right for left arm and right arm respectively).
             Vector3 planeNormal = -new Vector3(a, b, c);
 
-            Vector3    otherLocalArmPos = ToLocalAvatarPos(_otherArm.Arm.position);
+            Transform otherArm         = _side == UxrHandSide.Left ? Avatar.AvatarRig.RightArm.UpperArm : Avatar.AvatarRig.LeftArm.UpperArm;
+            Vector3   otherLocalArmPos = otherArm != null ? ToLocalAvatarPos(otherArm.position) : Vector3.zero;
+
+            if (otherArm == null)
+            {
+                otherLocalArmPos   = ToLocalAvatarPos(Arm.position);
+                otherLocalArmPos.x = -otherLocalArmPos.x;
+            }
+            
             Quaternion rotToShoulder    = Quaternion.LookRotation(Vector3.Cross((localArmPos - otherLocalArmPos) * (_side == UxrHandSide.Left ? -1.0f : 1.0f), Vector3.up).normalized, Vector3.up);
             Vector3    armToHand        = (finalLocalHandPosition - localArmPos).normalized;
             Quaternion rotArmForward    = rotToShoulder * Quaternion.LookRotation(Quaternion.Inverse(rotToShoulder) * localArmToCenter, Quaternion.Inverse(rotToShoulder) * armToHand);
 
             Vector3 vectorFromCenterSide = Vector3.Cross(_side == UxrHandSide.Left ? rotArmForward * Vector3.up : rotArmForward * -Vector3.up, planeNormal);
 
-            if (_otherArm != null)
+            if (otherArm != null)
             {
                 bool isBack = Vector3.Cross(localArmPos - otherLocalArmPos, localCenter - localArmPos).y * (_side == UxrHandSide.Left ? -1.0f : 1.0f) > 0.0f;
 
@@ -308,6 +318,17 @@ namespace UltimateXR.Animation.IK
         #region Unity
 
         /// <summary>
+        ///     Computes internal IK parameters.
+        /// </summary>
+        protected override void Awake()
+        {
+            base.Awake();
+
+            ComputeParameters();
+            _initialized = true;
+        }
+
+        /// <summary>
         ///     Subscribe to events.
         /// </summary>
         protected override void OnEnable()
@@ -323,15 +344,6 @@ namespace UltimateXR.Animation.IK
         {
             base.OnDisable();
             UxrManager.AvatarsUpdated -= UxrManager_AvatarsUpdated;
-        }
-
-        /// <summary>
-        ///     Computes internal IK parameters.
-        /// </summary>
-        protected override void Start()
-        {
-            base.Start();
-            ComputeParameters();
         }
 
         #endregion
@@ -359,6 +371,11 @@ namespace UltimateXR.Animation.IK
         /// </summary>
         protected override void InternalSolveIK()
         {
+            if (Avatar == null || Avatar.AvatarController == null || !Avatar.AvatarController.Initialized)
+            {
+                return;
+            }
+            
             if (Clavicle != null)
             {
                 // If we have a clavicle, perform another pass this time taking it into account.
@@ -431,31 +448,17 @@ namespace UltimateXR.Animation.IK
         /// </summary>
         private void ComputeParameters()
         {
-            UxrAvatar avatar = GetComponentInParent<UxrAvatar>();
-
-            if (avatar == null)
+            if (Avatar == null)
             {
-                if (UxrGlobalSettings.Instance.LogLevelAvatar >= UxrLogLevel.Errors)
+                if (UxrGlobalSettings.Instance.LogLevelAnimation >= UxrLogLevel.Errors)
                 {
-                    Debug.LogError($"{UxrConstants.AvatarModule} {nameof(UxrArmIKSolver)} can't find {nameof(UxrAvatar)} component upwards in the hierarchy. Component is located in {this.GetPathUnderScene()}");
+                    Debug.LogError($"{UxrConstants.AnimationModule} {nameof(UxrArmIKSolver)} can't find {nameof(UxrAvatar)} component upwards in the hierarchy. Component is located in {this.GetPathUnderScene()}");
                 }
-                
+
                 return;
             }
-            
-            // Try to find opposite arm
-            UxrArmIKSolver[] otherArms = transform.root.GetComponentsInChildren<UxrArmIKSolver>();
 
-            _otherArm = null;
-
-            foreach (UxrArmIKSolver solver in otherArms)
-            {
-                if (solver != this)
-                {
-                    _otherArm = solver;
-                    break;
-                }
-            }
+            _side = transform.HasParent(Avatar.AvatarRig.LeftArm.Clavicle ?? Avatar.AvatarRig.LeftArm.UpperArm) ? UxrHandSide.Left : UxrHandSide.Right;
 
             // Set up references
             if (Clavicle == null)
@@ -484,19 +487,19 @@ namespace UltimateXR.Animation.IK
             {
                 // Compute lengths in local avatar coordinates in case avatar has scaling.
                 // We use special treatment for the local hand in case that the component is being added at runtime and the hand is driven by a multiplayer NetworkTransform component that already moved it.
-                
+
                 Vector3 localUpperArm = ToLocalAvatarPos(arm.UpperArm.position);
                 Vector3 localForearm  = ToLocalAvatarPos(arm.Forearm.position);
-                Vector3 localHand     = ToLocalAvatarPos(arm.Hand.Wrist.transform.parent.TransformPoint(avatar.AvatarRigInfo.GetArmInfo(_side).HandUniversalLocalAxes.InitialLocalPosition));
-                
+                Vector3 localHand     = ToLocalAvatarPos(arm.Hand.Wrist.transform.parent.TransformPoint(Avatar.AvatarRigInfo.GetArmInfo(_side).HandUniversalLocalAxes.InitialLocalPosition));
+
                 _upperArmLocalLength = Vector3.Distance(localUpperArm, localForearm);
                 _forearmLocalLength  = Vector3.Distance(localForearm,  localHand);
             }
             else
             {
-                if (UxrGlobalSettings.Instance.LogLevelAvatar >= UxrLogLevel.Errors)
+                if (UxrGlobalSettings.Instance.LogLevelAnimation >= UxrLogLevel.Errors)
                 {
-                    Debug.LogError($"{UxrConstants.AvatarModule} {nameof(UxrArmIKSolver)} can't find one or more of the following bones: upper arm, forearm, wrist. Component is located in {this.GetPathUnderScene()}");
+                    Debug.LogError($"{UxrConstants.AnimationModule} {nameof(UxrArmIKSolver)} can't find one or more of the following bones: upper arm, forearm, wrist. Component is located in {this.GetPathUnderScene()}");
                 }
 
                 return;
@@ -541,7 +544,8 @@ namespace UltimateXR.Animation.IK
         private const float ElbowApertureRotationSmoothTime = 0.1f;
         private const float ElbowMinAngleThreshold          = 3.0f;
 
-        private UxrArmIKSolver        _otherArm;
+        private UxrHandSide           _side;
+        private bool                  _initialized;
         private UxrUniversalLocalAxes _clavicleUniversalLocalAxes;
         private UxrUniversalLocalAxes _armUniversalLocalAxes;
         private UxrUniversalLocalAxes _forearmUniversalLocalAxes;

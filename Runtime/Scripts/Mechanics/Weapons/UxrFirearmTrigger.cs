@@ -132,44 +132,5 @@ namespace UltimateXR.Mechanics.Weapons
         public float RecoilDurationSeconds => _recoilDurationSeconds;
 
         #endregion
-
-        #region Internal Types & Data
-
-        /// <summary>
-        ///     Gets or sets whether the trigger is being pressed.
-        /// </summary>
-        internal bool TriggerPressed { get; set; }
-
-        /// <summary>
-        ///     Gets or sets whether the trigger just started being pressed.
-        /// </summary>
-        internal bool TriggerPressStarted { get; set; }
-
-        /// <summary>
-        ///     Gets or sets whether the trigger just finished being pressed.
-        /// </summary>
-        internal bool TriggerPressEnded { get; set; }
-
-        /// <summary>
-        ///     Gets or sets the decreasing timer in seconds that will reach zero when the firearm is ready to shoot again.
-        /// </summary>
-        internal float LastShotTimer { get; set; }
-
-        /// <summary>
-        ///     Gets or sets whether the weapon is currently loaded.
-        /// </summary>
-        internal bool HasReloaded { get; set; }
-
-        /// <summary>
-        ///     Gets or sets the trigger's initial local rotation.
-        /// </summary>
-        internal Quaternion TriggerInitialLocalRotation { get; set; }
-
-        /// <summary>
-        ///     Gets or sets the decreasing timer in seconds that will reach zero when the recoil animation finished.
-        /// </summary>
-        internal float RecoilTimer { get; set; }
-
-        #endregion
     }
 }

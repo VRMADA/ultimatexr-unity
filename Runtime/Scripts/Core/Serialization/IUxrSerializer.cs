@@ -5,8 +5,8 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using UltimateXR.Core.Components;
-using UltimateXR.Core.StateSync;
+using UltimateXR.Core.Math;
+using UltimateXR.Core.Unique;
 using UnityEngine;
 
 namespace UltimateXR.Core.Serialization
@@ -105,19 +105,34 @@ namespace UltimateXR.Core.Serialization
         ///     Serializes or deserializes string value.
         /// </summary>
         /// <param name="value">The element to serialize or deserialize</param>
+        /// <remarks>Implementations must support serializing null strings</remarks>
         void Serialize(ref string value);
 
         /// <summary>
         ///     Serializes or deserializes an Enum value.
         /// </summary>
         /// <param name="value">The element to serialize or deserialize</param>
+        /// <remarks>Implementations must support null</remarks>
         void SerializeEnum<T>(ref T value) where T : Enum;
+
+        /// <summary>
+        ///     Serializes or deserializes a type value.
+        /// </summary>
+        /// <param name="value">The element to serialize or deserialize</param>
+        void Serialize(ref Type value);
+
+        /// <summary>
+        ///     Serializes or deserializes a <see cref="Guid" /> value.
+        /// </summary>
+        /// <param name="value">The element to serialize or deserialize</param>
+        void Serialize(ref Guid value);
 
         /// <summary>
         ///     Serializes or deserializes an array.
         /// </summary>
         /// <param name="values">The elements to serialize or deserialize</param>
         /// <typeparam name="T">The type of the elements</typeparam>
+        /// <remarks>Implementations must support null</remarks>
         void Serialize<T>(ref T[] values);
 
         /// <summary>
@@ -125,6 +140,7 @@ namespace UltimateXR.Core.Serialization
         ///     be stored next to the object.
         /// </summary>
         /// <param name="values">The elements to serialize or deserialize</param>
+        /// <remarks>Implementations must support null</remarks>
         void Serialize(ref object[] values);
 
         /// <summary>
@@ -132,6 +148,7 @@ namespace UltimateXR.Core.Serialization
         /// </summary>
         /// <param name="values">The elements to serialize or deserialize</param>
         /// <typeparam name="T">The type of the elements</typeparam>
+        /// <remarks>Implementations must support null</remarks>
         void Serialize<T>(ref List<T> values);
 
         /// <summary>
@@ -139,6 +156,7 @@ namespace UltimateXR.Core.Serialization
         ///     element will be stored next to the object.
         /// </summary>
         /// <param name="values">The elements to serialize or deserialize</param>
+        /// <remarks>Implementations must support null</remarks>
         void Serialize(ref List<object> values);
 
         /// <summary>
@@ -147,13 +165,8 @@ namespace UltimateXR.Core.Serialization
         /// <param name="values">The values</param>
         /// <typeparam name="TKey">The key type</typeparam>
         /// <typeparam name="TValue">The value type</typeparam>
+        /// <remarks>Implementations must support null</remarks>
         void Serialize<TKey, TValue>(ref Dictionary<TKey, TValue> values);
-
-        /// <summary>
-        ///     Serializes or deserializes a type value.
-        /// </summary>
-        /// <param name="value">The element to serialize or deserialize</param>
-        void Serialize(ref Type value);
 
         /// <summary>
         ///     Serializes or deserializes a Vector2 value.
@@ -198,23 +211,48 @@ namespace UltimateXR.Core.Serialization
         void Serialize(ref Matrix4x4 value);
 
         /// <summary>
-        ///     Serializes or deserializes UxrComponent value, storing only the <see cref="UxrComponent.UniqueId" />.
+        ///     Serializes or deserializes a component with the <see cref="IUxrUniqueId" /> interface, storing only the
+        ///     <see cref="IUxrUniqueId.UniqueId" />.
         /// </summary>
-        /// <param name="value">The element to serialize or deserialize</param>
-        void SerializeUxrComponent<T>(ref T value) where T : UxrComponent;
+        /// <param name="unique">The element to serialize or deserialize</param>
+        /// <remarks>Implementations must support null</remarks>
+        void SerializeUniqueComponent(ref IUxrUniqueId unique);
+
+        /// <summary>
+        ///     Serializes or deserializes a component with the <see cref="IUxrUniqueId" /> interface, storing only the
+        ///     <see cref="IUxrUniqueId.UniqueId" />.
+        /// </summary>
+        /// <param name="component">The element to serialize or deserialize</param>
+        /// <remarks>Implementations must support null</remarks>
+        void SerializeUniqueComponent<T>(ref T component) where T : Component, IUxrUniqueId;
 
         /// <summary>
         ///     Serializes or deserializes an object that implements the <see cref="IUxrSerializable" /> interface.
         /// </summary>
-        /// <param name="value">The element to serialize or deserialize</param>
-        void SerializeUxrSerializable<T>(ref T value) where T : class, IUxrSerializable;
+        /// <param name="serializable">The element to serialize or deserialize</param>
+        /// <remarks>Implementations must support null</remarks>
+        void SerializeUxrSerializable(ref IUxrSerializable serializable);
+
+        /// <summary>
+        ///     Serializes or deserializes an object that implements the <see cref="IUxrSerializable" /> interface.
+        /// </summary>
+        /// <param name="obj">The element to serialize or deserialize</param>
+        /// <remarks>Implementations must support null</remarks>
+        void SerializeUxrSerializable<T>(ref T obj) where T : class, IUxrSerializable;
+
+        /// <summary>
+        ///     Serializes or deserializes an <see cref="UxrAxis" /> value.
+        /// </summary>
+        /// <param name="axis">The axis to serialize or deserialize</param>
+        void SerializeAxis(ref UxrAxis axis);
 
         /// <summary>
         ///     Serializes a variable of a type that is not determined at compile time. When writing it will serialize the type
         ///     together with the value so that it can be deserialized back when reading.
         /// </summary>
-        /// <param name="value">The element to serialize or deserialize</param>
-        void SerializeAnyVar(ref object value);
+        /// <param name="obj">The element to serialize or deserialize</param>
+        /// <remarks>Implementations must support null</remarks>
+        void SerializeAnyVar<T>(ref T obj);
 
         #endregion
     }

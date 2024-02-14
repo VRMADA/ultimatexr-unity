@@ -29,12 +29,16 @@ namespace UltimateXR.Networking
 
         [SerializeField] private UxrNetworkImplementation      _networkImplementation;
         [SerializeField] private UxrNetworkVoiceImplementation _networkVoiceImplementation;
-        [SerializeField] private bool                          _useSameSdkVoice               = true;
-        [SerializeField] private List<GameObject>              _createdGlobalGameObjects      = new List<GameObject>();
-        [SerializeField] private List<Component>               _createdGlobalComponents       = new List<Component>();
-        [SerializeField] private List<GameObject>              _createdGlobalVoiceGameObjects = new List<GameObject>();
-        [SerializeField] private List<Component>               _createdGlobalVoiceComponents  = new List<Component>();
-        [SerializeField] private List<AvatarSetup>             _registeredAvatars             = new List<AvatarSetup>();
+        [SerializeField] private bool                          _useSameSdkVoice                   = true;
+        [SerializeField] private List<GameObject>              _createdGlobalGameObjects          = new List<GameObject>();
+        [SerializeField] private List<Component>               _createdGlobalComponents           = new List<Component>();
+        [SerializeField] private List<GameObject>              _createdGlobalVoiceGameObjects     = new List<GameObject>();
+        [SerializeField] private List<Component>               _createdGlobalVoiceComponents      = new List<Component>();
+        [SerializeField] private List<string>                  _createdGlobalGameObjectPaths      = new List<string>();
+        [SerializeField] private List<string>                  _createdGlobalComponentPaths       = new List<string>();
+        [SerializeField] private List<string>                  _createdGlobalVoiceGameObjectPaths = new List<string>();
+        [SerializeField] private List<string>                  _createdGlobalVoiceComponentPaths  = new List<string>();
+        [SerializeField] private List<AvatarSetup>             _registeredAvatars                 = new List<AvatarSetup>();
         [SerializeField] private bool                          _grabbablePhysicsAddProjectScenes;
         [SerializeField] private bool                          _grabbablePhysicsAddPathPrefabs;
         [SerializeField] private string                        _grabbablePhysicsPathRoot;
@@ -132,8 +136,8 @@ namespace UltimateXR.Networking
 
             if (NetworkImplementation)
             {
-                UxrGrabManager.Instance.ObjectGrabbed += GrabManager_ObjectGrabbed;
-                UxrGrabManager.Instance.ObjectGrabbed += GrabManager_ObjectReleased;
+                UxrGrabManager.Instance.ObjectGrabbed  += GrabManager_ObjectGrabbed;
+                UxrGrabManager.Instance.ObjectReleased += GrabManager_ObjectReleased;
             }
         }
 
@@ -146,8 +150,8 @@ namespace UltimateXR.Networking
 
             if (NetworkImplementation)
             {
-                UxrGrabManager.Instance.ObjectGrabbed -= GrabManager_ObjectGrabbed;
-                UxrGrabManager.Instance.ObjectGrabbed -= GrabManager_ObjectReleased;
+                UxrGrabManager.Instance.ObjectGrabbed  -= GrabManager_ObjectGrabbed;
+                UxrGrabManager.Instance.ObjectReleased -= GrabManager_ObjectReleased;
             }
         }
 

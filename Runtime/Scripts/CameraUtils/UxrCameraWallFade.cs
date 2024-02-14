@@ -21,7 +21,7 @@ namespace UltimateXR.CameraUtils
     ///     in order to prevent cheating through walls.
     /// </summary>
     [RequireComponent(typeof(Camera))]
-    public class UxrCameraWallFade : UxrAvatarComponent<UxrCameraWallFade>
+    public partial class UxrCameraWallFade : UxrAvatarComponent<UxrCameraWallFade>
     {
         #region Inspector Properties/Serialized Fields
 
@@ -75,7 +75,7 @@ namespace UltimateXR.CameraUtils
             {
                 return false;
             }
-            
+
             UxrCameraWallFade wallFade = avatar.CameraComponent != null ? avatar.CameraComponent.GetComponent<UxrCameraWallFade>() : null;
             return wallFade && wallFade._quadObject.activeSelf; //.IsInsideWall;
         }
@@ -121,7 +121,7 @@ namespace UltimateXR.CameraUtils
             if (_quadObject != null)
             {
                 _quadObject.SetActive(false);
-        }
+            }
         }
 
         #endregion
@@ -137,8 +137,8 @@ namespace UltimateXR.CameraUtils
         {
             if (ReferenceEquals(sender, Avatar))
             {
-            _lastValidPosInitialized = false;
-        }
+                _lastValidPosInitialized = false;
+            }
         }
 
         /// <summary>
@@ -150,13 +150,13 @@ namespace UltimateXR.CameraUtils
             {
                 if (_quadObject)
                 {
-                    _quadObject.SetActive(false);                    
+                    _quadObject.SetActive(false);
                 }
             }
             else
             {
-            UpdateFade();
-        }
+                UpdateFade();
+            }
         }
 
         #endregion
@@ -183,7 +183,7 @@ namespace UltimateXR.CameraUtils
 
                 // First check if we are inside a wall or not using the last valid position
                 Vector3 cameraDeltaPos = transform.position - _lastValidPos;
-                
+
                 // We cast rays in both directions, from the last valid position to the current position. We will look for transitions
                 // from inside to outside a wall or the other way around by looking at the number of intersections in both directions
                 RaycastHit[] raycastHitsFromLasValidPos = Physics.RaycastAll(_lastValidPos,

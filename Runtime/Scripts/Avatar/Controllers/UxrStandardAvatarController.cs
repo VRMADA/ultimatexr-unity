@@ -251,6 +251,35 @@ namespace UltimateXR.Avatar.Controllers
         #region Public Overrides UxrAvatarController
 
         /// <inheritdoc />
+        public override bool Initialized
+        {
+            get
+            {
+                if (!_initialized)
+                {
+                    return false;
+                }
+                
+                if (_bodyIK != null && !_bodyIK.Initialized)
+                {
+                    return false;
+                }
+
+                if (_leftArmIK && !_leftArmIK.Initialized)
+                {
+                    return false;
+                }
+
+                if (_rightArmIK && !_rightArmIK.Initialized)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        /// <inheritdoc />
         public override bool CanHandInteractWithUI(UxrHandSide handSide)
         {
             if (Avatar.ControllerInput.GetControllerCapabilities(handSide).HasFlag(UxrControllerInputCapabilities.TrackedHandPose))
@@ -360,6 +389,16 @@ namespace UltimateXR.Avatar.Controllers
 
             _leftHandInfo.LetGrabAgain  = true;
             _rightHandInfo.LetGrabAgain = true;
+            
+            // IK
+
+            if (Avatar != null && Avatar.AvatarRigType == UxrAvatarRigType.HalfOrFullBody && _useBodyIK)
+            {
+                _bodyIK = new UxrBodyIK();
+                _bodyIK.Initialize(Avatar, _bodyIKSettings, _useArmIK, _useLegIK);
+            }
+
+            _initialized = true;
         }
 
         /// <summary>
@@ -386,20 +425,6 @@ namespace UltimateXR.Avatar.Controllers
             UxrGrabManager.Instance.ObjectGrabbed  -= UxrGrabManager_ObjectGrabbed;
             UxrGrabManager.Instance.ObjectPlaced   -= UxrGrabManager_ObjectPlacedOrReleased;
             UxrGrabManager.Instance.ObjectReleased -= UxrGrabManager_ObjectPlacedOrReleased;
-        }
-
-        /// <summary>
-        ///     Initializes the body IK component if required.
-        /// </summary>
-        protected override void Start()
-        {
-            base.Start();
-
-            if (Avatar != null && Avatar.AvatarRigType == UxrAvatarRigType.HalfOrFullBody && _useBodyIK)
-            {
-                _bodyIK = new UxrBodyIK();
-                _bodyIK.Initialize(Avatar, _bodyIKSettings, _useArmIK, _useLegIK);
-            }
         }
 
         #endregion
@@ -494,9 +519,9 @@ namespace UltimateXR.Avatar.Controllers
 
             UxrInputButtons GetRequiredGrabButtonsOverride(UxrHandSide handSide)
             {
-                if( UxrGrabManager.Instance.GetClosestGrabbableObject(Avatar, handSide, out UxrGrabbableObject grabbableObject, out int grabPoint) &&
+                if (UxrGrabManager.Instance.GetClosestGrabbableObject(Avatar, handSide, out UxrGrabbableObject grabbableObject, out int grabPoint) &&
                     !grabbableObject.GetGrabPoint(grabPoint).UseDefaultGrabButtons &&
-                    (Avatar.ControllerInput.GetButtonsEvent(handSide, grabbableObject.GetGrabPoint(grabPoint).InputButtons, UxrButtonEventType.PressDown, ProcessIgnoredInput) ||
+                    (Avatar.ControllerInput.GetButtonsEvent(handSide, grabbableObject.GetGrabPoint(grabPoint).InputButtons,                      UxrButtonEventType.PressDown, ProcessIgnoredInput) ||
                      Avatar.ControllerInput.GetButtonsEvent(handSide, handSide == UxrHandSide.Left ? LeftHandGrabButtons : RightHandGrabButtons, UxrButtonEventType.PressDown, ProcessIgnoredInput)))
                 {
                     return grabbableObject.GetGrabPoint(grabPoint).InputButtons;
@@ -1024,7 +1049,6 @@ namespace UltimateXR.Avatar.Controllers
             if (arm.UpperArm && arm.Forearm && arm.Hand.Wrist)
             {
                 UxrArmIKSolver armIK = arm.UpperArm.gameObject.GetOrAddComponent<UxrArmIKSolver>();
-                armIK.Side                 = side;
                 armIK.RelaxedElbowAperture = _armIKElbowAperture;
                 armIK.OverExtendMode       = _armIKOverExtendMode;
 
@@ -1115,13 +1139,14 @@ namespace UltimateXR.Avatar.Controllers
 
         #region Private Types & Data
 
-        private const float FlexibleFingerVolumeMargin = 0.1f;
+        private const    float    FlexibleFingerVolumeMargin = 0.1f;
+        private readonly HandInfo _leftHandInfo              = new HandInfo();
+        private readonly HandInfo _rightHandInfo             = new HandInfo();
 
-        private readonly HandInfo       _leftHandInfo  = new HandInfo();
-        private readonly HandInfo       _rightHandInfo = new HandInfo();
-        private          UxrArmIKSolver _leftArmIK;
-        private          UxrArmIKSolver _rightArmIK;
-        private          UxrBodyIK      _bodyIK;
+        private bool           _initialized;
+        private UxrArmIKSolver _leftArmIK;
+        private UxrArmIKSolver _rightArmIK;
+        private UxrBodyIK      _bodyIK;
 
         #endregion
     }

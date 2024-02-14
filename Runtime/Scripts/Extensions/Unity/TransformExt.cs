@@ -362,7 +362,7 @@ namespace UltimateXR.Extensions.Unity
             Vector3 pivotPos = space == Space.Self ? tArray[0].localPosition : tArray[0].position;
             Vector3 firstPos = pivotPos - 0.5f * (tArray.Length - 1) * paddingVector;
 
-            for (var i = 0; i < tArray.Length; ++i)
+            for (int i = 0; i < tArray.Length; ++i)
             {
                 Vector3 pos = firstPos + i * paddingVector;
                 if (space == Space.Self)

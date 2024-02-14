@@ -40,7 +40,7 @@ namespace UltimateXR.Manipulation
     ///         </item>
     ///     </list>
     /// </summary>
-    public class UxrGrabbableObjectAnchor : UxrComponent<UxrGrabbableObjectAnchor>
+    public partial class UxrGrabbableObjectAnchor : UxrComponent<UxrGrabbableObjectAnchor>
     {
         #region Inspector Properties/Serialized Fields
 
@@ -121,7 +121,11 @@ namespace UltimateXR.Manipulation
         /// <summary>
         ///     Gets the <see cref="UxrGrabbableObject" /> that is currently placed on the anchor.
         /// </summary>
-        public UxrGrabbableObject CurrentPlacedObject { get; internal set; }
+        public UxrGrabbableObject CurrentPlacedObject
+        {
+            get => _currentPlacedObject;
+            internal set => _currentPlacedObject = value;
+        }
 
         /// <summary>
         ///     Gets or sets the maximum distance from which an object that is released will be placed on the anchor.
@@ -411,6 +415,7 @@ namespace UltimateXR.Manipulation
 
         private readonly List<Func<UxrGrabbableObject, bool>> _placingValidators = new List<Func<UxrGrabbableObject, bool>>();
         private          UxrManipulationEventArgs             _smoothPlaceEventArgs;
+        private          UxrGrabbableObject                   _currentPlacedObject;
 
         #endregion
     }

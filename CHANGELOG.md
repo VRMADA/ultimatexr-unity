@@ -12,6 +12,9 @@ TODO: Write update guide:
   -Rename CheckAndApplyLockHands() to KeepGripsInPlace()
   -Removed UxrGrabbableObject.PlaceOnAnchor
   -SDK constants moved from UxrManager to UxrConstants.
+  -Component synchronization in UxrManager now uses IUxrStateSync instead of
+   UxrComponent.
+  -UxrComponent.TryGetComponentById now is UxrUniqueIdImplementer.TryGetComponentById().
 
 ### Added
 
@@ -19,29 +22,34 @@ TODO: Write update guide:
   (Photon Fusion, Unity NetCode, Mirror) and voice communication SDKs
   (Photon Voice, Dissonance). More connectors will be added soon.
 - Update SDK Manager window with new tabs for SDK types, including new multiplayer.
-- Add new UxrComponent unique ID system to help creating multiplayer applications
-  and save-state functionality. All components that inherit from UxrComponent will
-  have a unique ID that can be used with UxrComponent.TryGetComponentById().
+- Add new GlobalSettings accessible using the Tools->UltimateXR Unity menu.
+- Add new unique ID functionality to UXR components. All components that inherit
+  from UxrComponent will have a unique ID that can be used with
+  UxrUniqueIdImplementer.TryGetComponentById().
 - Add new Unique ID generation tool to generate unique IDs for projects build with
   earlier versions of UltimateXR.
+- Add IUxrUniqueId, IUxrStateSync and IUxrStateSave interfaces to UxrComponent to
+  facilitate multiplayer synchronization, serialization, state saves and replay
+  functionality in all UltimateXR components.
+- Add UxrUniqueIdImplementer, UxrStateSaveImplementer and UxrStateSyncImplementer
+  to leverage the interface implementation in custom user classes that cannot
+  inherit from UxrComponent due to multiple inheritance limitation.
+- Add functionality to UxrManager to save and load the scene state using
+  SaveStateChanges() and LoadStateChanges().
 - Add functionality to UxrManager to have a single point of entry to all component
   state changes that require synchronization:
   ComponentStateChanged event and ExecuteStateChange() method.
 - Add serialization/deserialization methods to all UxrComponent derived classes.
 - Add serialization/deserialization methods to all UxrSyncEventArgs.
-- Add IUxrStateSync interface to UxrComponent to facilitate multiplayer
-  synchronization and save state in all UltimateXR components and user created
-- Add new GlobalSettings accessible using the Tools->UltimateXR Unity menu.
-  components that inherit from UxrComponent.
-- Add UxrComponent OnMethodInvokedSync() and OnPropertyChangedSync() to easily
-  synchronize method calls and property changes to support networking.
 - Create UxrVarType to enumerate all supported var types that can be synchronized.
-- Add ToString() to all UxrStateSyncEventArgs to help data logging.
-- Add new property ShouldSyncNetworkEvent to UxrStateSyncEventArgs to tell whether
-  an event should be synchronized through network.
-- Add new BinaryWriter and binaryReader extensions with functionality to
+- Add ToString() to all UxrSyncEventArgs to help data logging.
+- Add new property TargetEnvironments to UxrSyncEventArgs to tell whether
+  the event should be synchronized in different environments such as networks
+  or replays.
+- Add new BinaryWriter and BinaryReader extensions with functionality to
   serialize/deserialize Unity and UltimateXR data.
-- Add new UxrProxy component to identify objects that don't have any UxrComponent
+- Add new UxrBinarySerializer with binary serialization and deserialization support.
+- Add new UxrDummy component to identify objects that don't have any UxrComponent
   added, so that they have a unique ID.
 - Add support to solve manipulations on objects using an unlimited amount of
   grabs to support multi-user shared interaction.
@@ -69,11 +77,12 @@ TODO: Write update guide:
   scene or project separately processing instances, prefab variants and original
   prefabs.
 - Add automatic detection of UXR installation path.
+- Add new menus in Tools->UltimateXR.
 - Add PushTransform() and PopTransform() methods in UxrComponent to facilitate
   saving and restoring transformation info.
 - Add new parameters to UxrColorTween.AnimateBlinkAlpha to support min alpha and
   max alpha.
-- Add new coloring options to cyborg avatar.
+- Add new PBR shader with a tinted mask. Use in cyborg avatar to color it.
 - Add new cabinet prefab to Lab in example scene to showcase grabbable parent dummies.
 - Expose properties in UxrTeleportSpawnCollider to have public access.
 

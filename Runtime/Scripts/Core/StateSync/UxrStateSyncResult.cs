@@ -61,12 +61,12 @@ namespace UltimateXR.Core.StateSync
             if (IsValid)
             {
                 string result = !string.IsNullOrEmpty(ErrorMessage) ? "Could not execute state change" : "Successful state change";
-                return $"{result} event for {Target.SyncTargetName}, {EventArgs}.{error}";
+                return $"{result} event for {Target.Name}, {EventArgs}.{error}";
             }
 
             if (Target != null)
             {
-                return $"Unknown event for {Target.SyncTargetName}.{error}";
+                return $"Unknown event for {Target.Name}.{error}";
             }
 
             if (EventArgs != null)

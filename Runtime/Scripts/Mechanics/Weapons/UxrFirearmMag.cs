@@ -14,7 +14,7 @@ namespace UltimateXR.Mechanics.Weapons
     ///     A magazine that contains ammo for a <see cref="UxrFirearmWeapon" />. Magazines can be attached to firearms using
     ///     <see cref="UxrGrabbableObject" /> functionality.
     /// </summary>
-    public class UxrFirearmMag : UxrComponent
+    public partial class UxrFirearmMag : UxrComponent
     {
         #region Inspector Properties/Serialized Fields
 

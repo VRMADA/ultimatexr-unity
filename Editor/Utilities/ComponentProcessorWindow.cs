@@ -235,8 +235,9 @@ namespace UltimateXR.Editor.Utilities
         ///     Whether to only check if components should be processed, without making any changes. This
         ///     can be used to get how many elements would be changed without modifying any data
         /// </param>
-        /// <returns>Whether the component was changed</returns>
-        protected abstract bool ProcessComponent(UxrComponentInfo<T> info, bool onlyCheck);
+        /// <param name="isChanged">Returns whether the component was changed</param>
+        /// <param name="forceNoLog">Returns whether to force the result not be logged</param>
+        protected abstract void ProcessComponent(UxrComponentInfo<T> info, bool onlyCheck, out bool isChanged, out bool forceNoLog);
 
         /// <summary>
         ///     Overridable method that shows the results dialog.
@@ -266,9 +267,12 @@ namespace UltimateXR.Editor.Utilities
         /// <returns>Whether the component required to be changed</returns>
         private bool ComponentProcessor(UxrComponentInfo<T> info, bool onlyCheck)
         {
-            bool isChanged = ProcessComponent(info, onlyCheck);
+            ProcessComponent(info, onlyCheck, out bool isChanged, out bool ignoreLog);
 
-            LogProcessing(info, isChanged);
+            if (!ignoreLog)
+            {
+                LogProcessing(info, isChanged);
+            }
 
             return isChanged;
         }

@@ -4,39 +4,68 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using UltimateXR.Attributes;
 using UltimateXR.Core.Serialization;
-using UltimateXR.Core.Settings;
+using UltimateXR.Core.StateSave;
 using UltimateXR.Core.StateSync;
-using UltimateXR.Extensions.System;
+using UltimateXR.Core.Unique;
+using UltimateXR.Extensions.System.IO;
 using UltimateXR.Extensions.Unity;
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace UltimateXR.Core.Components
 {
     /// <summary>
-    ///     Base class for components in UltimateXR. Has functionality to access the global lists of UltimateXR components,
-    ///     cache Unity components, access initial transform values and some other common utilities.
-    ///     To enumerate all components use the static properties <see cref="AllComponents" /> and
-    ///     <see cref="EnabledComponents" />.
-    ///     This base class also provides functionality to synchronize the state, in order to add support for multiplayer
-    ///     and save states.
+    ///     Base class for all components in UltimateXR. It provides built-in functionality such as:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             Provide access to all components statically using <see cref="AllComponents" /> or
+    ///             <see cref="EnabledComponents" />.
+    ///         </item>
+    ///         <item>
+    ///             Identify each component using an unique ID, and be able to get a component using
+    ///             <see cref="UxrUniqueIdImplementer.TryGetComponentById" />.
+    ///         </item>
+    ///         <item>
+    ///             Synchronize the state and changes of all components through the network, or serialize them to disk.
+    ///             This provides native multiplayer support, state saving and replay functionality.
+    ///         </item>
+    ///         <item>Caching of Unity components.</item>
+    ///         <item>Caching of initial transform values and other transform utilities.</item>
+    ///     </list>
+    ///     Custom components that do not inherit from <see cref="UxrComponent" /> can still integrate with UltimateXR
+    ///     functionality such as:
+    ///     <list type="bullet">
+    ///         <item>Unique ID component identification and access.</item>
+    ///         <item>State synchronization over network.</item>
+    ///         <item>Save state to disk.</item>
+    ///         <item>Integration with the replay system.</item>
+    ///     </list>
+    ///     Custom user components that desire this built-in functionality of <see cref="UxrComponent" /> but cannot
+    ///     inherit due to multiple inheritance limitations can still achieve the desired functionality implementing the
+    ///     following interfaces:<br />
+    ///     <see cref="IUxrUniqueId" />, <see cref="IUxrStateSave" /> and <see cref="IUxrStateSync" />.<br />
+    ///     UltimateXR provides <see cref="UxrUniqueIdImplementer{T}" />, <see cref="UxrStateSaveImplementer{T}" />,
+    ///     <see cref="UxrStateSyncImplementer" />, and <see cref="UxrBinarySerializer" /> to facilitate the implementation of
+    ///     all required interfaces.
     /// </summary>
     /// <remarks>
-    ///     Make sure to override the Unity methods used, and call the base implementation in the body.
-    ///     Components get registered through their Awake() call. This means that components get registered
-    ///     the first time they are enabled. Disabled objects that have been enabled at some point are enumerated, but objects
-    ///     that have never been enabled don't get enumerated, which means that they will not appear in
-    ///     <see cref="AllComponents" />.
+    ///     When inheriting, make sure to override any Unity methods used such as Awake(), Start(), OnEnable() etc, and call
+    ///     the base implementation in the body using base.Awake(), base.Start() etc.<br />
+    ///     Components get registered through their Awake() call. Although objects that are initially disabled in the scene get
+    ///     registered, components that are instantiated at runtime and are initially disabled don't get registered until they
+    ///     are enabled the first time.
+    ///     Unregistered objects can't be accessed using <see cref="UxrUniqueIdImplementer.TryGetComponentById" /> or
+    ///     enumerated using
+    ///     <see cref="AllComponents" /> or similar.
+    ///     To overcome this limitation, <see cref="RegisterUniqueIdIfNecessary" /> can be called on the disabled objects to
+    ///     register them manually.
     /// </remarks>
-    public abstract class UxrComponent : MonoBehaviour, IUxrStateSync
+    public abstract class UxrComponent : MonoBehaviour, IUxrStateSave, IUxrStateSync
     {
         #region Inspector Properties/Serialized Fields
 
@@ -82,13 +111,13 @@ namespace UltimateXR.Core.Components
         ///     Called when a component is about to change its unique id by using <see cref="ChangeUniqueId" />.
         ///     Parameters are oldId, newId.
         /// </summary>
-        public static event Action<string, string> GlobalIdChanging;
+        public static event Action<Guid, Guid> GlobalIdChanging;
 
         /// <summary>
         ///     Called when a component changed its unique id by using <see cref="ChangeUniqueId" />.
         ///     Parameters are oldId, newId.
         /// </summary>
-        public static event Action<string, string> GlobalIdChanged;
+        public static event Action<Guid, Guid> GlobalIdChanged;
 
         /// <summary>
         ///     Gets all the components, enabled or not, in all open scenes.
@@ -99,21 +128,12 @@ namespace UltimateXR.Core.Components
         ///     to <see cref="GameObject.GetComponentsInChildren{T}(bool)" /> or
         ///     <see cref="UnityEngine.Object.FindObjectsOfType{T}(bool)" />.
         /// </remarks>
-        public static IEnumerable<UxrComponent> AllComponents => s_componentsById.Values.Where(c => c != null);
+        public static IEnumerable<UxrComponent> AllComponents => UxrUniqueIdImplementer<UxrComponent>.ComponentsById.Values.Where(c => c != null);
 
         /// <summary>
         ///     Gets all components that are enabled, in all open scenes.
         /// </summary>
         public static IEnumerable<UxrComponent> EnabledComponents => AllComponents.Where(c => c != null && c.isActiveAndEnabled);
-
-        /// <summary>
-        ///     Gets the unique Id of the component.
-        /// </summary>
-        public string UniqueId
-        {
-            get => _uxrUniqueId;
-            private set => _uxrUniqueId = value;
-        }
 
         /// <summary>
         ///     Gets or sets whether the application is quitting. An application is known to be quitting when
@@ -178,17 +198,112 @@ namespace UltimateXR.Core.Components
 
         #endregion
 
-        #region Implicit IUxrStateSync
+        #region Implicit IUxrStateSave
 
         /// <inheritdoc />
-        public virtual string SyncTargetName => name;
+        public virtual UxrTransformSpace TransformStateSaveSpace => UxrTransformSpace.World;
+
+        /// <inheritdoc />
+        public int StateSerializationVersion => 0;
+
+        /// <inheritdoc />
+        public virtual bool RequiresTransformSerialization(UxrStateSaveLevel level)
+        {
+            return false;
+        }
+
+        /// <inheritdoc />
+        public bool SerializeState(IUxrSerializer serializer, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
+        {
+            int serializeCounter = StateSaveImplementer.SerializeCounter;
+
+            _stateSerializer = serializer;
+            StateSaveImplementer.SerializeState(serializer, level, options, SerializeStateInternal);
+
+            return StateSaveImplementer.SerializeCounter != serializeCounter;
+        }
+
+        #endregion
+
+        #region Implicit IUxrStateSync
 
         /// <inheritdoc />
         public event EventHandler<UxrSyncEventArgs> StateChanged;
 
         /// <inheritdoc />
-        public virtual void SerializeGlobalState(IUxrSerializer serializer)
+        public void SyncState(UxrSyncEventArgs e)
         {
+            StateSyncImplementer.SyncState(e, SyncStateInternal);
+        }
+
+        #endregion
+
+        #region Implicit IUxrUniqueId
+
+        /// <inheritdoc />
+        public virtual bool UniqueIdIsTypeName => false;
+
+        /// <inheritdoc />
+        public Guid UniqueId
+        {
+            get
+            {
+                // Cache the Guid if it hasn't been cached yet. The cached id is derived from parsing the _uxrUniqueId string,
+                // which represents the Guid. Unity doesn't serialize Guids directly, requiring the caching approach.
+
+                if (_cachedGuid == default && !string.IsNullOrEmpty(_uxrUniqueId))
+                {
+                    _cachedGuid = new Guid(_uxrUniqueId);
+                }
+
+                return _cachedGuid;
+            }
+
+            private set
+            {
+                _uxrUniqueId = value.ToString();
+                _cachedGuid  = value;
+            }
+        }
+
+        /// <summary>
+        ///     <para>
+        ///         Registers the <see cref="UxrComponent" />, making sure that its Unique ID is available enabling it
+        ///         to exchange synchronization messages. If the component was already registered, the call is ignored.
+        ///     </para>
+        ///     <para>
+        ///         <see cref="UxrComponent" />s are automatically registered during <see cref="Awake" /> completely
+        ///         transparent to the user.<br />
+        ///         For objects that are initially disabled, however, this means that they will not be able to receive
+        ///         synchronization messages because their Unique ID has not been registered yet.<br />
+        ///         If a component gets enabled on a remote session, and sends a state synchronization message, the other
+        ///         devices where the object is disabled will not be able to find it. Calling this method forces the object
+        ///         to be registered, making it possible to exchange messages.
+        ///     </para>
+        /// </summary>
+        /// <returns></returns>
+        public void RegisterUniqueIdIfNecessary()
+        {
+            UniqueIdImplementer.InitializeUniqueIdIfNecessary(this,
+                                                              (c, id) => c.UniqueId = id,
+                                                              c => c.UniqueIdImplementer,
+                                                              (c, oldId, newId) => c.OnUniqueIdChanging(oldId, newId),
+                                                              (c, oldId, newId) => c.OnUniqueIdChanged(oldId, newId),
+                                                              c => c.OnRegistering(),
+                                                              c => c.OnRegistered());
+        }
+
+        /// <inheritdoc />
+        public Guid ChangeUniqueId(Guid newUniqueId, bool recursive = false)
+        {
+            return UniqueIdImplementer.ChangeUniqueId(newUniqueId,
+                                                      (c, id) => c.UniqueId = id,
+                                                      c => c.UniqueIdImplementer,
+                                                      (c, oldId, newId) => c.OnUniqueIdChanging(oldId, newId),
+                                                      (c, oldId, newId) => c.OnUniqueIdChanged(oldId, newId),
+                                                      c => c.OnRegistering(),
+                                                      c => c.OnRegistered(),
+                                                      recursive);
         }
 
         #endregion
@@ -196,98 +311,7 @@ namespace UltimateXR.Core.Components
         #region Explicit IUxrStateSync
 
         /// <inheritdoc />
-        void IUxrStateSync.SyncState(UxrSyncEventArgs e)
-        {
-            // First check if it's a synchronization that can be solved at the base level
-
-            if (e is UxrPropertyChangedSyncEventArgs propertyChangedEventArgs)
-            {
-                try
-                {
-                    // Set new property value using reflection
-                    GetType().GetProperty(propertyChangedEventArgs.PropertyName, PropertyFlags).SetValue(this, propertyChangedEventArgs.Value);
-                }
-                catch (Exception exception)
-                {
-                    if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
-                    {
-                        Debug.LogError($"{UxrConstants.CoreModule} Error trying to sync property {propertyChangedEventArgs.PropertyName} to value {propertyChangedEventArgs.Value} . Component: {this.GetPathUnderScene()}. Exception: {exception}");
-                    }
-                }
-            }
-            else if (e is UxrMethodInvokedSyncEventArgs methodInvokedEventArgs)
-            {
-                try
-                {
-                    if (methodInvokedEventArgs.Parameters == null || !methodInvokedEventArgs.Parameters.Any())
-                    {
-                        // Invoke without arguments
-                        GetType().GetMethod(methodInvokedEventArgs.MethodName, MethodFlags).Invoke(this, null);
-                    }
-                    else
-                    {
-                        // Invoke method using same parameters using reflection. Make sure we select the correct overload.
-
-                        bool anyIsNull = methodInvokedEventArgs.Parameters.Any(p => p == null);
-
-                        if (GetType().GetMethods().Length == 1)
-                        {
-                            // There are no overloads
-                            GetType().GetMethod(methodInvokedEventArgs.MethodName, MethodFlags).Invoke(this, methodInvokedEventArgs.Parameters);
-                        }
-                        else if (!anyIsNull)
-                        {
-                            // We can look for a method specifying the parameter types.
-                            GetType().GetMethod(methodInvokedEventArgs.MethodName, MethodFlags, null, methodInvokedEventArgs.Parameters.Select(p => p.GetType()).ToArray(), null).Invoke(this, methodInvokedEventArgs.Parameters);
-                        }
-                        else
-                        {
-                            // We have a call where a parameter is null, so we can't infer the parameter type. Try to find a method with the same parameter count.
-
-                            MethodInfo method = GetType().GetMethods(MethodFlags).FirstOrDefault(x => x.Name.Equals(methodInvokedEventArgs.MethodName) && x.GetParameters().Length == methodInvokedEventArgs.Parameters.Length);
-
-                            if (method != null)
-                            {
-                                method.Invoke(this, methodInvokedEventArgs.Parameters);
-                            }
-                            else
-                            {
-                                throw new Exception("Could not find a method with the given name and parameter count");
-                            }
-                        }
-                    }
-                }
-                catch (AmbiguousMatchException ambiguousMatchException)
-                {
-                    if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
-                    {
-                        Debug.LogError($"{UxrConstants.CoreModule} Trying to sync a method that has ambiguous call. {e}. Component: {this.GetPathUnderScene()}. Exception: {ambiguousMatchException}");
-                    }
-                }
-                catch (Exception exception)
-                {
-                    if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
-                    {
-                        Debug.LogError($"{UxrConstants.CoreModule} Error trying to sync method. It could be that {nameof(EndSyncMethod)} was used with the wrong parameters or it has an overload that could not be resolved. {e}. Component: {this.GetPathUnderScene()}. Exception: {exception}");
-                    }
-                }
-            }
-            else
-            {
-                try
-                {
-                    // Try to sync using child class (overriden SyncState method).
-                    SyncState(e);
-                }
-                catch (Exception exception)
-                {
-                    if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
-                    {
-                        Debug.LogError($"{UxrConstants.CoreModule} Error trying to sync state. {e}. Component: {this.GetPathUnderScene()}. Exception: {exception}");
-                    }
-                }
-            }
-        }
+        string IUxrStateSync.Name => StateSyncName;
 
         #endregion
 
@@ -326,84 +350,6 @@ namespace UltimateXR.Core.Components
             {
                 Destroy(component.gameObject);
             }
-        }
-
-        /// <summary>
-        ///     Tries to get a component by its unique id.
-        /// </summary>
-        /// <param name="id">Id of the component to retrieve</param>
-        /// <param name="component">Returns the component if the id exists</param>
-        /// <returns>Whether the id was found</returns>
-        public static bool TryGetComponentById(string id, out UxrComponent component)
-        {
-            return s_componentsById.TryGetValue(id, out component);
-        }
-
-        /// <summary>
-        ///     Generates a new unique Id.
-        /// </summary>
-        /// <returns>Unique Id</returns>
-        public static string GetNewUniqueId()
-        {
-            return Guid.NewGuid().ToString();
-        }
-
-        /// <summary>
-        ///     Changes the object's unique Id if it doesn't exist. This is useful in multiplayer
-        ///     environments to make sure that network instantiated objects share the same ID.
-        /// </summary>
-        /// <param name="newUniqueId">New id</param>
-        /// <param name="recursive">
-        ///     Whether to change also the unique ID's of the UxrComponent components in the same GameObject
-        ///     and all children, based on the new unique ID
-        /// </param>
-        /// <returns>
-        ///     The new unique ID. If the requested unique already existed, the returned value will be different
-        ///     to make sure it is unique
-        /// </returns>
-        public string ChangeUniqueId(string newUniqueId, bool recursive = false)
-        {
-            // If called during edit-time, simply generate unique IDs
-
-            if (!Application.isPlaying)
-            {
-                UxrComponent[] components = GetComponentsInChildren<UxrComponent>(true);
-
-                foreach (UxrComponent component in components)
-                {
-                    component.UniqueId = GetNewUniqueId();
-                }
-
-                return UniqueId;
-            }
-
-            // Make sure original ID has been initialized.
-            CheckInitializeUniqueId();
-
-            // During play time, generate new ID for the component and if recursion was requested, generate
-            // "relative" IDs for the children to make sure that they are generated equally in different computers
-            GenerateUniqueId(this, newUniqueId);
-
-            if (recursive)
-            {
-                // Re-generate IDs for all components in same GameObject and children based on relative unique id:
-
-                UxrComponent[] components = GetComponentsInChildren<UxrComponent>(true);
-
-                foreach (UxrComponent component in components)
-                {
-                    if (component != this)
-                    {
-                        // Make sure original ID has been initialized.
-                        component.CheckInitializeUniqueId();
-
-                        // This makes sure that the children will also get the same unique ID on all devices 
-                        GenerateUniqueId(component, (newUniqueId + component.OriginalUniqueId).GetMd5x2());
-                    }
-                }
-            }
-
-            return UniqueId;
         }
 
         /// <summary>
@@ -562,7 +508,7 @@ namespace UltimateXR.Core.Components
             RecomputeInitialTransformData();
 
             // Register unique ID
-            CheckInitializeUniqueId();
+            RegisterUniqueIdIfNecessary();
         }
 
         /// <summary>
@@ -571,7 +517,7 @@ namespace UltimateXR.Core.Components
         protected virtual void OnDestroy()
         {
             OnUnregistering();
-            s_componentsById.Remove(UniqueId);
+            UniqueIdImplementer.NotifyOnDestroy();
             OnUnregistered();
         }
 
@@ -588,7 +534,13 @@ namespace UltimateXR.Core.Components
         /// </summary>
         protected virtual void OnEnable()
         {
-            OnEnabled();
+            StateSyncImplementer.NotifyOnEnable();
+            GlobalEnabled?.Invoke(this);
+
+            if (!_initialStateSerialized)
+            {
+                StartCoroutine(NotifyEndOfFirstFrameCoroutine());
+            }
         }
 
         /// <summary>
@@ -596,7 +548,8 @@ namespace UltimateXR.Core.Components
         /// </summary>
         protected virtual void OnDisable()
         {
-            OnDisabled();
+            StateSyncImplementer.NotifyOnDisable();
+            GlobalDisabled?.Invoke(this);
         }
 
         /// <summary>
@@ -619,73 +572,24 @@ namespace UltimateXR.Core.Components
         /// </summary>
         protected virtual void OnValidate()
         {
-#if UNITY_EDITOR
+            UniqueIdImplementer.NotifyOnValidate((c, id) => c.UniqueId = id, ref __isInPrefab, ref __prefabGuid);
+        }
 
-            string InternalGetUniqueId()
-            {
-                if (UniqueIdIsTypeName)
-                {
-                    // Unique ID will be based on the type name. This is useful for singletons that are instantiated dynamically, in order to ensure same values on all devices.
-                    return GetType().FullName.GetMd5x2();
-                }
+        #endregion
 
-                // Unique ID is generated randomly.
-                return GetNewUniqueId();
-            }
+        #region Coroutines
 
-            if (EditorPrefs.GetBool(UxrConstants.Editor.AutomaticIdGenerationPrefs, true) &&
-                !EditorApplication.isPlayingOrWillChangePlaymode &&
-                !EditorApplication.isCompiling &&
-                !BuildPipeline.isBuildingPlayer &&
-                !EditorApplication.isUpdating)
-            {
-                if (gameObject.scene.name != null && !gameObject.scene.isLoaded)
-                {
-                    // Returning from play-mode, re-loading after build, among others.  
-                    return;
-                }
+        /// <summary>
+        ///     Coroutine that will wait until the end of the first frame and cache the initial state of the component for
+        ///     serialization.
+        /// </summary>
+        /// <returns>Coroutine IEnumerator</returns>
+        private IEnumerator NotifyEndOfFirstFrameCoroutine()
+        {
+            yield return new WaitForEndOfFrame();
 
-                bool setDirty = false;
-
-                if (string.IsNullOrEmpty(_uxrUniqueId))
-                {
-                    // Generate unique ID
-                    _uxrUniqueId = InternalGetUniqueId();
-                    setDirty     = true;
-                }
-
-                // Check if a prefab was instantiated or an object was made prefab, to generate a different ID.
-                // We want to avoid multiple instantiated prefabs to share the same ID.
-
-                try
-                {
-                    // Sometimes, in prefab mode, GetPrefabGuid() can throw an exception when accessing
-                    // PrefabStageUtility.GetCurrentPrefabStage().prefabContentsRoot during OnValidate().
-                    // It seems to happen when loading the prefab for the first time.
-
-                    if (this.GetPrefabGuid(out string prefabGuid, out string assetPath))
-                    {
-                        if (this.IsInPrefab() != __isInPrefab || prefabGuid != __prefabGuid)
-                        {
-                            _uxrUniqueId = InternalGetUniqueId();
-                            __isInPrefab = this.IsInPrefab();
-                            __prefabGuid = prefabGuid;
-                            setDirty     = true;
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                    // Ignore exception.
-                }
-
-                if (setDirty)
-                {
-                    EditorUtility.SetDirty(this);
-                }
-            }
-
-#endif
+            StateSaveImplementer.NotifyEndOfFirstFrame();
+            _initialStateSerialized = true;
         }
 
         #endregion
@@ -734,27 +638,11 @@ namespace UltimateXR.Core.Components
         }
 
         /// <summary>
-        ///     <see cref="GlobalEnabled" /> event trigger.
-        /// </summary>
-        private void OnEnabled()
-        {
-            GlobalEnabled?.Invoke(this);
-        }
-
-        /// <summary>
-        ///     <see cref="GlobalDisabled" /> event trigger.
-        /// </summary>
-        private void OnDisabled()
-        {
-            GlobalDisabled?.Invoke(this);
-        }
-
-        /// <summary>
         ///     <see cref="GlobalIdChanging" /> event trigger.
         /// </summary>
         /// <param name="oldId">Old id</param>
         /// <param name="newId">New id</param>
-        private void OnUniqueIdChanging(string oldId, string newId)
+        private void OnUniqueIdChanging(Guid oldId, Guid newId)
         {
             GlobalIdChanging?.Invoke(oldId, newId);
         }
@@ -764,34 +652,9 @@ namespace UltimateXR.Core.Components
         /// </summary>
         /// <param name="oldId">Old id</param>
         /// <param name="newId">New id</param>
-        private void OnUniqueIdChanged(string oldId, string newId)
+        private void OnUniqueIdChanged(Guid oldId, Guid newId)
         {
             GlobalIdChanged?.Invoke(oldId, newId);
-        }
-
-        #endregion
-
-        #region Protected Internal Methods
-
-        /// <summary>
-        ///     <para>
-        ///         Registers the <see cref="UxrComponent" />, making sure that its Unique ID is available enabling it
-        ///         to receive synchronization messages. If the component was already registered, the call is ignored.
-        ///     </para>
-        ///     <para>
-        ///         <see cref="UxrComponent" />s are automatically registered during <see cref="Awake" /> completely
-        ///         transparent to the user.
-        ///         For objects that are initially disabled, however, this means that they will not be able to receive
-        ///         synchronization messages because their Unique ID has not been registered yet.<br />
-        ///         If a component gets enabled on a remote session, and sends a state synchronization message, the other
-        ///         devices where the object is disabled will not be able to find it. Calling this method forces the object
-        ///         to be registered, making it possible to receive messages.
-        ///     </para>
-        /// </summary>
-        /// <returns></returns>
-        protected internal void RegisterComponent()
-        {
-            CheckInitializeUniqueId();
         }
 
         #endregion
@@ -799,12 +662,68 @@ namespace UltimateXR.Core.Components
         #region Protected Methods
 
         /// <summary>
+        ///     Serializes the component state. To be implemented in child classes that have custom state saving.
+        ///     Serialization will be performed with the help of <see cref="SerializeStateValue{T}" />.
+        /// </summary>
+        /// <param name="isReading">Whether the serializer is reading or writing</param>
+        /// <param name="stateSerializationVersion">
+        ///     When reading it tells the <see cref="StateSerializationVersion" /> the data was
+        ///     serialized with. When writing it uses the latest <see cref="StateSerializationVersion" /> version.
+        /// </param>
+        /// <param name="level">
+        ///     The amount of data to read/write.
+        /// </param>
+        /// <param name="options">Options</param>
+        protected virtual void SerializeStateInternal(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
+        {
+        }
+
+        /// <summary>
         ///     Executes the state change described by <see cref="e" />. To be implemented in child classes
         ///     that have custom state synchronization.
         /// </summary>
         /// <param name="e">State change information</param>
-        protected virtual void SyncState(UxrSyncEventArgs e)
+        protected virtual void SyncStateInternal(UxrSyncEventArgs e)
         {
+        }
+
+        /// <summary>
+        ///     Returns <see cref="UxrTransformSpace.Local" /> if the object is parented to an object with a
+        ///     <see cref="IUxrUniqueId" /> component.
+        ///     Otherwise returns the space passed as parameter.
+        /// </summary>
+        /// <param name="alternative">
+        ///     Alternative space returned if the object isn't parented to an object with
+        ///     <see cref="IUxrUniqueId" />
+        /// </param>
+        /// <returns>Space</returns>
+        protected UxrTransformSpace GetLocalTransformIfParentedOr(UxrTransformSpace alternative)
+        {
+            if (transform.parent != null && transform.parent.GetComponent<IUxrUniqueId>() != null)
+            {
+                return UxrTransformSpace.Local;
+            }
+
+            return alternative;
+        }
+
+        /// <summary>
+        ///     See <see cref="UxrStateSaveImplementer{T}.SerializeStateValue{TV}" />.
+        /// </summary>
+        protected void SerializeStateValue<T>(UxrStateSaveLevel level, UxrStateSaveOptions options, string name, ref T value)
+        {
+            StateSaveImplementer.SerializeStateValue(_stateSerializer, level, options, name, ref value);
+        }
+
+        /// <summary>
+        ///     See <see cref="UxrStateSaveImplementer{T}.SerializeStateTransform" />.
+        /// </summary>
+        protected void SerializeStateTransform(UxrStateSaveLevel level, UxrStateSaveOptions options, string name, UxrTransformSpace space, Transform transform)
+        {
+            if (transform != null)
+            {
+                StateSaveImplementer.SerializeStateTransform(_stateSerializer, level, options, name, space, transform);
+            }
         }
 
         /// <summary>
@@ -822,20 +741,14 @@ namespace UltimateXR.Core.Components
         ///         To be able to execute these changes on other PCs, state changes can be serialized to a byte array using
         ///         <see cref="UxrSyncEventArgs.SerializeEventBinary" />. These byte arrays can be saved to disk for replays or
         ///         sent through network for multiplayer synchronization.<br />
-        ///         Executing an event serialized in a byte array can be done using <see cref="UxrManager.ExecuteStateChange" />.
+        ///         Executing an event serialized in a byte array can be done using <see cref="UxrManager.ExecuteStateSyncEvent" />
+        ///         .
         ///     </para>
         /// </summary>
-        protected void BeginSync()
+        /// <param name="targetEnvironments">Target environment(s) where the state sync should be used/saved. It's All by default.</param>
+        protected void BeginSync(UxrStateSyncEnvironments targetEnvironments = UxrStateSyncEnvironments.All)
         {
-            SyncCallDepth++;
-
-            if (SyncCallDepth > StateSyncCallDepthErrorThreshold)
-            {
-                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
-                {
-                    Debug.LogError($"{UxrConstants.CoreModule} BeginSync/EndSync mismatch when calling BeginSync. Did you forget an EndSync call? Component: {this.GetPathUnderScene()}");
-                }
-            }
+            StateSyncImplementer.BeginSync(targetEnvironments);
         }
 
         /// <summary>
@@ -861,17 +774,7 @@ namespace UltimateXR.Core.Components
         /// </example>
         protected void CancelSync()
         {
-            if (SyncCallDepth > 0)
-            {
-                SyncCallDepth--;
-            }
-            else
-            {
-                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
-                {
-                    Debug.LogError($"{UxrConstants.CoreModule} BeginSync/CancelSync mismatch when calling CancelSync. Did you forget a BeginSync call? State call depth is < 1. Component: {this.GetPathUnderScene()}");
-                }
-            }
+            StateSyncImplementer.CancelSync();
         }
 
         /// <summary>
@@ -956,7 +859,7 @@ namespace UltimateXR.Core.Components
         ///     {
         ///         // Override this method that will receive custom events that need to be synchronized. For example, on
         ///         // all clients in a multiplayer environment.
-        ///         protected override void SyncState(UxrSyncEventArgs e)
+        ///         protected override void SyncStateInternal(UxrSyncEventArgs e)
         ///         {
         ///             if (e is CoolLaserSyncEventArgs eventArgs)
         ///             {
@@ -1019,154 +922,7 @@ namespace UltimateXR.Core.Components
         /// </example>
         protected void EndSyncState(UxrSyncEventArgs e)
         {
-            if (SyncCallDepth > 0)
-            {
-                OnStateChanged(e);
-                SyncCallDepth--;
-            }
-            else
-            {
-                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
-                {
-                    Debug.LogError($"{UxrConstants.CoreModule} BeginSync/EndSync mismatch when calling EndSync. Did you forget a BeginSync call? State call depth is < 1. Component: {this.GetPathUnderScene()}");
-                }
-            }
-        }
-
-        #endregion
-
-        #region Private Methods
-
-        /// <summary>
-        ///     Returns a generated unique ID based on the given component, taking care of collisions.
-        /// </summary>
-        /// <param name="component">Component to get a unique ID for</param>
-        /// <param name="requestedId">
-        ///     If non-null, it will try to assign this Id. If it already exists
-        ///     or is null, it will generate a new one.
-        /// </param>
-        /// <returns>New generated ID</returns>
-        private static string GenerateUniqueId(UxrComponent component, string requestedId = null)
-        {
-            string unprocessedId = requestedId ?? GetNewUniqueId();
-            string newId         = unprocessedId;
-            string unregisterId  = null;
-
-            // First unregister if it was already registered
-
-            if (!string.IsNullOrEmpty(component.UniqueId) && s_componentsById.TryGetValue(component.UniqueId, out UxrComponent existingComponent) && component == existingComponent)
-            {
-                unregisterId = component.UniqueId;
-            }
-
-            // Try to get new unique ID
-
-            if (s_componentsById.ContainsKey(newId))
-            {
-                // Handle collisions
-
-                int collisionIterations = 0;
-
-                while (s_componentsById.ContainsKey(newId))
-                {
-                    int collisionCount = s_idCollisions[unprocessedId];
-
-                    collisionCount++;
-                    collisionIterations++;
-                    newId = (unprocessedId + $"Collision{collisionCount}").GetMd5x2();
-
-                    s_idCollisions[unprocessedId] = collisionCount;
-                }
-
-                s_idCollisions[newId] = 0;
-            }
-            else
-            {
-                // New unique ID not in use: Initialize or update collision dictionary for this ID
-
-                if (!s_idCollisions.ContainsKey(unprocessedId))
-                {
-                    s_idCollisions.Add(unprocessedId, 0);
-                }
-                else
-                {
-                    s_idCollisions[unprocessedId]++;
-                }
-            }
-
-            // Call ID change events
-
-            if (unregisterId != null)
-            {
-                component.OnUniqueIdChanging(unregisterId, newId);
-                s_componentsById.Remove(unregisterId);
-            }
-
-            // Register new ID
-
-            component.OnRegistering();
-            component.UniqueId = newId;
-
-            // This should not happen unless a new singleton of a class is instantiated. The old one would be deleted later but since
-            // they share the same ID we want to remove the old one here first too.
-
-            if (s_componentsById.ContainsKey(newId))
-            {
-                s_componentsById[newId] = component;
-            }
-            else
-            {
-                s_componentsById.Add(newId, component);
-            }
-
-            component.OnRegistered();
-
-            // Call ID change events
-
-            if (unregisterId != null)
-            {
-                component.OnUniqueIdChanged(unregisterId, newId);
-            }
-
-            return newId;
-        }
-
-        /// <summary>
-        ///     Checks if the component has been registered, and registers it if it not.
-        ///     The main reason why it exists is to make sure that it has been called if ChangeUniqueId()
-        ///     changes the ID. Since this might happen right after instantiation, before Awake() gets called at
-        ///     the end of the frame, it might need to be called there before.
-        /// </summary>
-        private void CheckInitializeUniqueId()
-        {
-            if (_initializedComponent == this)
-            {
-                return;
-            }
-
-            // Not yet generated? Generate ID using unique scene path.
-            // Warning: This is not 100% safe for several reasons:
-            //   -In Unity root GameObjects don't have a sibling index at runtime
-            //   -Index in root GameObjects is not consistent across platforms
-            //   -Can create collisions when instantiating, but these are taken care of in the next step.
-            if (string.IsNullOrEmpty(UniqueId))
-            {
-                if (UniqueIdIsTypeName)
-                {
-                    UniqueId = GetType().FullName.GetMd5x2();
-                }
-                else
-                {
-                    UniqueId = this.GetUniqueScenePath().GetMd5x2();
-                }
-            }
-
-            // Store original unique ID
-            _originalUniqueId = UniqueId;
-
-            // Register, taking care of collisions
-            GenerateUniqueId(this, UniqueId);
-            _initializedComponent = this;
+            StateSyncImplementer.EndSyncState(OnStateChanged, e);
         }
 
         #endregion
@@ -1174,85 +930,79 @@ namespace UltimateXR.Core.Components
         #region Protected Types & Data
 
         /// <summary>
-        ///     <para>
-        ///         Gets the current call depth of BeginSync/EndSync calls, which are responsible for helping synchronize calls
-        ///         over the network.
-        ///         To avoid redundant synchronization, nested calls (where <see cref="SyncCallDepth" /> is greater than 1),
-        ///         need to be ignored.
-        ///     </para>
-        ///     <para>
-        ///         State synchronization, for networking or other functionality like saving gameplay replays, can be done
-        ///         by subscribing to <see cref="UxrManager.ComponentStateChanged" />. By default, only top level calls will
-        ///         trigger the event. This can be changed using <see cref="UxrManager.UseTopLevelStateChangesOnly" />.
-        ///     </para>
-        ///     <para>
-        ///         In the following code, only PlayerShoot() needs to be synchronized. This will not only save bandwidth, but also
-        ///         make sure that only a single particle system gets instantiated and the shot audio doesn't get played twice.
-        ///     </para>
-        ///     <code>
-        ///         void PlayerShoot(int parameter1, bool parameter2)
-        ///         {
-        ///             BeginSync(); 
-        ///             ShowParticles(parameter1);
-        ///             PlayAudioShot(parameter2); 
-        ///             EndSyncMethod(new object[] {parameter1, parameter2});
-        ///         }
-        ///         
-        ///         void ShowParticles(int parameter);
-        ///         {
-        ///             BeginSync();
-        ///             Instantiate(ParticleSystem);
-        ///             EndSyncMethod(new object[] {parameter});
-        ///         }
-        ///         
-        ///         void PlayAudioShot(bool parameter);
-        ///         {
-        ///             BeginSync();
-        ///             _audio.Play();
-        ///             EndSyncMethod(new object[] {parameter});
-        ///         }
-        ///     </code>
+        ///     Gets the name of the object, to identify it in debug strings. Uses Unity's name object by default, but it can be
+        ///     overriden to provide a better, comprehensible name.
         /// </summary>
-        protected static int SyncCallDepth { get; private set; }
-
-        /// <summary>
-        ///     Gets whether the unique ID for this component is generated based on the full type name. This is useful to let
-        ///     singletons generate the same Unique ID in all devices to ensure that message exchanges will work correctly.
-        /// </summary>
-        protected virtual bool UniqueIdIsTypeName => false;
+        /// <returns>Name of the object</returns>
+        protected virtual string StateSyncName => name;
 
         #endregion
 
         #region Private Types & Data
 
         /// <summary>
-        ///     The original ID that was assigned at startup, which might be different than the one assigned during edit-time.
-        ///     We want to keep the original one for <see cref="ChangeUniqueId" /> when computing IDs relative to the parent.
+        ///     Gets the implementer for the <see cref="IUxrStateSave" /> interface.
         /// </summary>
-        private string OriginalUniqueId => _originalUniqueId ?? UniqueId;
+        private UxrUniqueIdImplementer<UxrComponent> UniqueIdImplementer
+        {
+            get
+            {
+                if (_uniqueIdImplementer == null)
+                {
+                    _uniqueIdImplementer = new UxrUniqueIdImplementer<UxrComponent>(this);
+                }
 
-        private const BindingFlags EventFlags                       = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
-        private const BindingFlags MethodFlags                      = EventFlags | BindingFlags.InvokeMethod | BindingFlags.FlattenHierarchy;
-        private const BindingFlags PropertyFlags                    = EventFlags | BindingFlags.SetProperty;
-        private const int          StateSyncCallDepthErrorThreshold = 100;
-
-        /// <summary>
-        ///     Static dictionary of all <see cref="UxrComponent" /> components by id.
-        /// </summary>
-        private static readonly Dictionary<string, UxrComponent> s_componentsById = new Dictionary<string, UxrComponent>();
-
-        /// <summary>
-        ///     Static dictionary of path collisions so that unique ids are generated.
-        /// </summary>
-        private static readonly Dictionary<string, int> s_idCollisions = new Dictionary<string, int>();
+                return _uniqueIdImplementer;
+            }
+        }
 
         /// <summary>
-        ///     Dictionary of cached components by type.
+        ///     Gets the implementer for the <see cref="IUxrStateSave" /> interface.
         /// </summary>
+        private UxrStateSaveImplementer<UxrComponent> StateSaveImplementer
+        {
+            get
+            {
+                if (_stateSaveImplementer == null)
+                {
+                    _stateSaveImplementer = new UxrStateSaveImplementer<UxrComponent>(this);
+                }
+
+                return _stateSaveImplementer;
+            }
+        }
+
+        /// <summary>
+        ///     Gets the implementer for the <see cref="IUxrStateSync" /> interface.
+        /// </summary>
+        private UxrStateSyncImplementer<UxrComponent> StateSyncImplementer
+        {
+            get
+            {
+                if (_stateSyncImplementer == null)
+                {
+                    _stateSyncImplementer = new UxrStateSyncImplementer<UxrComponent>(this);
+                }
+
+                return _stateSyncImplementer;
+            }
+        }
+
+        // Private vars
+
         private readonly Dictionary<Type, Component> _cachedComponents = new Dictionary<Type, Component>();
 
-        private UxrComponent _initializedComponent;
-        private string       _originalUniqueId;
+        private Guid _cachedGuid;
+
+        // Helpers that leverage implementation of IUxrUniqueId, IUxrStateSync and IUxrStateSave
+
+        private UxrUniqueIdImplementer<UxrComponent>  _uniqueIdImplementer;
+        private UxrStateSaveImplementer<UxrComponent> _stateSaveImplementer;
+        private UxrStateSyncImplementer<UxrComponent> _stateSyncImplementer;
+        private IUxrSerializer                        _stateSerializer;
+        private bool                                  _initialStateSerialized;
+
+        // Transform stacks
 
         private Stack<Vector3>    _localPositionStack;
         private Stack<Quaternion> _localRotationStack;

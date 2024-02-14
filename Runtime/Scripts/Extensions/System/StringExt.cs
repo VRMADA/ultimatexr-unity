@@ -9,7 +9,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using UnityEngine;
 using Random = UnityEngine.Random;
 
 namespace UltimateXR.Extensions.System
@@ -85,6 +84,20 @@ namespace UltimateXR.Extensions.System
         {
             byte[] md5 = self.GetMd5();
             return md5.Aggregate(new StringBuilder(md5.Length * 2), (sb, b) => sb.AppendFormat("{0:x2}", b)).ToString();
+        }
+
+        /// <summary>
+        ///     Gets a Guid result of hashing the string using SHA-256 and using the first 16 bytes.
+        /// </summary>
+        /// <param name="self">String to get the Guid hash value of</param>
+        /// <returns>Guid hash value of the string</returns>
+        public static Guid GetGuid(this string self)
+        {
+            // Take the first 16 bytes of the hash to create a Guid
+            byte[] guidBytes = new byte[16];
+            Buffer.BlockCopy(GetSha256(self), 0, guidBytes, 0, guidBytes.Length);
+
+            return new Guid(guidBytes);
         }
 
         /// <summary>

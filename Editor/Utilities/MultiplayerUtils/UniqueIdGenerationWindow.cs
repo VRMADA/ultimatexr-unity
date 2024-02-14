@@ -3,11 +3,13 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System;
 using System.Xml;
 using UltimateXR.Core;
-using UltimateXR.Core.Components;
+using UltimateXR.Core.Unique;
 using UltimateXR.Extensions.Unity;
 using UnityEditor;
+using UnityEngine;
 
 namespace UltimateXR.Editor.Utilities.MultiplayerUtils
 {
@@ -15,7 +17,7 @@ namespace UltimateXR.Editor.Utilities.MultiplayerUtils
     ///     Custom tool window that will make sure that all UXR elements in the project have correct
     ///     <see cref="UniqueId" /> values.
     /// </summary>
-    public sealed class UniqueIdGenerationWindow : ComponentProcessorWindow<UxrComponent>
+    public sealed class UniqueIdGenerationWindow : ComponentProcessorWindow<Component>
     {
         #region Public Methods
 
@@ -29,7 +31,7 @@ namespace UltimateXR.Editor.Utilities.MultiplayerUtils
         ///     perform any modifications on it
         /// </param>
         /// <returns>Whether the component required changes</returns>
-        public static bool FixComponentUniqueIdInformation(UxrComponentInfo<UxrComponent> info, bool forceRegenerateId, bool onlyCheck)
+        public static bool FixComponentUniqueIdInformation(UxrComponentInfo<Component> info, bool forceRegenerateId, bool onlyCheck)
         {
             SerializedObject serializedObject = new SerializedObject(info.TargetComponent);
             serializedObject.Update();
@@ -41,7 +43,13 @@ namespace UltimateXR.Editor.Utilities.MultiplayerUtils
             {
                 return false;
             }
-            
+
+            if (uniqueIdProperty == null || prefabGuidProperty == null || isInPrefabProperty == null)
+            {
+                Debug.LogError($"Can't find one or more fields in {info.TargetComponent}. Target type ({info.TargetComponent.GetType().FullName}) is missing one or more of these required fields: {UxrEditorUtils.PropertyUniqueId}, {UxrEditorUtils.PropertyPrefabGuid}, {UxrEditorUtils.PropertyIsInPrefab}.");
+                return false;
+            }
+
             bool isInPrefab  = info.TargetComponent.IsInPrefab();
             bool needsChange = false;
 
@@ -55,7 +63,7 @@ namespace UltimateXR.Editor.Utilities.MultiplayerUtils
                     serializedObject.ApplyModifiedProperties();
                     prefabGuidProperty.stringValue = prefabGuid;
                 }
-                
+
                 needsChange = true;
             }
 
@@ -77,10 +85,10 @@ namespace UltimateXR.Editor.Utilities.MultiplayerUtils
             {
                 if (!onlyCheck)
                 {
-                    string newUniqueID = UxrComponent.GetNewUniqueId();
+                    Guid newUniqueID = UxrUniqueIdImplementer.GetNewUniqueId();
                     uniqueIdProperty.stringValue = "AA";
                     serializedObject.ApplyModifiedProperties();
-                    uniqueIdProperty.stringValue = newUniqueID;
+                    uniqueIdProperty.stringValue = newUniqueID.ToString();
                 }
 
                 needsChange = true;
@@ -121,13 +129,13 @@ namespace UltimateXR.Editor.Utilities.MultiplayerUtils
 
         #endregion
 
-        #region Protected Overrides ComponentProcessorWindow<UxrComponent>
+        #region Protected Overrides ComponentProcessorWindow<Component>
 
         /// <inheritdoc />
         protected override bool CanProcessUltimateXRAssets => true;
 
         /// <inheritdoc />
-        protected override string HelpBoxMessage => "This generates missing unique IDs for UltimateXR components. Unique IDs are used to identify objects so that functionality such as multi-user and save states can work correctly. UltimateXR versions prior to 0.10.0 might have missing IDs since unique ID information was first introduced in 0.10.0. Use this tool to generate missing unique ID information in projects created with older versions.";
+        protected override string HelpBoxMessage => "This generates missing unique IDs for UltimateXR components. Unique IDs are used to identify objects so that functionality such as multi-user and state saves can work correctly. UltimateXR versions prior to 1.0.0 might have missing IDs since unique ID information was first introduced in 1.0.0. Use this tool to generate missing unique ID information in projects created with older versions.";
 
         /// <inheritdoc />
         protected override string DontIgnoreUxrAssetsWarningMessage => "All assets in UltimateXR come already with unique ID information. Changing it may have unwanted results";
@@ -136,9 +144,16 @@ namespace UltimateXR.Editor.Utilities.MultiplayerUtils
         protected override string ProcessButtonText => "Generate";
 
         /// <inheritdoc />
-        protected override bool ProcessComponent(UxrComponentInfo<UxrComponent> info, bool onlyCheck)
+        protected override void ProcessComponent(UxrComponentInfo<Component> info, bool onlyCheck, out bool isChanged, out bool forceNoLog)
         {
-            return FixComponentUniqueIdInformation(info, false, onlyCheck);
+            isChanged  = false;
+            forceNoLog = true;
+
+            if (info.TargetComponent is IUxrUniqueId)
+            {
+                forceNoLog = false;
+                isChanged  = FixComponentUniqueIdInformation(info, false, onlyCheck);
+            }
         }
 
         #endregion

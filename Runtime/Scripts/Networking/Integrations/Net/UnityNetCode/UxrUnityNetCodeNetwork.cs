@@ -4,16 +4,17 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections.Generic;
-using System.Linq;
 using UltimateXR.Avatar;
 using UltimateXR.Core;
-using UltimateXR.Extensions.Unity;
-using UltimateXR.Manipulation;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+
 #if ULTIMATEXR_USE_UNITY_NETCODE
+using System.Linq;
+using UltimateXR.Extensions.Unity;
+using UltimateXR.Manipulation;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using NetworkObject = Unity.Netcode.NetworkObject;
@@ -54,7 +55,6 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
             newComponents  = new List<Component>();
 
 #if ULTIMATEXR_USE_UNITY_NETCODE && UNITY_EDITOR
-
             GameObject networkManagerGo = new GameObject("NetCodeNetworkManager");
             Undo.RegisterCreatedObjectUndo(networkManagerGo, "Create NetCode Network Manager");
             networkManagerGo.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
@@ -79,7 +79,6 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
             newComponents  = new List<Component>();
 
 #if ULTIMATEXR_USE_UNITY_NETCODE && UNITY_EDITOR
-
             if (avatar == null)
             {
                 return;
@@ -91,7 +90,7 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
             IEnumerable<Behaviour> avatarComponents    = SetupClientNetworkTransform(avatar.gameObject,                                  true, UxrNetworkTransformFlags.All);
             IEnumerable<Behaviour> cameraComponents    = SetupClientNetworkTransform(avatar.CameraComponent.gameObject,                  true, UxrNetworkTransformFlags.ChildPositionAndRotation);
             IEnumerable<Behaviour> leftHandComponents  = SetupClientNetworkTransform(avatar.GetHand(UxrHandSide.Left).Wrist.gameObject,  true, UxrNetworkTransformFlags.ChildPositionAndRotation);
-            IEnumerable<Behaviour> rightHandComponents = SetupClientNetworkTransform(avatar.GetHand(UxrHandSide.Right).Wrist.gameObject, true, UxrNetworkTransformFlags.ChildAll);
+            IEnumerable<Behaviour> rightHandComponents = SetupClientNetworkTransform(avatar.GetHand(UxrHandSide.Right).Wrist.gameObject, true, UxrNetworkTransformFlags.ChildPositionAndRotation);
 
             newComponents.AddRange(avatarComponents.ToList().Concat(cameraComponents).Concat(leftHandComponents).Concat(rightHandComponents));
             Undo.RegisterFullObjectHierarchyUndo(avatar.gameObject, "Setup NetCode Avatar");
@@ -110,7 +109,6 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
         public override IEnumerable<Behaviour> AddNetworkTransform(GameObject gameObject, bool worldSpace, UxrNetworkTransformFlags networkTransformFlags)
         {
 #if ULTIMATEXR_USE_UNITY_NETCODE && UNITY_EDITOR
-
             if (networkTransformFlags.HasFlag(UxrNetworkTransformFlags.ChildTransform) == false)
             {
                 NetworkObject networkObject = gameObject.GetOrAddComponent<NetworkObject>();
@@ -139,7 +137,6 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
         public override IEnumerable<Behaviour> AddNetworkRigidbody(GameObject gameObject, bool worldSpace, UxrNetworkRigidbodyFlags networkRigidbodyFlags)
         {
 #if ULTIMATEXR_USE_UNITY_NETCODE && UNITY_EDITOR
-
             // Building list forces evaluation of AddNetworkTransform IEnumerable and creates the components
             List<Behaviour> networkTransformComponents = new List<Behaviour>(AddNetworkTransform(gameObject, worldSpace, UxrNetworkTransformFlags.All));
 
@@ -201,7 +198,6 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
         public override bool HasAuthority(GameObject gameObject)
         {
 #if ULTIMATEXR_USE_UNITY_NETCODE
-
             NetworkObject networkObject = gameObject.GetComponent<NetworkObject>();
 
             if (networkObject == null)
@@ -219,7 +215,6 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
         public override void RequestAuthority(GameObject gameObject)
         {
 #if ULTIMATEXR_USE_UNITY_NETCODE
-
             if (gameObject == null)
             {
                 return;
@@ -239,7 +234,6 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
         public override void CheckReassignGrabAuthority(GameObject gameObject)
         {
 #if ULTIMATEXR_USE_UNITY_NETCODE
-
             UxrGrabbableObject grabbableObject = gameObject.GetComponent<UxrGrabbableObject>();
             NetworkObject      networkObject   = gameObject.GetComponent<NetworkObject>();
 
@@ -259,6 +253,16 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
                     }
                 }
             }
+#endif
+        }
+
+        /// <inheritdoc />
+        public override bool HasNetworkTransformSyncComponents(GameObject gameObject)
+        {
+#if ULTIMATEXR_USE_UNITY_NETCODE
+            return gameObject.GetComponent<NetworkTransform>() != null || gameObject.GetComponent<NetworkRigidbody>() != null;
+#else
+            return false;
 #endif
         }
 
@@ -309,7 +313,7 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
                 {
                     return;
                 }
-                
+
                 if (NetworkManager.Singleton.IsHost)
                 {
                     if (GUI.Button(new Rect(0, PosY, ButtonWidth, ButtonHeight), "Stop Host"))
@@ -334,7 +338,6 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
 
                 return;
             }
-
 
             GUI.Box(new Rect(0,                PosY, ButtonWidth,     LabelHeight), "Network Address:");
             GUI.Box(new Rect(ButtonWidth + 10, PosY, ButtonWidth / 2, LabelHeight), "Port:");
@@ -370,9 +373,9 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
                 NetworkManager.Singleton.StartClient();
             }
         }
-        
+
         #endregion
-        
+
         #region Private Methods
 
         /// <summary>

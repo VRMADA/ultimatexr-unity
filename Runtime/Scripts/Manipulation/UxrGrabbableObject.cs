@@ -4,16 +4,20 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Avatar;
 using UltimateXR.Core;
 using UltimateXR.Core.Components;
 using UltimateXR.Core.Math;
+using UltimateXR.Core.Settings;
+using UltimateXR.Core.StateSync;
 using UltimateXR.Devices.Visualization;
 using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Extensions.Unity.Math;
+using UltimateXR.Networking;
 using UnityEngine;
 
 #pragma warning disable 0414
@@ -60,7 +64,7 @@ namespace UltimateXR.Manipulation
     ///     </list>
     /// </summary>
     [DisallowMultipleComponent]
-    public class UxrGrabbableObject : UxrComponent<UxrGrabbableObject>, IUxrGrabbable
+    public partial class UxrGrabbableObject : UxrComponent<UxrGrabbableObject>, IUxrGrabbable
     {
         #region Inspector Properties/Serialized Fields
 
@@ -152,8 +156,43 @@ namespace UltimateXR.Manipulation
         public event EventHandler<UxrApplyConstraintsEventArgs> ConstraintsFinished;
 
         /// <summary>
-        ///     Gets if the object has constraints and at the same time has a grabbable parent. This means that the object can
-        ///     either be considered as another grabbable part of the parent object or a separate grabbable object that is just
+        ///     <para>
+        ///         Gets whether the grabbable object is a dummy grabbable parent. Dummy grabbable parents are objects
+        ///         that can only be manipulated through the children, but still have their own translation/rotations constraints.
+        ///     </para>
+        ///     <para>
+        ///         An example of a dummy grabbable parent is a door and handle setup. The door is the parent, but the grabbable
+        ///         object is the door handle which can rotate around itself and should also allow rotating the door.
+        ///         Using the door handle only, the door cannot be opened or closed, because only the handle will rotate and the
+        ///         handle is a child of the door.<br />
+        ///         UltimateXR allows grabbable children to control a grabbable parent direction using
+        ///         <see cref="ControlParentDirection" />, but sometimes the parent should not really be grabbable. When the
+        ///         parent is not grabbable but the <see cref="ControlParentDirection" /> is still desired, it is possible to add a
+        ///         <see cref="UxrGrabbableObject" /> component to the parent, set up translation/rotation constraints and enable
+        ///         the <see cref="IsDummyGrabbableParent" /> property.
+        ///     </para>
+        ///     <para>
+        ///         Some other examples where dummy grabbable parents come in handy:
+        ///         <list type="bullet">
+        ///             <item>An aircraft yoke column that moves forward/backward when the child yoke object is being grabbed.</item>
+        ///         </list>
+        ///     </para>
+        /// </summary>
+        public bool IsDummyGrabbableParent => _isDummyGrabbableParent;
+
+        /// <summary>
+        ///     Gets whether a dependent object can control the grabbable parent's direction when being moved.
+        /// </summary>
+        public bool ControlParentDirection => _controlParentDirection;
+
+        /// <summary>
+        ///     Gets whether the grabbable parent dependency is ignored. <see cref="UsesGrabbableParentDependency" />.
+        /// </summary>
+        public bool IgnoreGrabbableParentDependency => _ignoreGrabbableParentDependency;
+
+        /// <summary>
+        ///     Gets whether  the object has constraints and at the same time has a grabbable parent. This means that the object
+        ///     can either be considered as another grabbable part of the parent object or a separate grabbable object that is just
         ///     attached to the parent object but has no control over it. The former are movable parts in a composite object while
         ///     the latter are independent grabbable objects that happen to be in the hierarchy.
         /// </summary>
@@ -182,6 +221,11 @@ namespace UltimateXR.Manipulation
         ///     </para>
         /// </summary>
         public bool UsesGrabbableParentDependency => HasGrabbableParentDependency && !_ignoreGrabbableParentDependency;
+
+        /// <summary>
+        ///     Gets whether the object can be grabbed with more than one hand.
+        /// </summary>
+        public bool AllowMultiGrab => _allowMultiGrab;
 
         /// <summary>
         ///     Gets the first <see cref="UxrGrabbableObject" /> upwards in the hierarchy, and that the object can be dependent on.
@@ -459,11 +503,6 @@ namespace UltimateXR.Manipulation
         public bool NeedsTwoHandsToRotate => _needsTwoHandsToRotate;
 
         /// <summary>
-        ///     Gets whether the object can be grabbed with more than one hand.
-        /// </summary>
-        public bool AllowMultiGrab => _allowMultiGrab;
-
-        /// <summary>
         ///     Gets the <see cref="UxrGrabbableObjectAnchor" /> the object started on, regardless of the current anchor.
         /// </summary>
         public UxrGrabbableObjectAnchor StartAnchor => _startAnchor;
@@ -493,6 +532,28 @@ namespace UltimateXR.Manipulation
         }
 
         /// <summary>
+        ///     Gets whether the first grab point in the list is the main grab in objects with more than one grab point.
+        ///     When an object is grabbed with both hands, the main grab controls the actual position while the secondary grab
+        ///     controls the direction.
+        ///     Set it to true in objects like a rifle, where the trigger hand should be the first grab in order to keep the object
+        ///     in place, and the front grab will control the aiming direction.
+        ///     If false, the grab point order is irrelevant and the hand that grabbed the object first will be considered as the
+        ///     main grab.
+        /// </summary>
+        public bool FirstGrabPointIsMain => _firstGrabPointIsMain;
+
+        /// <summary>
+        ///     Gets the rotation provider. The rotation provider is used in objects with constrained position to know
+        ///     which element drives the rotation.
+        /// </summary>
+        public UxrRotationProvider RotationProvider => HasTranslationConstraint && LimitedRangeOfMotionRotationAxes.Any() ? _rotationProvider : UxrRotationProvider.HandOrientation;
+
+        /// <summary>
+        ///     Gets which axis is the longitudinal axis (x, y or z) in a rotation with constraints on two or more axes.
+        /// </summary>
+        public UxrAxis RotationLongitudinalAxis => _rotationLongitudinalAxis;
+
+        /// <summary>
         ///     Gets or sets the rotation angle in degrees for objects that have a single rotational degree of freedom.
         /// </summary>
         /// <remarks>
@@ -509,12 +570,20 @@ namespace UltimateXR.Manipulation
         ///     Gets the <see cref="UxrGrabbableObjectAnchor" /> where the object is actually placed or null if it's not placed on
         ///     any.
         /// </summary>
-        public UxrGrabbableObjectAnchor CurrentAnchor { get; internal set; }
+        public UxrGrabbableObjectAnchor CurrentAnchor
+        {
+            get => _currentAnchor;
+            internal set => _currentAnchor = value;
+        }
 
         /// <summary>
         ///     Gets or sets whether the object can be placed on an <see cref="UxrGrabbableObjectAnchor" />.
         /// </summary>
-        public bool IsPlaceable { get; set; } = true;
+        public bool IsPlaceable
+        {
+            get => _isPlaceable;
+            set => _isPlaceable = value;
+        }
 
         /// <summary>
         ///     Gets or sets whether the object can be moved/rotated. A locked in place object may be grabbed but cannot be moved.
@@ -533,53 +602,6 @@ namespace UltimateXR.Manipulation
         }
 
         /// <summary>
-        ///     <para>
-        ///         Gets or sets whether the grabbable object is a dummy grabbable parent. Dummy grabbable parents are objects
-        ///         that can only be manipulated through the children, but still have their own translation/rotations constraints.
-        ///     </para>
-        ///     <para>
-        ///         An example of a dummy grabbable parent is a door and handle setup. The door is the parent, but the grabbable
-        ///         object is the door handle which can rotate around itself and should also allow rotating the door.
-        ///         Using the door handle only, the door cannot be opened or closed, because only the handle will rotate and the
-        ///         handle is a child of the door.<br />
-        ///         UltimateXR allows grabbable children to control a grabbable parent direction using
-        ///         <see cref="ControlParentDirection" />, but sometimes the parent should not really be grabbable. When the
-        ///         parent is not grabbable but the <see cref="ControlParentDirection" /> is still desired, it is possible to add a
-        ///         <see cref="UxrGrabbableObject" /> component to the parent, set up translation/rotation constraints and enable
-        ///         the <see cref="IsDummyGrabbableParent" /> property.
-        ///     </para>
-        ///     <para>
-        ///         Some other examples where dummy grabbable parents come in handy:
-        ///         <list type="bullet">
-        ///             <item>An aircraft yoke column that moves forward/backward when the child yoke object is being grabbed.</item>
-        ///         </list>
-        ///     </para>
-        /// </summary>
-        public bool IsDummyGrabbableParent
-        {
-            get => _isDummyGrabbableParent;
-            set => _isDummyGrabbableParent = value;
-        }
-
-        /// <summary>
-        ///     Gets or sets whether a dependent object can control the grabbable parent's direction when being moved.
-        /// </summary>
-        public bool ControlParentDirection
-        {
-            get => _controlParentDirection;
-            set => _controlParentDirection = value;
-        }
-
-        /// <summary>
-        ///     Gets or sets whether to ignore the grabbable parent dependency. <see cref="UsesGrabbableParentDependency" />.
-        /// </summary>
-        public bool IgnoreGrabbableParentDependency
-        {
-            get => _ignoreGrabbableParentDependency;
-            set => _ignoreGrabbableParentDependency = value;
-        }
-
-        /// <summary>
         ///     Gets or sets the object priority. The priority is used to control which object will be grabbed when multiple
         ///     objects are in reach and the user performs the grab gesture.
         ///     The default behaviour is to use the distance and orientation to the objects in reach to select the one with the
@@ -593,30 +615,6 @@ namespace UltimateXR.Manipulation
         }
 
         /// <summary>
-        ///     Specifies the rigidbody component that controls the grabbable object when it is in dynamic (physics-enabled) mode.
-        /// </summary>
-        public Rigidbody RigidBodySource
-        {
-            get => _rigidBodySource;
-            set => _rigidBodySource = value;
-        }
-
-        /// <summary>
-        ///     Gets or sets whether the first grab point in the list is the main grab in objects with more than one grab point.
-        ///     When an object is grabbed with both hands, the main grab controls the actual position while the secondary grab
-        ///     controls the direction.
-        ///     Set it to true in objects like a rifle, where the trigger hand should be the first grab in order to keep the object
-        ///     in place, and the front grab will control the aiming direction.
-        ///     If false, the grab point order is irrelevant and the hand that grabbed the object first will be considered as the
-        ///     main grab.
-        /// </summary>
-        public bool FirstGrabPointIsMain
-        {
-            get => _firstGrabPointIsMain;
-            set => _firstGrabPointIsMain = value;
-        }
-
-        /// <summary>
         ///     Gets or sets whether to parent the object to the <see cref="UxrGrabbableObjectAnchor" /> being placed. Also whether
         ///     to set the parent to null when grabbing the object from one.
         /// </summary>
@@ -627,8 +625,9 @@ namespace UltimateXR.Manipulation
         }
 
         /// <summary>
-        ///     String that identifies which <see cref="UxrGrabbableObjectAnchor" /> components are compatible for placement. A
-        ///     <see cref="UxrGrabbableObject" /> can be placed on an <see cref="UxrGrabbableObjectAnchor" /> only if:
+        ///     Gets or sets the string that identifies which <see cref="UxrGrabbableObjectAnchor" /> components are
+        ///     compatible for placement. A <see cref="UxrGrabbableObject" /> can be placed on an
+        ///     <see cref="UxrGrabbableObjectAnchor" /> only if:
         ///     <list type="bullet">
         ///         <item>
         ///             <see cref="Tag" /> is null or empty and <see cref="UxrGrabbableObjectAnchor" /> has no compatible tags
@@ -725,25 +724,6 @@ namespace UltimateXR.Manipulation
         }
 
         /// <summary>
-        ///     Gets or sets the rotation provider. The rotation provider is used in objects with constrained position to know
-        ///     which element drives the rotation.
-        /// </summary>
-        public UxrRotationProvider RotationProvider
-        {
-            get => HasTranslationConstraint && LimitedRangeOfMotionRotationAxes.Any() ? _rotationProvider : UxrRotationProvider.HandOrientation;
-            set => _rotationProvider = value;
-        }
-
-        /// <summary>
-        ///     Gets or sets which one is the longitudinal axis (x, y or z) in a rotation with constraints on two or more axes.
-        /// </summary>
-        public UxrAxis RotationLongitudinalAxis
-        {
-            get => _rotationLongitudinalAxis;
-            set => _rotationLongitudinalAxis = value;
-        }
-
-        /// <summary>
         ///     Gets or sets the resistance to the object being moved around. This can be used to smooth out the position but also
         ///     to simulate heavy objects.
         /// </summary>
@@ -761,6 +741,16 @@ namespace UltimateXR.Manipulation
         {
             get => _rotationResistance;
             set => _rotationResistance = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the rigidbody component that controls the grabbable object when it is in dynamic
+        ///     (physics-enabled) mode.
+        /// </summary>
+        public Rigidbody RigidBodySource
+        {
+            get => _rigidBodySource;
+            set => _rigidBodySource = value;
         }
 
         /// <summary>
@@ -827,7 +817,11 @@ namespace UltimateXR.Manipulation
         /// <summary>
         ///     Gets or sets the rotation angle in degrees for objects that have a single rotational degree of freedom.
         /// </summary>
-        internal float SingleRotationAngleCumulative { get; set; }
+        internal float SingleRotationAngleCumulative
+        {
+            get => _singleRotationAngleCumulative;
+            set => _singleRotationAngleCumulative = value;
+        }
 
         /// <summary>
         ///     Gets or sets the initial position of the grabbable object in local grabbable parent space, if a grabbable parent
@@ -847,6 +841,16 @@ namespace UltimateXR.Manipulation
         /// </summary>
         internal Quaternion LocalRotationBeforeUpdate { get; set; }
 
+        /// <summary>
+        ///     Gets the placement options used in the last call that placed the object, for example using
+        ///     <see cref="UxrGrabManager.PlaceObject" />.
+        /// </summary>
+        internal UxrPlacementOptions PlacementOptions
+        {
+            get => _placementOptions;
+            set => _placementOptions = value;
+        }
+
         #endregion
 
         #region Implicit IUxrGrabbable
@@ -855,7 +859,11 @@ namespace UltimateXR.Manipulation
         public bool IsBeingGrabbed => UxrGrabManager.Instance.IsBeingGrabbed(this);
 
         /// <inheritdoc />
-        public bool IsGrabbable { get; set; } = true;
+        public bool IsGrabbable
+        {
+            get => _isGrabbable;
+            set => _isGrabbable = value;
+        }
 
         /// <inheritdoc />
         public bool IsKinematic
@@ -1787,8 +1795,8 @@ namespace UltimateXR.Manipulation
             {
                 UxrGrabbableObjectAnchor newAnchor = new GameObject($"{name} Auto Anchor", typeof(UxrGrabbableObjectAnchor)).GetComponent<UxrGrabbableObjectAnchor>();
 
-                // Make sure to generate same unique ID for the new anchor to support multiplayer, save state, etc. 
-                newAnchor.ChangeUniqueId((UniqueId + newAnchor.name).GetMd5x2());
+                // Make sure to generate same unique ID for the new anchor to support multiplayer, state save, etc. 
+                newAnchor.ChangeUniqueId(GuidExt.Combine(UniqueId, newAnchor.name.GetGuid()));
                 newAnchor.MaxPlaceDistance = _autoAnchorMaxPlaceDistance;
 
                 newAnchor.transform.SetPositionAndRotation(DropAlignTransform);
@@ -1865,6 +1873,36 @@ namespace UltimateXR.Manipulation
 
         #endregion
 
+        #region Coroutines
+
+        /// <summary>
+        ///     Coroutine that will keep manually in sync grabbable object rigidbodies without native network synchronization
+        ///     components.
+        /// </summary>
+        /// <param name="grabber">The grabber that released the object</param>
+        /// <param name="intervalSeconds">Interval in seconds to send sync messages</param>
+        /// <returns>Coroutine IEnumerator</returns>
+        private IEnumerator RegularPhysicsSyncCoroutine(UxrGrabber grabber, float intervalSeconds)
+        {
+            while (_rigidBodySource != null)
+            {
+                bool isSleeping = _rigidBodySource.IsSleeping();
+
+                UpdateRigidbody(grabber, isSleeping, transform.position, transform.rotation, _rigidBodySource.velocity, _rigidBodySource.angularVelocity);
+
+                if (isSleeping)
+                {
+                    break;
+                }
+
+                yield return new WaitForSeconds(intervalSeconds);
+            }
+
+            _regularPhysicsSyncCoroutine = null;
+        }
+
+        #endregion
+
         #region Event Trigger Methods
 
         /// <summary>
@@ -1900,6 +1938,12 @@ namespace UltimateXR.Manipulation
         /// <param name="e">Event parameters</param>
         internal void RaiseGrabbingEvent(UxrManipulationEventArgs e)
         {
+            if (_regularPhysicsSyncCoroutine != null)
+            {
+                StopCoroutine(_regularPhysicsSyncCoroutine);
+                _regularPhysicsSyncCoroutine = null;
+            }
+
             Grabbing?.Invoke(this, e);
         }
 
@@ -1927,6 +1971,26 @@ namespace UltimateXR.Manipulation
         /// <param name="e">Event parameters</param>
         internal void RaiseReleasedEvent(UxrManipulationEventArgs e)
         {
+            // Check whether the object was released, is in a networking environment and requires manually keep physics in sync through messages
+
+            if (UxrGlobalSettings.Instance.SyncGrabbablePhysics &&
+                _rigidBodySource != null &&
+                _rigidBodyDynamicOnRelease &&
+                !IsBeingGrabbed &&
+                e.Grabber != null &&
+                e.Grabber.Avatar.GetComponent<IUxrNetworkAvatar>() is IUxrNetworkAvatar networkAvatar &&
+                networkAvatar.IsLocal &&
+                UxrNetworkManager.HasInstance &&
+                !UxrNetworkManager.Instance.NetworkImplementation.HasNetworkTransformSyncComponents(gameObject))
+            {
+                if (_regularPhysicsSyncCoroutine != null)
+                {
+                    StopCoroutine(_regularPhysicsSyncCoroutine);
+                }
+
+                _regularPhysicsSyncCoroutine = StartCoroutine(RegularPhysicsSyncCoroutine(e.Grabber, UxrGlobalSettings.Instance.GrabbableSyncIntervalSeconds));
+            }
+
             Released?.Invoke(this, e);
         }
 
@@ -1936,6 +2000,12 @@ namespace UltimateXR.Manipulation
         /// <param name="e">Event parameters</param>
         internal void RaisePlacingEvent(UxrManipulationEventArgs e)
         {
+            if (_regularPhysicsSyncCoroutine != null)
+            {
+                StopCoroutine(_regularPhysicsSyncCoroutine);
+                _regularPhysicsSyncCoroutine = null;
+            }
+
             Placing?.Invoke(this, e);
         }
 
@@ -2039,6 +2109,43 @@ namespace UltimateXR.Manipulation
         }
 
         /// <summary>
+        ///     Updates the rigidbody making sure the messages are synchronized through the network.
+        /// </summary>
+        /// <param name="grabber">The grabber that released the object</param>
+        /// <param name="isSleeping">Whether the rigidbody is sleeping</param>
+        /// <param name="transformPosition">The rigidbody position</param>
+        /// <param name="transformRotation">The rigidbody rotation</param>
+        /// <param name="velocity">The rigidbody velocity</param>
+        /// <param name="angularVelocity">The rigidbody angular velocity</param>
+        private void UpdateRigidbody(UxrGrabber grabber, bool isSleeping, Vector3 transformPosition, Quaternion transformRotation, Vector3 velocity, Vector3 angularVelocity)
+        {
+            if (!_rigidBodySource)
+            {
+                return;
+            }
+
+            bool isLocal = grabber != null && grabber.Avatar != null && grabber.Avatar.GetComponent<IUxrNetworkAvatar>() is IUxrNetworkAvatar networkAvatar && networkAvatar.IsLocal;
+
+            // Only sync in network, we don't use it anywhere else.
+            BeginSync(UxrStateSyncEnvironments.Network);
+
+            if (!isLocal)
+            {
+                _rigidBodySource.transform.position = transformPosition;
+                _rigidBodySource.transform.rotation = transformRotation;
+                _rigidBodySource.velocity           = velocity;
+                _rigidBodySource.angularVelocity    = angularVelocity;
+
+                if (isSleeping)
+                {
+                    _rigidBodySource.Sleep();
+                }
+            }
+
+            EndSyncMethod(new object[] { grabber, isSleeping, transformPosition, transformRotation, velocity, angularVelocity });
+        }
+
+        /// <summary>
         ///     Gets the first <see cref="UxrGrabbableObject" /> upwards in the hierarchy.
         /// </summary>
         /// <param name="grabbableTransform"><see cref="UxrGrabbableObject" /> to get the grabbable parent of</param>
@@ -2057,16 +2164,6 @@ namespace UltimateXR.Manipulation
 
             return null;
         }
-
-        #endregion
-
-        #region Internal Types & Data
-
-        /// <summary>
-        ///     Gets the placement options used in the last call that placed the object, for example using
-        ///     <see cref="UxrGrabManager.PlaceObject" />.
-        /// </summary>
-        internal UxrPlacementOptions PlacementOptions;
 
         #endregion
 
@@ -2119,12 +2216,30 @@ namespace UltimateXR.Manipulation
         /// </summary>
         private float SmoothConstrainTimer { get; set; } = -1.0f;
 
+        // Backing fields for public properties
+
+        private UxrGrabbableObjectAnchor _currentAnchor;
+        private bool                     _isPlaceable = true;
+        private bool                     _isLockedInPlace;
+
+        // Private vars from internal properties
+
+        private float               _singleRotationAngleCumulative;
+        private UxrPlacementOptions _placementOptions;
+
+        // Backing fields for IUxrGrabbable
+
+        private bool _isGrabbable = true;
+
         // Private vars
 
-        private readonly Dictionary<int, bool>              _grabPointEnabledStates = new Dictionary<int, bool>();
-        private          bool                               _initialIsKinematic     = true;
-        private          Dictionary<int, UxrGrabPointShape> _grabPointShapes        = new Dictionary<int, UxrGrabPointShape>();
-        private          bool                               _isLockedInPlace;
+        private Dictionary<int, bool>              _grabPointEnabledStates = new Dictionary<int, bool>();
+        private bool                               _initialIsKinematic     = true;
+        private Dictionary<int, UxrGrabPointShape> _grabPointShapes        = new Dictionary<int, UxrGrabPointShape>();
+
+        // Coroutines
+
+        private Coroutine _regularPhysicsSyncCoroutine;
 
         #endregion
 

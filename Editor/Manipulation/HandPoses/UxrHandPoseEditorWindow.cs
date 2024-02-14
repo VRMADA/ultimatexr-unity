@@ -90,7 +90,7 @@ namespace UltimateXR.Editor.Manipulation.HandPoses
         /// <summary>
         ///     Shows the hand pose editor menu item.
         /// </summary>
-        [MenuItem(UxrConstants.Editor.MenuPathAvatar + "Hand Pose Editor", priority = UxrConstants.Editor.PriorityMenuPathAvatar)]
+        [MenuItem(UxrConstants.Editor.MenuPathAvatar + "Hand Pose Editor", priority = UxrConstants.Editor.PriorityMenuPathAvatar + 1)]
         public static void ShowWindow()
         {
             EditorWindow handPoseWindow = GetWindow(typeof(UxrHandPoseEditorWindow), true, "UltimateXR Hand Pose Editor");

@@ -3,9 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using UltimateXR.Core.Serialization;
-
-namespace UltimateXR.Core.StateSync
+namespace UltimateXR.Core.Serialization
 {
     /// <summary>
     ///     Interface to add serialization capabilities to a class.
@@ -19,9 +17,9 @@ namespace UltimateXR.Core.StateSync
         ///     <see cref="UxrConstants.Serialization.CurrentBinaryVersion" /> but this version property is specific to each class
         ///     that implements the <see cref="IUxrSerializable" /> interface, which may be used outside the UltimateXR scope,
         ///     in user specific classes that want to benefit from serialization.<br />
-        ///     Each class that implement the IUxrSerializable interface may have its own version. It is a number that gets
-        ///     increased by one each time the serialization format of the class that implements this interface changes, enabling
-        ///     backwards compatibility.
+        ///     Each class that implement the <see cref="IUxrSerializable" /> interface may have its own version. It is a number
+        ///     that gets incremented by one each time the serialization format of the class that implements this interface
+        ///     changes, enabling backwards compatibility.
         /// </summary>
         int SerializationVersion { get; }
 

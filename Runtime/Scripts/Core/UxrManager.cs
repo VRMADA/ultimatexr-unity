@@ -6,6 +6,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,8 +17,12 @@ using UltimateXR.Avatar.Controllers;
 using UltimateXR.Core.Caching;
 using UltimateXR.Core.Components;
 using UltimateXR.Core.Components.Singleton;
+using UltimateXR.Core.Serialization;
 using UltimateXR.Core.Settings;
+using UltimateXR.Core.StateSave;
 using UltimateXR.Core.StateSync;
+using UltimateXR.Core.Unique;
+using UltimateXR.Extensions.System.IO;
 using UltimateXR.Extensions.System.Threading;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Extensions.Unity.Math;
@@ -34,8 +40,8 @@ namespace UltimateXR.Core
     /// <summary>
     ///     <para>
     ///         Main manager in the UltimateXR framework. As a <see cref="UxrSingleton{T}">UxrSingleton</see> it can be
-    ///         accessed at any point in the application through <see cref="UxrSingleton{T}.Instance">UxrManager.Instance</see>
-    ///         . It can be pre-instantiated in the scene in order to change default parameters through the inspector but it is
+    ///         accessed at any point in the application using <see cref="UxrSingleton{T}.Instance">UxrManager.Instance</see>.
+    ///         It can be pre-instantiated in the scene in order to change default parameters through the inspector but it is
     ///         not required. When accessing the global <see cref="UxrSingleton{T}.Instance">UxrManager.Instance</see>, if no
     ///         <see cref="UxrManager" /> is currently available, one will be instantiated in the scene as the global
     ///         Singleton.
@@ -46,19 +52,34 @@ namespace UltimateXR.Core
     ///         stages of the updating process.
     ///     </para>
     ///     <para>
-    ///         <see cref="UxrManager" /> also provides commonly required functionality:
+    ///         <see cref="UxrManager" /> also provides the following functionality:
     ///         <list type="bullet">
-    ///             <item>Pre-caching prefabs when scenes are loaded to eliminate hiccups.</item>
-    ///             <item>Moving/rotating/teleporting avatars.</item>
-    ///             <item>Provide events to notify when avatars have been moved/rotated/teleported.</item>
     ///             <item>
-    ///                 Provide events to notify before and after updating a frame and at different stages of the updating
-    ///                 process for finer control.
+    ///                 Pre-caching prefabs when scenes are loaded to eliminate hiccups using the
+    ///                 <see cref="IUxrPrecacheable" /> interface.
+    ///             </item>
+    ///             <item>Moving/rotating/teleporting avatars.</item>
+    ///             <item>Events to get notified when avatars have been moved/rotated/teleported.</item>
+    ///             <item>
+    ///                 Events to get notified before and after updating a frame and at different stages of the updating
+    ///                 process for finer control: <see cref="AvatarsUpdating" />/<see cref="AvatarsUpdated" /> and
+    ///                 <see cref="StageUpdating" />/<see cref="StageUpdated" />.
+    ///             </item>
+    ///             <item>
+    ///                 A single event to get notified of all state changes in any component in the framework or
+    ///                 any custom user class: <see cref="ComponentStateChanged" />. Also a way to execute back state change
+    ///                 events, helping implement network synchronization and save-to-file/replay functionality:
+    ///                 <see cref="ExecuteStateSyncEvent" /> .
+    ///             </item>
+    ///             <item>
+    ///                 Provide ways to save the current state of the scene and load it back, helping implement
+    ///                 sync-on-join networking functionality and save-to-file/replays: <see cref="SaveStateChanges" /> and
+    ///                 <see cref="LoadStateChanges" />.
     ///             </item>
     ///         </list>
     ///     </para>
     /// </summary>
-    public sealed partial class UxrManager : UxrSingleton<UxrManager>
+    public sealed class UxrManager : UxrSingleton<UxrManager>
     {
         #region Inspector Properties/Serialized Fields
 
@@ -73,27 +94,34 @@ namespace UltimateXR.Core
         // Events
 
         /// <summary>
-        ///     Called whenever a <see cref="UxrComponent" /> has a state change that needs to be synced in a network environment.
-        ///     It is also useful when state changes are being saved to disk, like in a replay or state-save system, for example.
-        ///     State changes can be serialized through the network or saved to disk disk using
-        ///     <see cref="UxrSyncEventArgs.SerializeEventBinary" />.
-        ///     Serialized events can be executed using <see cref="ExecuteStateChange" />.
-        ///     All this functionality makes it really easy to implement networking using UltimateXR:
+        ///     Invoked to notify a state change in a <see cref="IUxrStateSync" /> component. This can be used to synchronize the
+        ///     event over the network or capture it in a replay/save state system. <br />
+        ///     The <see cref="IUxrStateSync" /> interface is implemented in the <see cref="UxrComponent" /> base class,
+        ///     serving as the foundation for all components within UltimateXR. While this interface is readily available in
+        ///     <see cref="UxrComponent" />, users may also implement it in custom classes where inheritance from
+        ///     <see cref="UxrComponent" /> is not feasible due to limitations in multiple inheritance.
+        ///     <see cref="UxrStateSyncImplementer{T}" /> helps leverage this interface implementation.<br />
+        ///     <see cref="UxrSyncEventArgs.SerializeEventBinary" /> is used to serialize the event.
+        ///     Serialized events can subsequently be executed via <see cref="ExecuteStateSyncEvent" />.
+        ///     This streamlined functionality simplifies networking implementation with UltimateXR:
         ///     <list type="bullet">
-        ///         <item>A single point of entry to capture all events in UltimateXR: <see cref="ComponentStateChanged" /></item>
-        ///         <item>A way to serialize the event to a byte array: <see cref="UxrSyncEventArgs.SerializeEventBinary" /></item>
         ///         <item>
-        ///             A way to execute an event to replicate the state change in another device or session:
-        ///             <see cref="ExecuteStateChange" />
+        ///             A central entry point to capture all events in UltimateXR: <see cref="ComponentStateChanged" />
+        ///         </item>
+        ///         <item>
+        ///             A method to serialize the event into a byte array: <see cref="UxrSyncEventArgs.SerializeEventBinary" />
+        ///         </item>
+        ///         <item>
+        ///             A means to execute an event for replicating the state change in another device or session:
+        ///             <see cref="ExecuteStateSyncEvent" />
         ///         </item>
         ///     </list>
-        ///     By default, nested state changes are ignored to save bandwidth and avoid duplicate calls that could lead to
-        ///     inconsistencies.
-        ///     Since the root state change will already call the nested state changes, these don't need to be synchronized again.
-        ///     For more information about this see <see cref="UseTopLevelStateChangesOnly" /> and
-        ///     <see cref="UxrComponent.SyncCallDepth" />.
+        ///     By default, nested state changes are ignored to optimize bandwidth usage and prevent redundant calls that
+        ///     might result in inconsistencies.<br />
+        ///     Since the root state change already triggers the nested ones, there's no need to synchronize them again.
+        ///     For additional details, refer to <see cref="UxrManager.UseTopLevelStateChangesOnly" />.
         /// </summary>
-        public static event Action<UxrComponent, UxrSyncEventArgs> ComponentStateChanged;
+        public static event Action<IUxrStateSync, UxrSyncEventArgs> ComponentStateChanged;
 
         /// <summary>
         ///     Called right before precaching is about to start. It's called on the first frame that is displayed black.
@@ -131,7 +159,8 @@ namespace UltimateXR.Core
 
         /// <summary>
         ///     Gets or sets whether the <see cref="ComponentStateChanged" /> event will be triggered by top level
-        ///     synchronization calls only. It is true by default. See <see cref="UxrComponent.SyncCallDepth" />.
+        ///     synchronization calls only. It is true by default to avoid redundant calls and inconsistencies.
+        ///     When false, they will also be triggered by nested changes.
         /// </summary>
         public static bool UseTopLevelStateChangesOnly { get; set; } = true;
 
@@ -186,7 +215,7 @@ namespace UltimateXR.Core
         /// <summary>
         ///     Gets or sets the color used when teleporting using screen fading transitions.
         /// </summary>
-        public Color TeleportFadeColor { get; set; } = default;
+        public Color TeleportFadeColor { get; set; }
 
         #endregion
 
@@ -219,11 +248,250 @@ namespace UltimateXR.Core
         }
 
         /// <summary>
+        ///     Saves the state of all components. This can be used to synchronize a network session when joining or support
+        ///     save-to-file functionality.
+        /// </summary>
+        /// <param name="roots">A list of GameObjects whose hierarchy to serialize or null to serialize the whole scene</param>
+        /// <param name="ignoreRoots">A list of GameObjects whose hierarchy to ignore, or null to not ignore anything</param>
+        /// <param name="level">The level of changes to serialize</param>
+        /// <param name="format">The serialization output format</param>
+        /// <returns>A data stream that can be saved and loaded back using <see cref="LoadStateChanges" /></returns>
+        public byte[] SaveStateChanges(List<GameObject> roots, List<GameObject> ignoreRoots, UxrStateSaveLevel level, UxrSerializationFormat format)
+        {
+            int                count        = 0;
+            using MemoryStream stream       = new MemoryStream();
+            Stream             targetStream = stream;
+
+            stream.WriteByte((byte)format);
+            stream.Flush();
+
+            using (GZipStream zipStream = new GZipStream(targetStream, CompressionMode.Compress))
+            {
+                if (format == UxrSerializationFormat.BinaryGzip)
+                {
+                    targetStream = zipStream;
+                }
+
+                using (BinaryWriter writer = new BinaryWriter(targetStream))
+                {
+                    UxrBinarySerializer serializer = new UxrBinarySerializer(writer);
+
+                    foreach (IUxrUniqueId unique in roots == null ? UxrUniqueIdImplementer.AllComponents : roots.SelectMany(go => go.GetComponentsInChildren<IUxrUniqueId>()))
+                    {
+                        if (unique is IUxrStateSave stateSave)
+                        {
+                            bool serialize = ignoreRoots == null || !ignoreRoots.Any(go => (unique as Component).transform.HasParent(go.transform));
+
+                            if (!serialize)
+                            {
+                                continue;
+                            }
+                            
+                            if (stateSave.SerializeState(serializer, stateSave.StateSerializationVersion, level, UxrStateSaveOptions.DontCacheChanges | UxrStateSaveOptions.DontSerialize))
+                            {
+                                long before = format == UxrSerializationFormat.BinaryUncompressed ? writer.BaseStream.Position : 0;
+
+                                writer.WriteUniqueComponent(unique);
+                                writer.Write(stateSave.StateSerializationVersion);
+                                stateSave.SerializeState(serializer, stateSave.StateSerializationVersion, level);
+
+                                long after = format == UxrSerializationFormat.BinaryUncompressed ? writer.BaseStream.Position : 0;
+
+                                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Debug)
+                                {
+                                    if (format == UxrSerializationFormat.BinaryUncompressed)
+                                    {
+                                        Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Serialized {(unique as Component).name} ({unique.GetType().Name}) to {after - before} bytes. Id is {unique.UniqueId}.");
+                                    }
+                                    else
+                                    {
+                                        Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Serialized {(unique as Component).name} ({unique.GetType().Name}). Id is {unique.UniqueId}.");
+                                    }
+                                }
+
+                                count++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            stream.Flush();
+            byte[] bytes = stream.ToArray();
+
+            if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Verbose)
+            {
+                string rootName = roots != null ? $"{roots.Count} root object(s)" : "scene";
+                Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Serialized {count} component(s) from {rootName} to {bytes.Length} bytes.");
+            }
+
+            return bytes;
+        }
+
+        /// <summary>
+        ///     Loads the state of component changes from serialized data using <see cref="SaveStateChanges" />.
+        /// </summary>
+        /// <param name="serializedState">Serialized state</param>
+        public void LoadStateChanges(byte[] serializedState)
+        {
+            if (serializedState == null)
+            {
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Input bytes is null.");
+                }
+
+                return;
+            }
+
+            // We will use a CancelSync() at the end. This avoids propagation of any synchronization message while loading.
+            BeginSync();
+
+            int             count         = 0;
+            List<UxrAvatar> loadedAvatars = new List<UxrAvatar>();
+
+            using MemoryStream     stream = new MemoryStream(serializedState);
+            UxrSerializationFormat format = (UxrSerializationFormat)stream.ReadByte();
+
+            switch (format)
+            {
+                case UxrSerializationFormat.BinaryUncompressed:
+                    DeserializeUncompressed(stream);
+                    break;
+
+                case UxrSerializationFormat.BinaryGzip:
+                {
+                    using MemoryStream compressedStream   = new MemoryStream(serializedState, 1, serializedState.Length - 1);
+                    using GZipStream   gzipStream         = new GZipStream(compressedStream, CompressionMode.Decompress);
+                    using MemoryStream uncompressedStream = new MemoryStream();
+                    gzipStream.CopyTo(uncompressedStream);
+                    uncompressedStream.Position = 0;
+                    DeserializeUncompressed(uncompressedStream);
+                    break;
+                }
+
+                default: throw new ArgumentOutOfRangeException();
+            }
+
+            void DeserializeUncompressed(Stream inputStream)
+            {
+                using BinaryReader  reader     = new BinaryReader(inputStream);
+                UxrBinarySerializer serializer = new UxrBinarySerializer(reader, 0);
+
+                while (reader.BaseStream.Position < reader.BaseStream.Length)
+                {
+                    IUxrUniqueId unique = null;
+
+                    try
+                    {
+                        serializer.SerializeUniqueComponent(ref unique);
+
+                        if (unique is IUxrStateSave stateSave)
+                        {
+                            int stateSerializationVersion = stateSave.StateSerializationVersion;
+                            serializer.Serialize(ref stateSerializationVersion);
+                            stateSave.SerializeState(serializer, stateSerializationVersion, UxrStateSaveLevel.ChangesSinceBeginning);
+
+                            if (unique is UxrAvatar avatar)
+                            {
+                                loadedAvatars.Add(avatar);
+                            }
+
+                            if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Debug)
+                            {
+                                Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Deserialized {(unique as Component).name} ({unique.GetType().Name}). Id is {unique.UniqueId}.");
+                            }
+
+                            count++;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+                        {
+                            if (unique != null)
+                            {
+                                Debug.LogError($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Ignoring component (ID: {unique.UniqueId}) due to an exception: {e}");
+                            }
+                            else
+                            {
+                                Debug.LogError($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Tried deserializing a component but it returned null: {e}");
+                            }
+                        }
+                    }
+                }
+            }
+
+            // When deserializing, make sure to trigger the avatar movement events by using MoveAvatarTo using the current position.
+
+            foreach (UxrAvatar avatar in loadedAvatars)
+            {
+                MoveAvatarTo(avatar, avatar.CameraFloorPosition);
+            }
+
+            // This avoids propagation of any synchronization message while loading.
+            CancelSync();
+
+            if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Verbose)
+            {
+                Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Deserialized {count} components from {serializedState.Length} bytes.");
+            }
+        }
+
+        /// <summary>
+        ///     Executes a state change, serialized using <see cref="UxrSyncEventArgs.SerializeEventBinary" />, so that it is
+        ///     processed by the same component.
+        /// </summary>
+        /// <param name="serializedEvent">Event serialized using <see cref="UxrSyncEventArgs.SerializeEventBinary" /></param>
+        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
+        /// <returns>
+        ///     The result, containing the target of the event and the event data. If there were errors deserializing the
+        ///     data or trying to execute the event, <see cref="UxrStateSyncResult.IsError" /> will return true and
+        ///     <see cref="UxrStateSyncResult.ErrorMessage" /> will get the error message.
+        /// </returns>
+        public UxrStateSyncResult ExecuteStateSyncEvent(byte[] serializedEvent, int serializationVersion)
+        {
+            IUxrStateSync    stateSync    = null;
+            UxrSyncEventArgs eventArgs    = null;
+            string           errorMessage = null;
+
+            try
+            {
+                if (UxrSyncEventArgs.DeserializeEventBinary(serializedEvent, serializationVersion, out stateSync, out eventArgs, out errorMessage))
+                {
+                    errorMessage      = null;
+                    _isExecutingEvent = true;
+                    stateSync.SyncState(eventArgs);
+                }
+            }
+            catch (Exception e)
+            {
+                errorMessage = e.ToString();
+            }
+            finally
+            {
+                _isExecutingEvent = false;
+            }
+
+            UxrStateSyncResult result = new UxrStateSyncResult(stateSync, eventArgs, errorMessage); 
+
+            if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Verbose)
+            {
+                Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(ExecuteStateSyncEvent)}(): Deserialized and processed {serializedEvent.Length} bytes of event data: {result}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
         ///     Translates an avatar.
         /// </summary>
         /// <param name="avatar">The avatar to translate</param>
         /// <param name="translation">Translation offset</param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         public void TranslateAvatar(UxrAvatar avatar, Vector3 translation, bool propagateEvents = true)
         {
             MoveAvatarTo(avatar, avatar.CameraFloorPosition + translation, avatar.ProjectedCameraForward, propagateEvents);
@@ -237,7 +505,10 @@ namespace UltimateXR.Core
         ///     The position on the floor above which the avatar's camera will be positioned.
         ///     Coordinates need to be specified at ground level since the eye camera level over the floor will be maintained.
         /// </param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         public void MoveAvatarTo(UxrAvatar avatar, Vector3 newFloorPosition, bool propagateEvents = true)
         {
             MoveAvatarTo(avatar, newFloorPosition, avatar.ProjectedCameraForward, propagateEvents);
@@ -252,7 +523,10 @@ namespace UltimateXR.Core
         ///     Coordinates need to be specified at ground level since the eye camera level over the floor will be maintained.
         /// </param>
         /// <param name="newForward">The new viewing direction of the avatar, including the camera.</param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         public void MoveAvatarTo(UxrAvatar avatar, Vector3 newFloorPosition, Vector3 newForward, bool propagateEvents = true)
         {
             // This method will be synchronized through network
@@ -279,7 +553,10 @@ namespace UltimateXR.Core
         /// </summary>
         /// <param name="avatar">The avatar to move</param>
         /// <param name="destination">The position and orientation on the floor</param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         public void MoveAvatarTo(UxrAvatar avatar, Transform destination, bool propagateEvents = true)
         {
             if (avatar && destination)
@@ -293,7 +570,10 @@ namespace UltimateXR.Core
         /// </summary>
         /// <param name="avatar">The avatar to move</param>
         /// <param name="floorLevel">The new floor level (Y)</param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         public void MoveAvatarTo(UxrAvatar avatar, float floorLevel, bool propagateEvents = true)
         {
             if (avatar)
@@ -310,7 +590,10 @@ namespace UltimateXR.Core
         /// </summary>
         /// <param name="avatar">The avatar to rotate</param>
         /// <param name="degrees">The degrees to rotate</param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         public void RotateAvatar(UxrAvatar avatar, float degrees, bool propagateEvents = true)
         {
             Transform avatarTransform = avatar.transform;
@@ -351,7 +634,10 @@ namespace UltimateXR.Core
         ///     whether the teleport finished completely (true) or was cancelled (false). If a fade effect has been requested, the
         ///     callback is executed right after the screen has faded back in.
         /// </param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         /// <returns>Coroutine enumerator</returns>
         /// <remarks>
         ///     If <see cref="UxrTranslationType.Fade" /> translation mode was specified, the default black fade color can be
@@ -424,7 +710,10 @@ namespace UltimateXR.Core
         ///     whether the teleport finished completely (true) or was cancelled (false). If a fade effect has been requested, the
         ///     callback is executed right after the screen has faded back in.
         /// </param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         /// <returns>Coroutine enumerator</returns>
         /// <remarks>
         ///     If <see cref="UxrTranslationType.Fade" /> translation mode was specified, the default black fade color can be
@@ -487,7 +776,10 @@ namespace UltimateXR.Core
         ///     </list>
         /// </param>
         /// <param name="ct">Optional cancellation token that can be used to cancel the task</param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         /// <returns>Awaitable <see cref="Task" /> that will finish after the avatar was teleported or if it was cancelled</returns>
         /// <exception cref="TaskCanceledException">Task was canceled using <paramref name="ct" /></exception>
         /// <remarks>
@@ -558,7 +850,10 @@ namespace UltimateXR.Core
         ///     </list>
         /// </param>
         /// <param name="ct">Optional cancellation token that can be used to cancel the task</param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         /// <returns>Awaitable <see cref="Task" /> that will finish after the avatar was teleported or if it was cancelled</returns>
         /// <exception cref="TaskCanceledException">Task was canceled using <paramref name="ct" /></exception>
         /// <remarks>
@@ -620,7 +915,10 @@ namespace UltimateXR.Core
         ///     whether the teleport finished completely (true) or was cancelled (false). If a fade effect has been requested, the
         ///     callback is executed right after the screen has faded back in.
         /// </param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         /// <remarks>
         ///     If <see cref="UxrTranslationType.Fade" /> translation mode was specified, the default black fade color can be
         ///     changed using <see cref="TeleportFadeColor" />.
@@ -669,7 +967,10 @@ namespace UltimateXR.Core
         ///     </list>
         /// </param>
         /// <param name="ct">Optional cancellation token to cancel the operation</param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         /// <returns>Awaitable <see cref="Task" /> that will finish when the rotation finished</returns>
         public async Task RotateLocalAvatarAsync(float             degrees,
                                                  UxrRotationType   rotationType      = UxrRotationType.Immediate,
@@ -693,41 +994,26 @@ namespace UltimateXR.Core
             }
         }
 
+        #endregion
+
+        #region Internal Methods
+
         /// <summary>
-        ///     Executes a state change, serialized using <see cref="UxrSyncEventArgs.SerializeEventBinary" />, so that it is
-        ///     processed by the same component.
+        ///     Notifies that the OnEnable() Unity event of a component with the IUxrStateSync interface was called.
         /// </summary>
-        /// <param name="serializedEvent">Event serialized using <see cref="SerializeEvent" /></param>
-        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
-        /// <returns>
-        ///     The result, containing the target of the event and the event data. If there were errors deserializing the
-        ///     data or trying to execute the event, <see cref="UxrStateSyncResult.IsError" /> will return true and
-        ///     <see cref="UxrStateSyncResult.ErrorMessage" /> will get the error message.
-        /// </returns>
-        public UxrStateSyncResult ExecuteStateChange(byte[] serializedEvent, int serializationVersion)
+        /// <param name="component">Custom component</param>
+        internal void NotifyStateSyncOnEnable<T>(Component component) where T : IUxrStateSync
         {
-            if (UxrSyncEventArgs.DeserializeEventBinary(serializedEvent, serializationVersion, out IUxrStateSync stateSync, out UxrSyncEventArgs eventArgs, out string errorMessage))
-            {
-                errorMessage = null;
+            StateSync_Enabled(component as IUxrStateSync);
+        }
 
-                try
-                {
-                    _isExecutingEvent = true;
-                    stateSync.SyncState(eventArgs);
-                }
-                catch (Exception e)
-                {
-                    errorMessage = e.ToString();
-                }
-                finally
-                {
-                    _isExecutingEvent = false;
-                }
-
-                return new UxrStateSyncResult(stateSync, eventArgs, errorMessage);
-            }
-
-            return new UxrStateSyncResult(stateSync, eventArgs, errorMessage);
+        /// <summary>
+        ///     Notifies that the OnDisable() Unity event of a component with the IUxrStateSync interface was called.
+        /// </summary>
+        /// <param name="component">Custom component</param>
+        internal void NotifyStateSyncOnDisable<T>(Component component) where T : IUxrStateSync
+        {
+            StateSync_Disabled(component as IUxrStateSync);
         }
 
         #endregion
@@ -741,8 +1027,6 @@ namespace UltimateXR.Core
         {
             base.Awake();
 
-            GlobalEnabled              += Component_Enabled;
-            GlobalDisabled             += Component_Disabled;
             UxrAvatar.GlobalEnabled    += Avatar_Enabled;
             SceneManager.sceneLoaded   += SceneManager_SceneLoaded;
             SceneManager.sceneUnloaded += SceneManager_SceneUnloaded;
@@ -755,8 +1039,6 @@ namespace UltimateXR.Core
         {
             base.OnDestroy();
 
-            GlobalEnabled              -= Component_Enabled;
-            GlobalDisabled             -= Component_Disabled;
             UxrAvatar.GlobalEnabled    -= Avatar_Enabled;
             SceneManager.sceneLoaded   -= SceneManager_SceneLoaded;
             SceneManager.sceneUnloaded -= SceneManager_SceneUnloaded;
@@ -855,7 +1137,10 @@ namespace UltimateXR.Core
         ///     Optional callback executed right after the teleportation finished. If a fade effect has been requested, the
         ///     callback is executed right after the screen has faded back in.
         /// </param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         /// <returns>Coroutine enumerator</returns>
         /// <remarks>
         ///     If <see cref="UxrTranslationType.Fade" /> translation mode was specified, the default black fade color can be
@@ -925,7 +1210,10 @@ namespace UltimateXR.Core
         ///     Optional callback executed right after the teleportation finished. If a fade effect has been requested, the
         ///     callback is executed right after the screen has faded back in.
         /// </param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         /// <returns>Coroutine enumerator</returns>
         /// <remarks>
         ///     If <see cref="UxrTranslationType.Fade" /> translation mode was specified, the default black fade color can be
@@ -1032,7 +1320,10 @@ namespace UltimateXR.Core
         ///     Optional callback executed right after the rotation finished. If a fade effect has been requested, the callback is
         ///     executed right after the screen has faded back in.
         /// </param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" />/<see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">
+        ///     Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" />/
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> events
+        /// </param>
         /// <returns>Coroutine enumerator</returns>
         /// <remarks>
         ///     If <see cref="UxrRotationType.Fade" /> translation mode was specified, the default black fade color can be changed
@@ -1173,35 +1464,15 @@ namespace UltimateXR.Core
         #region Event Handling Methods
 
         /// <summary>
-        ///     Called when a <see cref="UxrComponent" /> is being enabled. We use it to subscribe to the
-        ///     <see cref="UxrComponent.StateChanged" /> event to keep track of any state changes in components in UltimateXR.
+        ///     Called when any component with the <see cref="IUxrStateSync" /> interface has a state change.
         /// </summary>
-        /// <param name="component">Component that was enabled</param>
-        private void Component_Enabled(UxrComponent component)
-        {
-            component.StateChanged += Component_StateChanged;
-        }
-
-        /// <summary>
-        ///     Called when a <see cref="UxrComponent" /> is being disabled. We use it to unsubscribe from the
-        ///     <see cref="UxrComponent.StateChanged" /> event.
-        /// </summary>
-        /// <param name="component">Component that was disabled</param>
-        private void Component_Disabled(UxrComponent component)
-        {
-            component.StateChanged -= Component_StateChanged;
-        }
-
-        /// <summary>
-        ///     Called when any <see cref="UxrComponent" /> has a state change.
-        /// </summary>
-        /// <param name="sender">Sender (<see cref="UxrComponent" /> implementing <see cref="IUxrStateSync" />)</param>
+        /// <param name="sender">Sender (component implementing <see cref="IUxrStateSync" />)</param>
         /// <param name="eventArgs">Event parameters</param>
-        private void Component_StateChanged(object sender, UxrSyncEventArgs eventArgs)
+        private void StateSync_StateChanged(object sender, UxrSyncEventArgs eventArgs)
         {
-            // Don't generate ComponentChanged events inside ExecuteStateChange() to avoid infinite message loop 
+            // Don't generate ComponentChanged events inside ExecuteStateSyncEvent() to avoid infinite message loop 
 
-            if (!_isExecutingEvent && sender is UxrComponent component)
+            if (!_isExecutingEvent && sender is IUxrStateSync component)
             {
                 OnComponentStateChanged(component, eventArgs);
             }
@@ -1258,6 +1529,26 @@ namespace UltimateXR.Core
             SetupCanvases();
         }
 
+        /// <summary>
+        ///     Called when a component implementing <see cref="IUxrStateSync" /> is being enabled. We use it to subscribe to the
+        ///     <see cref="UxrComponent.StateChanged" /> event to keep track of any state changes in components in UltimateXR.
+        /// </summary>
+        /// <param name="component">Component that was enabled</param>
+        private void StateSync_Enabled(IUxrStateSync component)
+        {
+            component.StateChanged += StateSync_StateChanged;
+        }
+
+        /// <summary>
+        ///     Called when a component implementing <see cref="IUxrStateSync" /> is being disabled. We use it to unsubscribe from
+        ///     the <see cref="UxrComponent.StateChanged" /> event.
+        /// </summary>
+        /// <param name="component">Component that was disabled</param>
+        private void StateSync_Disabled(IUxrStateSync component)
+        {
+            component.StateChanged -= StateSync_StateChanged;
+        }
+
         #endregion
 
         #region Event Trigger Methods
@@ -1267,9 +1558,9 @@ namespace UltimateXR.Core
         /// </summary>
         /// <param name="component">Component with the state change</param>
         /// <param name="eventArgs">Event parameters</param>
-        private void OnComponentStateChanged(UxrComponent component, UxrSyncEventArgs eventArgs)
+        private void OnComponentStateChanged(IUxrStateSync component, UxrSyncEventArgs eventArgs)
         {
-            if (SyncCallDepth == 1 || !UseTopLevelStateChangesOnly)
+            if (UxrStateSyncImplementer.SyncCallDepth == 1 || !UseTopLevelStateChangesOnly)
             {
                 ComponentStateChanged?.Invoke(component, eventArgs);
             }
@@ -1292,11 +1583,11 @@ namespace UltimateXR.Core
         }
 
         /// <summary>
-        ///     <see cref="AvatarMoving" /> event trigger.
+        ///     <see cref="UxrAvatar.GlobalAvatarMoving" /> event trigger.
         /// </summary>
         /// <param name="avatar">The avatar that is about to move</param>
         /// <param name="args">Event parameters</param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoving" /> events</param>
+        /// <param name="propagateEvents">Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoving" /> events</param>
         private void OnAvatarMoving(UxrAvatar avatar, UxrAvatarMoveEventArgs args, bool propagateEvents = true)
         {
             if (propagateEvents)
@@ -1306,11 +1597,11 @@ namespace UltimateXR.Core
         }
 
         /// <summary>
-        ///     <see cref="AvatarMoved" /> event trigger.
+        ///     <see cref="UxrAvatar.GlobalAvatarMoved" /> event trigger.
         /// </summary>
         /// <param name="avatar">The avatar that moved</param>
         /// <param name="args">Event parameters</param>
-        /// <param name="propagateEvents">Whether to propagate <see cref="AvatarMoved" /> events</param>
+        /// <param name="propagateEvents">Whether to propagate <see cref="UxrAvatar.GlobalAvatarMoved" /> events</param>
         private void OnAvatarMoved(UxrAvatar avatar, UxrAvatarMoveEventArgs args, bool propagateEvents = true)
         {
             if (propagateEvents)
@@ -1427,7 +1718,7 @@ namespace UltimateXR.Core
 
             foreach (UxrAvatar avatar in UxrAvatar.EnabledComponents)
             {
-                if (avatar.AvatarController && avatar.AvatarController.enabled)
+                if (avatar.AvatarController && avatar.AvatarController.enabled && avatar.AvatarController.Initialized)
                 {
                     if (avatar.AvatarMode == UxrAvatarMode.Local)
                     {
@@ -1504,11 +1795,11 @@ namespace UltimateXR.Core
                         }
                     }
 
-                    // Register disabled UltimateXR components so that their UniqueId is known and can receive state sync messages too
+                    // Ensure registering initially disabled components so that their UniqueId is known and can exchange sync messages too
 
-                    if (behaviours[behaviourIndex] is UxrComponent component && !component.enabled)
+                    if (!behaviours[behaviourIndex].enabled && behaviours[behaviourIndex] is IUxrUniqueId unique)
                     {
-                        component.RegisterComponent();
+                        unique.RegisterUniqueIdIfNecessary();
                     }
                 }
             }
@@ -1595,7 +1886,7 @@ namespace UltimateXR.Core
             {
                 foreach (UxrAvatar avatar in UxrAvatar.EnabledComponents)
                 {
-                    if (avatar.AvatarMode == UxrAvatarMode.Local && avatar.AvatarController != null && avatar.AvatarController.enabled)
+                    if (avatar.AvatarMode == UxrAvatarMode.Local && avatar.AvatarController != null && avatar.AvatarController.enabled && avatar.AvatarController.Initialized)
                     {
                         yield return avatar.AvatarController;
                     }
@@ -1613,7 +1904,7 @@ namespace UltimateXR.Core
             {
                 foreach (UxrAvatar avatar in UxrAvatar.EnabledComponents)
                 {
-                    if (avatar.AvatarController != null && avatar.AvatarController.enabled)
+                    if (avatar.AvatarController != null && avatar.AvatarController.enabled && avatar.AvatarController.Initialized)
                     {
                         yield return avatar.AvatarController;
                     }

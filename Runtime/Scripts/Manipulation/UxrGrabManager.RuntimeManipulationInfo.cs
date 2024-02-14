@@ -3,7 +3,9 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
+using UltimateXR.Core.Serialization;
 using UltimateXR.Extensions.System.Math;
 using UnityEngine;
 
@@ -17,7 +19,12 @@ namespace UltimateXR.Manipulation
         ///     Stores information of grabs performed on a <see cref="UxrGrabbableObject" /> at runtime.
         ///     An object being manipulated can have multiple grabs, registered in <see cref="Grabs" />.
         /// </summary>
-        private sealed class RuntimeManipulationInfo
+        /// <remarks>
+        ///     Implements <see cref="IUxrSerializable" /> to help <see cref="UxrGrabManager" />'s implementation of the
+        ///     <see cref="IUxrStateSave" /> interface (<see cref="UxrGrabManager.SerializeStateInternal" />).
+        /// </remarks>
+        [Serializable]
+        private sealed class RuntimeManipulationInfo : IUxrSerializable
         {
             #region Public Types & Data
 
@@ -52,12 +59,12 @@ namespace UltimateXR.Manipulation
             /// <summary>
             ///     Gets the current grabs manipulating the object.
             /// </summary>
-            public List<RuntimeGrabInfo> Grabs { get; } = new List<RuntimeGrabInfo>();
+            public List<RuntimeGrabInfo> Grabs => _grabs;
 
             /// <summary>
             ///     Gets the target from where the <see cref="UxrGrabbableObject" /> was grabbed.
             /// </summary>
-            public UxrGrabbableObjectAnchor SourceAnchor { get; }
+            public UxrGrabbableObjectAnchor SourceAnchor => _sourceAnchor;
 
             /// <summary>
             ///     Gets the current rotation angle, in objects constrained to a single rotation axis, contributed by all the grabbers
@@ -88,12 +95,16 @@ namespace UltimateXR.Manipulation
             /// <summary>
             ///     Gets the grabbed object.
             /// </summary>
-            public UxrGrabbableObject GrabbableObject { get; }
+            public UxrGrabbableObject GrabbableObject => _grabbableObject;
 
             /// <summary>
             ///     Gets the rotation pivot when child grabbable objects manipulate this object's orientation.
             /// </summary>
-            public Vector3 LocalManipulationRotationPivot { get; set; }
+            public Vector3 LocalManipulationRotationPivot
+            {
+                get => _localManipulationRotationPivot;
+                set => _localManipulationRotationPivot = value;
+            }
 
             #endregion
 
@@ -109,8 +120,31 @@ namespace UltimateXR.Manipulation
             {
                 Grabs.Add(new RuntimeGrabInfo(grabber, grabPoint));
 
-                GrabbableObject = grabber.GrabbedObject;
-                SourceAnchor    = sourceAnchor;
+                _grabbableObject = grabber.GrabbedObject;
+                _sourceAnchor    = sourceAnchor;
+            }
+
+            /// <summary>
+            ///     Default constructor required for serialization.
+            /// </summary>
+            private RuntimeManipulationInfo()
+            {
+            }
+
+            #endregion
+
+            #region Implicit IUxrSerializable
+
+            /// <inheritdoc />
+            public int SerializationVersion => 0;
+
+            /// <inheritdoc />
+            public void Serialize(IUxrSerializer serializer, int serializationVersion)
+            {
+                serializer.Serialize(ref _grabs);
+                serializer.SerializeUniqueComponent(ref _sourceAnchor);
+                serializer.SerializeUniqueComponent(ref _grabbableObject);
+                serializer.Serialize(ref _localManipulationRotationPivot);
             }
 
             #endregion
@@ -387,6 +421,15 @@ namespace UltimateXR.Manipulation
                                                                                                                                            grabbableObject.RotationAngleLimitsMax[singleRotationAxisIndex]);
                 }
             }
+
+            #endregion
+
+            #region Private Types & Data
+
+            private List<RuntimeGrabInfo>    _grabs = new List<RuntimeGrabInfo>();
+            private UxrGrabbableObjectAnchor _sourceAnchor;
+            private UxrGrabbableObject       _grabbableObject;
+            private Vector3                  _localManipulationRotationPivot;
 
             #endregion
         }

@@ -150,7 +150,7 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
         }
 
         /// <inheritdoc />
-        public override IEnumerable<Behaviour> AddNetworkRigidbody(GameObject gameObject, bool worldSpace, UxrNetworkRigidbodyFlags networkRigidbodyFlagsFlags = UxrNetworkRigidbodyFlags.None)
+        public override IEnumerable<Behaviour> AddNetworkRigidbody(GameObject gameObject, bool worldSpace, UxrNetworkRigidbodyFlags networkRigidbodyFlagsFlags)
         {
 #if ULTIMATEXR_USE_PHOTONFUSION_SDK && UNITY_EDITOR
 
@@ -265,6 +265,16 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
 #endif
         }
 
+        /// <inheritdoc />
+        public override bool HasNetworkTransformSyncComponents(GameObject gameObject)
+        {
+#if ULTIMATEXR_USE_PHOTONFUSION_SDK
+            return gameObject.GetComponent<NetworkTransform>() != null || gameObject.GetComponent<NetworkRigidbody>() != null;
+#else
+            return false;
+#endif
+        }
+
         #endregion
 
 #if ULTIMATEXR_USE_PHOTONFUSION_SDK
@@ -279,7 +289,7 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
                 Debug.Log($"{UxrConstants.NetworkingModule} {nameof(UxrPhotonFusionNetwork)}.{nameof(OnPlayerJoined)} PlayerId = {player.PlayerId}");
             }
 
-            if (_gameMode == GameMode.Single || _gameMode == GameMode.Server || _gameMode == GameMode.Host)
+            if (_gameMode == GameMode.Single || _gameMode == GameMode.Server || _gameMode == GameMode.Host || (_gameMode == GameMode.AutoHostOrClient && _networkRunner.IsServer))
             {
                 SpawnPlayer(runner, player);
             }

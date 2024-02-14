@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using UltimateXR.Core.Components;
-using UltimateXR.Core.StateSync;
+using UltimateXR.Core.Math;
+using UltimateXR.Core.Unique;
 using UltimateXR.Extensions.System.IO;
 using UnityEngine;
 
@@ -19,20 +19,6 @@ namespace UltimateXR.Core.Serialization
     /// </summary>
     public class UxrBinarySerializer : IUxrSerializer
     {
-        #region Public Types & Data
-
-        /// <summary>
-        ///     Gets the reader, if <see cref="IsReading" /> is true. Otherwise it is null.
-        /// </summary>
-        public BinaryReader Reader { get; }
-
-        /// <summary>
-        ///     Gets the writer, if <see cref="IsReading" /> is false. Otherwise it is null.
-        /// </summary>
-        public BinaryWriter Writer { get; }
-
-        #endregion
-
         #region Constructors & Finalizer
 
         /// <summary>
@@ -51,10 +37,9 @@ namespace UltimateXR.Core.Serialization
         ///     Constructor for serialization.
         /// </summary>
         /// <param name="writer">Binary writer to output the data</param>
-        /// <param name="version">Version that the data will be serialized with</param>
-        public UxrBinarySerializer(BinaryWriter writer, int version)
+        public UxrBinarySerializer(BinaryWriter writer)
         {
-            Version   = version;
+            Version   = UxrConstants.Serialization.CurrentBinaryVersion;
             IsReading = false;
             Writer    = writer;
         }
@@ -73,10 +58,6 @@ namespace UltimateXR.Core.Serialization
         ///     Gets whether the serializer is reading (using <see cref="Reader" />) or writing (using <see cref="Writer" />).
         /// </summary>
         public bool IsReading { get; }
-
-        #endregion
-
-        #region Explicit IUxrSerializer
 
         /// <inheritdoc />
         public void Serialize(ref bool value)
@@ -267,6 +248,19 @@ namespace UltimateXR.Core.Serialization
         }
 
         /// <inheritdoc />
+        public void Serialize(ref Guid value)
+        {
+            if (IsReading)
+            {
+                value = Reader.ReadGuid(Version);
+            }
+            else
+            {
+                Writer.Write(value);
+            }
+        }
+
+        /// <inheritdoc />
         public void Serialize<T>(ref T[] values)
         {
             if (IsReading)
@@ -423,43 +417,96 @@ namespace UltimateXR.Core.Serialization
         }
 
         /// <inheritdoc />
-        public void SerializeUxrComponent<T>(ref T value) where T : UxrComponent
+        public void SerializeUniqueComponent(ref IUxrUniqueId unique)
         {
             if (IsReading)
             {
-                value = Reader.ReadUxrComponent(Version) as T;
+                unique = Reader.ReadUniqueComponent(Version);
             }
             else
             {
-                Writer.WriteUxrComponent(value);
+                Writer.WriteUniqueComponent(unique);
             }
         }
 
         /// <inheritdoc />
-        public void SerializeUxrSerializable<T>(ref T value) where T : class, IUxrSerializable
+        public void SerializeUniqueComponent<T>(ref T component) where T : Component, IUxrUniqueId
         {
             if (IsReading)
             {
-                value = Reader.ReadUxrSerializable(Version) as T;
+                component = Reader.ReadUniqueComponent(Version) as T;
             }
             else
             {
-                Writer.WriteUxrSerializable(value);
+                Writer.WriteUniqueComponent(component);
             }
         }
 
         /// <inheritdoc />
-        public void SerializeAnyVar(ref object value)
+        public void SerializeUxrSerializable(ref IUxrSerializable serializable)
         {
             if (IsReading)
             {
-                value = Reader.ReadAnyVar(Version);
+                serializable = Reader.ReadUxrSerializable(Version);
             }
             else
             {
-                Writer.WriteAnyVar(value);
+                Writer.WriteUxrSerializable(serializable);
             }
         }
+
+        /// <inheritdoc />
+        public void SerializeUxrSerializable<T>(ref T obj) where T : class, IUxrSerializable
+        {
+            if (IsReading)
+            {
+                obj = Reader.ReadUxrSerializable(Version) as T;
+            }
+            else
+            {
+                Writer.WriteUxrSerializable(obj);
+            }
+        }
+
+        /// <inheritdoc />
+        public void SerializeAxis(ref UxrAxis axis)
+        {
+            if (IsReading)
+            {
+                axis = Reader.ReadAxis(Version);
+            }
+            else
+            {
+                Writer.WriteAxis(axis);
+            }
+        }
+
+        /// <inheritdoc />
+        public void SerializeAnyVar<T>(ref T obj)
+        {
+            if (IsReading)
+            {
+                obj = (T)Reader.ReadAnyVar(Version);
+            }
+            else
+            {
+                Writer.WriteAnyVar(obj);
+            }
+        }
+
+        #endregion
+
+        #region Private Types & Data
+
+        /// <summary>
+        ///     Gets the reader, if <see cref="IsReading" /> is true. Otherwise it is null.
+        /// </summary>
+        private BinaryReader Reader { get; }
+
+        /// <summary>
+        ///     Gets the writer, if <see cref="IsReading" /> is false. Otherwise it is null.
+        /// </summary>
+        private BinaryWriter Writer { get; }
 
         #endregion
     }

@@ -250,7 +250,6 @@ namespace UltimateXR.Manipulation
 
         /// <summary>
         ///     Gets the release start position for release events.
-        ///     This is used in multi-player environments to try to reproduce the same trajectory.
         /// </summary>
         internal Vector3 ReleaseStartPosition
         {
@@ -260,7 +259,6 @@ namespace UltimateXR.Manipulation
 
         /// <summary>
         ///     Gets the release start rotation for release events.
-        ///     This is used in multi-player environments to try to reproduce the same trajectory.
         /// </summary>
         internal Quaternion ReleaseStartRotation
         {
@@ -298,9 +296,9 @@ namespace UltimateXR.Manipulation
         void IUxrSerializable.Serialize(IUxrSerializer serializer, int serializationVersion)
         {
             serializer.SerializeEnum(ref _eventType);
-            serializer.SerializeUxrComponent(ref _grabbableObject);
-            serializer.SerializeUxrComponent(ref _grabbableAnchor);
-            serializer.SerializeUxrComponent(ref _grabber);
+            serializer.SerializeUniqueComponent(ref _grabbableObject);
+            serializer.SerializeUniqueComponent(ref _grabbableAnchor);
+            serializer.SerializeUniqueComponent(ref _grabber);
             serializer.Serialize(ref _grabPointIndex);
             serializer.Serialize(ref _isMultiHands);
             serializer.Serialize(ref _isSwitchHands);

@@ -138,35 +138,38 @@ namespace UltimateXR.Editor
                 T parentPrefabComponent    = PrefabUtility.GetCorrespondingObjectFromSource(component);
                 T prefabComponentCandidate = null;
 
-                // Navigate to the correct component in the last prefab parent before it's a model 
-
-                while (PrefabUtility.GetPrefabAssetType(parentPrefabComponent) == PrefabAssetType.Regular ||
-                       PrefabUtility.GetPrefabAssetType(parentPrefabComponent) == PrefabAssetType.Variant)
+                if (parentPrefabComponent != null)
                 {
-                    prefabComponentCandidate = parentPrefabComponent;
-                    parentPrefabComponent    = PrefabUtility.GetCorrespondingObjectFromSource(parentPrefabComponent);
-                }
+                    // Navigate to the correct component in the last prefab parent before it's a model
 
-                // Go up in the transform hierarchy to find prefab root
-
-                prefabInstance = component.gameObject;
-
-                if (prefabComponentCandidate != null)
-                {
-                    componentInPrefab = prefabComponentCandidate;
-                    prefab            = prefabComponentCandidate.transform.gameObject;
-
-                    while (prefab.transform.parent != null)
+                    while (PrefabUtility.GetPrefabAssetType(parentPrefabComponent) == PrefabAssetType.Regular ||
+                           PrefabUtility.GetPrefabAssetType(parentPrefabComponent) == PrefabAssetType.Variant)
                     {
-                        prefab = prefab.transform.parent.gameObject;
-
-                        if (prefabInstance != null && prefabInstance.transform.parent != null)
-                        {
-                            prefabInstance = prefabInstance.transform.parent.gameObject;
-                        }
+                        prefabComponentCandidate = parentPrefabComponent;
+                        parentPrefabComponent    = PrefabUtility.GetCorrespondingObjectFromSource(parentPrefabComponent);
                     }
 
-                    prefabAssetType = PrefabUtility.GetPrefabAssetType(prefab);
+                    // Go up in the transform hierarchy to find prefab root
+
+                    prefabInstance = component.gameObject;
+
+                    if (prefabComponentCandidate != null)
+                    {
+                        componentInPrefab = prefabComponentCandidate;
+                        prefab            = prefabComponentCandidate.transform.gameObject;
+
+                        while (prefab.transform.parent != null)
+                        {
+                            prefab = prefab.transform.parent.gameObject;
+
+                            if (prefabInstance != null && prefabInstance.transform.parent != null)
+                            {
+                                prefabInstance = prefabInstance.transform.parent.gameObject;
+                            }
+                        }
+
+                        prefabAssetType = PrefabUtility.GetPrefabAssetType(prefab);
+                    }
                 }
             }
 

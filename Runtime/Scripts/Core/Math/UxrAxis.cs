@@ -100,26 +100,13 @@ namespace UltimateXR.Core.Math
         /// <inheritdoc />
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj))
-            {
-                return false;
-            }
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-            if (obj.GetType() != GetType())
-            {
-                return false;
-            }
-
-            return Equals((UxrAxis)obj);
+            return Equals(obj as UxrAxis);
         }
 
         /// <inheritdoc />
         public override int GetHashCode()
         {
-            return _axis;
+            return _axis.GetHashCode();
         }
 
         #endregion

@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using UltimateXR.Core;
 using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.System.Math;
 using UnityEngine;
@@ -39,6 +40,29 @@ namespace UltimateXR.Extensions.Unity.Math
         #endregion
 
         #region Public Methods
+
+        /// <summary>
+        ///     Compares two Unity Vector3 objects for equality with a specified precision threshold.
+        /// </summary>
+        /// <param name="a">The first Vector3 to compare</param>
+        /// <param name="b">The second Vector3 to compare</param>
+        /// <param name="precisionThreshold">
+        ///     The precision threshold for float comparisons. Defaults to
+        ///     <see cref="UxrConstants.Math.DefaultPrecisionThreshold" />.
+        /// </param>
+        /// <returns>
+        ///     <c>true</c> if the Vector3 objects are equal; otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        ///     This method performs a component-wise comparison between two Vector3 objects.
+        ///     Each component is compared using the specified precision threshold for float comparisons.
+        /// </remarks>
+        public static bool EqualsUsingPrecision(this Vector3 a, Vector3 b, float precisionThreshold = UxrConstants.Math.DefaultPrecisionThreshold)
+        {
+            return Mathf.Abs(a.x - b.x) <= precisionThreshold &&
+                   Mathf.Abs(a.y - b.y) <= precisionThreshold &&
+                   Mathf.Abs(a.z - b.z) <= precisionThreshold;
+        }
 
         /// <summary>
         ///     Checks whether the given vector has any NaN component.
@@ -156,7 +180,7 @@ namespace UltimateXR.Extensions.Unity.Math
             {
                 return defaultIfEmpty;
             }
-            
+
             return new Vector3(vectors.Average(v => v.x),
                                vectors.Average(v => v.y),
                                vectors.Average(v => v.z));
@@ -186,7 +210,7 @@ namespace UltimateXR.Extensions.Unity.Math
             {
                 return defaultIfEmpty;
             }
-            
+
             return new Vector3(vectors.Max(v => v.x),
                                vectors.Max(v => v.y),
                                vectors.Max(v => v.z));
@@ -216,7 +240,7 @@ namespace UltimateXR.Extensions.Unity.Math
             {
                 return defaultIfEmpty;
             }
-            
+
             return new Vector3(vectors.Min(v => v.x),
                                vectors.Min(v => v.y),
                                vectors.Min(v => v.z));

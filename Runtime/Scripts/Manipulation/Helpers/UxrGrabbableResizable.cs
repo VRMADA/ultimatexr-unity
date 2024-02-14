@@ -33,7 +33,7 @@ namespace UltimateXR.Manipulation.Helpers
     /// </code>
     ///     All objects should use an axis system with x right, y up and z forward.
     /// </summary>
-    public sealed class UxrGrabbableResizable : UxrComponent, IUxrGrabbable
+    public sealed partial class UxrGrabbableResizable : UxrComponent, IUxrGrabbable
     {
         #region Inspector Properties/Serialized Fields
 

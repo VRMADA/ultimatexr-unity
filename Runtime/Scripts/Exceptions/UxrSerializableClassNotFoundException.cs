@@ -4,6 +4,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System;
+using UltimateXR.Core.Serialization;
 using UltimateXR.Core.StateSync;
 
 namespace UltimateXR.Exceptions

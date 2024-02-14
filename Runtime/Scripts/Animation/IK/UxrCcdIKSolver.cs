@@ -50,6 +50,13 @@ namespace UltimateXR.Animation.IK
 
         #endregion
 
+        #region Public Overrides UxrIKSolver
+
+        /// <inheritdoc />
+        public override bool Initialized => _initialized;
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>
@@ -151,6 +158,8 @@ namespace UltimateXR.Animation.IK
             {
                 _goal.SetParent(transform);
             }
+
+            _initialized = true;
         }
 
         #endregion
@@ -400,6 +409,12 @@ namespace UltimateXR.Animation.IK
 
             return goal;
         }
+
+        #endregion
+
+        #region Private Types & Data
+
+        private bool _initialized;
 
         #endregion
     }

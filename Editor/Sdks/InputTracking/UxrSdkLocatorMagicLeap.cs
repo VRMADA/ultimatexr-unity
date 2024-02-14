@@ -7,7 +7,7 @@ using UltimateXR.Core;
 using UnityEditor;
 using UnityEngine;
 
-namespace UltimateXR.Editor.Sdks
+namespace UltimateXR.Editor.Sdks.InputTracking
 {
     /// <summary>
     ///     SDK Locator for the Magic Leap SDK.
@@ -110,7 +110,7 @@ namespace UltimateXR.Editor.Sdks
         /// <summary>
         ///     Allows to remove dependencies from the project in case the user removed SDK folders manually.
         /// </summary>
-        [MenuItem("Tools/UltimateXR/SDKs/Remove Symbols for Magic Leap")]
+        [MenuItem(UxrConstants.Editor.MenuPathSdksInputTracking + "Remove Symbols for Magic Leap SDK", priority = UxrConstants.Editor.PriorityMenuPathSdksInputTracking)]
         private static void RemoveSymbols()
         {
             UxrSdkManager.RemoveSymbols(new UxrSdkLocatorMagicLeap());

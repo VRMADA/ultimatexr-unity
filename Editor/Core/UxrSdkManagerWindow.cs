@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Core;
 using UltimateXR.Editor.Sdks;
+using UltimateXR.Extensions.System;
 using UnityEditor;
 using UnityEngine;
 
@@ -81,7 +82,7 @@ namespace UltimateXR.Editor.Core
                 EditorGUILayout.Space();
                 EditorGUILayout.Space();
 
-                _selectedType = GUILayout.Toolbar(_selectedType, _registeredTypes.Select(t => t.ToString()).ToArray());
+                _selectedType = GUILayout.Toolbar(_selectedType, _registeredTypes.Select(t => t.ToString().SplitCamelCase()).ToArray());
             }
 
             // SDK list

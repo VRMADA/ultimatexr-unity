@@ -37,7 +37,7 @@ namespace UltimateXR.Editor
         {
             // Get all asset files and process them
 
-            string[] allAssetPaths = AssetDatabase.GetAllAssetPaths();
+            string[] allAssetPaths = GetAllAssetPathsExceptPackages();
 
             canceled = false;
 

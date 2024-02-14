@@ -108,197 +108,7 @@ namespace UltimateXR.Manipulation
         /// <param name="propagateEvents">Whether to propagate events</param>
         public void ReleaseObject(UxrGrabber grabber, UxrGrabbableObject grabbableObject, bool propagateEvents)
         {
-            int grabbedPoint = GetGrabbedPoint(grabber);
-
-            if (!UxrGrabber.EnabledComponents.Any(grb => grb.GrabbedObject == grabbableObject && (grb == grabber || grabber == null)))
-            {
-                return;
-            }
-
-            if (!_currentManipulations.TryGetValue(grabbableObject, out RuntimeManipulationInfo manipulationInfo))
-            {
-                if (UxrGlobalSettings.Instance.LogLevelManipulation >= UxrLogLevel.Errors)
-                {
-                    Debug.LogError($"{UxrConstants.ManipulationModule} {nameof(RuntimeManipulationInfo)} not found for object {grabbableObject.name}. This should not be happening.");
-                }
-
-                return;
-            }
-
-            if (grabbableObject.enabled == false)
-            {
-                if (UxrGlobalSettings.Instance.LogLevelManipulation >= UxrLogLevel.Warnings)
-                {
-                    Debug.LogWarning($"{UxrConstants.ManipulationModule} {nameof(ReleaseObject)}, {nameof(UxrGrabbableObject)} component on {nameof(grabbableObject.name)} is disabled.");
-                }
-            }
-
-            // This method will be synchronized
-            BeginSync();
-
-            UxrGrabbableObjectAnchor sourceAnchor           = manipulationInfo.SourceAnchor;
-            bool                     isMultiHands           = manipulationInfo.Grabs.Count > 1;
-            Vector3                  releaseVelocity        = grabber != null && !grabber.IsInSmoothManipulationTransition ? grabber.SmoothVelocity : Vector3.zero;
-            Vector3                  releaseAngularVelocity = grabber != null && !grabber.IsInSmoothManipulationTransition ? grabber.SmoothAngularVelocity * Mathf.Deg2Rad : Vector3.zero;
-            Vector2                  horizontal             = new Vector2(releaseVelocity.x, releaseVelocity.z);
-
-            // Minimum amount of velocity in units/sec a component (hor/ver) needs to have in order to have the multiplier applied.
-            // This will avoid objects being thrown super fast at low velocities.
-            float multiplierVelocityThreshold = 2.5f;
-
-            // In order to avoid the sudden change of velocity if an object is thrown just over/under the speed threshold, the
-            // multiplier is applied using a gradient measured in units/second. 
-            float multiplierVelocityGradient = 2.0f;
-
-            if (grabbableObject.HorizontalReleaseMultiplier > 1.0f)
-            {
-                // we will apply the multiplier gradually depending on the release velocity starting from multiplierVelocityThreshold.
-                // This is measured in units/sec so objects going below multiplierVelocityThreshold units/sec will have the normal
-                // release velocity and objects above or equal to (multiplierVelocityThreshold + multiplierVelocityGradient) units/sec will
-                // get the maximum multiplier. Velocities in between will have a smooth transition.
-                if (horizontal.magnitude > multiplierVelocityThreshold)
-                {
-                    float lerp = Mathf.Clamp01((horizontal.magnitude - multiplierVelocityThreshold) * (1.0f / multiplierVelocityGradient));
-                    horizontal = Vector3.Lerp(horizontal, horizontal * grabbableObject.HorizontalReleaseMultiplier, lerp);
-                }
-            }
-            else
-            {
-                horizontal *= grabbableObject.HorizontalReleaseMultiplier;
-            }
-
-            releaseVelocity.x = horizontal.x;
-            releaseVelocity.z = horizontal.y;
-
-            if (grabbableObject.VerticalReleaseMultiplier > 1.0f)
-            {
-                // Apply multiplier in the same gradual way as the horizontal component.
-                if (Mathf.Abs(releaseVelocity.y) > multiplierVelocityThreshold)
-                {
-                    float lerp = Mathf.Clamp01((Mathf.Abs(releaseVelocity.y) - multiplierVelocityThreshold) * (1.0f / multiplierVelocityGradient));
-                    releaseVelocity.y = Mathf.Lerp(releaseVelocity.y, releaseVelocity.y * grabbableObject.VerticalReleaseMultiplier, lerp);
-                }
-            }
-            else
-            {
-                releaseVelocity.y *= grabbableObject.VerticalReleaseMultiplier;
-            }
-
-            // Process and raise event(s)
-
-            foreach (UxrGrabber grb in manipulationInfo.Grabbers)
-            {
-                if (grb == grabber || grabber == null)
-                {
-                    int grbPoint = GetGrabbedPoint(grb);
-
-                    UxrManipulationEventArgs releasingEventArgs = UxrManipulationEventArgs.FromRelease(grabbableObject,
-                                                                                                       sourceAnchor,
-                                                                                                       grb,
-                                                                                                       grbPoint,
-                                                                                                       isMultiHands && grabber != null,
-                                                                                                       isMultiHands && grabber != null,
-                                                                                                       releaseVelocity,
-                                                                                                       releaseAngularVelocity);
-
-                    OnObjectReleasing(releasingEventArgs, propagateEvents);
-
-                    if (grabbableObject)
-                    {
-                        if (propagateEvents)
-                        {
-                            grabbableObject.RaiseReleasingEvent(releasingEventArgs);
-                        }
-
-                        manipulationInfo.NotifyEndGrab(grb, grabbableObject, grbPoint);
-                    }
-
-                    grb.GrabbedObject = null;
-                }
-            }
-
-            // Check if the object's rigidbody needs to be made dynamic
-
-            Rigidbody rigidBodyToRelease = null;
-
-            if (isMultiHands == false || grabber == null)
-            {
-                _currentManipulations.Remove(grabbableObject);
-
-                if (grabbableObject.RigidBodySource != null && grabbableObject.CanUseRigidBody && grabbableObject.RigidBodyDynamicOnRelease)
-                {
-                    if (!GetDirectChildrenLookAtBeingGrabbed(grabbableObject).Any())
-                    {
-                        rigidBodyToRelease = grabbableObject.RigidBodySource;
-                    }
-                }
-            }
-
-            // Check if the object's parent grabbable rigidbody needs to be made dynamic, if this is the last grab that keeps holding it
-
-            UxrGrabbableObject grabbableParentLookAt = grabbableObject.ParentLookAts.FirstOrDefault();
-
-            if (rigidBodyToRelease == null && grabbableParentLookAt != null && grabbableParentLookAt.RigidBodySource != null && grabbableParentLookAt.CanUseRigidBody && grabbableParentLookAt.RigidBodyDynamicOnRelease)
-            {
-                if (!grabbableParentLookAt.IsBeingGrabbed && !GetDirectChildrenLookAtBeingGrabbed(grabbableParentLookAt).Any())
-                {
-                    rigidBodyToRelease = grabbableParentLookAt.RigidBodySource;
-                }
-            }
-
-            // Make rigidbody dynamic if there is one
-
-            if (rigidBodyToRelease != null)
-            {
-                rigidBodyToRelease.isKinematic = false;
-
-                if (releaseVelocity.IsValid())
-                {
-                    rigidBodyToRelease.AddForce(releaseVelocity, ForceMode.VelocityChange);
-                    rigidBodyToRelease.position += releaseVelocity * Time.deltaTime;
-                }
-
-                if (releaseAngularVelocity.IsValid())
-                {
-                    rigidBodyToRelease.AddTorque(releaseAngularVelocity, ForceMode.VelocityChange);
-                }
-            }
-
-            // Raise event(s)
-
-            foreach (UxrGrabber grb in manipulationInfo.Grabbers)
-            {
-                if (grb == grabber || grabber == null)
-                {
-                    UxrManipulationEventArgs releasedEventArgs = UxrManipulationEventArgs.FromRelease(grabbableObject,
-                                                                                                      sourceAnchor,
-                                                                                                      grb,
-                                                                                                      grabbedPoint,
-                                                                                                      isMultiHands,
-                                                                                                      isMultiHands && grabber != null,
-                                                                                                      releaseVelocity,
-                                                                                                      releaseAngularVelocity);
-
-                    OnObjectReleased(releasedEventArgs, propagateEvents);
-
-                    if (grabbableObject && propagateEvents)
-                    {
-                        grabbableObject.RaiseReleasedEvent(releasedEventArgs);
-                    }
-                }
-            }
-
-            // Remove grabber(s)
-            if (grabber == null)
-            {
-                manipulationInfo.RemoveAll();
-            }
-            else
-            {
-                manipulationInfo.RemoveGrab(grabber);
-            }
-
-            EndSyncMethod(new object[] { grabber, grabbableObject, propagateEvents });
+            ReleaseObject(grabber, grabbableObject, null, null, null, null, propagateEvents);
         }
 
         /// <summary>
@@ -1170,6 +980,246 @@ namespace UltimateXR.Manipulation
         }
 
         /// <summary>
+        ///     Releases an object from a hand.
+        /// </summary>
+        /// <param name="grabber">
+        ///     If non-null it will tell the grabber that releases the object. If it is null any grabber that is holding the object
+        ///     will release it
+        /// </param>
+        /// <param name="grabbableObject">Object being released</param>
+        /// <param name="position">The position to use when releasing, or null to compute it locally</param>
+        /// <param name="rotation">The rotation to use when releasing, or null to compute it locally</param>
+        /// <param name="velocity">The velocity to use when releasing, or null to compute it locally</param>
+        /// <param name="angularVelocity">The angular velocity to use when releasing, or null to compute it locally</param>
+        /// <param name="propagateEvents">Whether to propagate events</param>
+        private void ReleaseObject(UxrGrabber grabber, UxrGrabbableObject grabbableObject, Vector3? position, Quaternion? rotation, Vector3? velocity, Vector3? angularVelocity, bool propagateEvents)
+        {
+            int grabbedPoint = GetGrabbedPoint(grabber);
+
+            if (!UxrGrabber.EnabledComponents.Any(grb => grb.GrabbedObject == grabbableObject && (grb == grabber || grabber == null)))
+            {
+                return;
+            }
+
+            if (!_currentManipulations.TryGetValue(grabbableObject, out RuntimeManipulationInfo manipulationInfo))
+            {
+                if (UxrGlobalSettings.Instance.LogLevelManipulation >= UxrLogLevel.Errors)
+                {
+                    Debug.LogError($"{UxrConstants.ManipulationModule} {nameof(RuntimeManipulationInfo)} not found for object {grabbableObject.name}. This should not be happening.");
+                }
+
+                return;
+            }
+
+            if (grabbableObject.enabled == false)
+            {
+                if (UxrGlobalSettings.Instance.LogLevelManipulation >= UxrLogLevel.Warnings)
+                {
+                    Debug.LogWarning($"{UxrConstants.ManipulationModule} {nameof(ReleaseObject)}, {nameof(UxrGrabbableObject)} component on {nameof(grabbableObject.name)} is disabled.");
+                }
+            }
+
+            // This method will be synchronized
+            BeginSync();
+
+            UxrGrabbableObjectAnchor sourceAnchor           = manipulationInfo.SourceAnchor;
+            bool                     isMultiHands           = manipulationInfo.Grabs.Count > 1;
+            Vector3                  releasePosition        = position ?? transform.position;
+            Quaternion               releaseRotation        = rotation ?? transform.rotation;
+            Vector3                  releaseVelocity        = velocity ?? (grabber != null && !grabber.IsInSmoothManipulationTransition ? grabber.SmoothVelocity : Vector3.zero);
+            Vector3                  releaseAngularVelocity = angularVelocity ?? (grabber != null && !grabber.IsInSmoothManipulationTransition ? grabber.SmoothAngularVelocity * Mathf.Deg2Rad : Vector3.zero);
+            Vector2                  horizontal             = new Vector2(releaseVelocity.x, releaseVelocity.z);
+
+            // Minimum amount of velocity in units/sec a component (hor/ver) needs to have in order to have the multiplier applied.
+            // This will avoid objects being thrown super fast at low velocities.
+            float multiplierVelocityThreshold = 2.5f;
+
+            // In order to avoid the sudden change of velocity if an object is thrown just over/under the speed threshold, the
+            // multiplier is applied using a gradient measured in units/second. 
+            float multiplierVelocityGradient = 2.0f;
+
+            if (grabbableObject.HorizontalReleaseMultiplier > 1.0f)
+            {
+                // we will apply the multiplier gradually depending on the release velocity starting from multiplierVelocityThreshold.
+                // This is measured in units/sec so objects going below multiplierVelocityThreshold units/sec will have the normal
+                // release velocity and objects above or equal to (multiplierVelocityThreshold + multiplierVelocityGradient) units/sec will
+                // get the maximum multiplier. Velocities in between will have a smooth transition.
+                if (horizontal.magnitude > multiplierVelocityThreshold)
+                {
+                    float lerp = Mathf.Clamp01((horizontal.magnitude - multiplierVelocityThreshold) * (1.0f / multiplierVelocityGradient));
+                    horizontal = Vector3.Lerp(horizontal, horizontal * grabbableObject.HorizontalReleaseMultiplier, lerp);
+                }
+            }
+            else
+            {
+                horizontal *= grabbableObject.HorizontalReleaseMultiplier;
+            }
+
+            releaseVelocity.x = horizontal.x;
+            releaseVelocity.z = horizontal.y;
+
+            if (grabbableObject.VerticalReleaseMultiplier > 1.0f)
+            {
+                // Apply multiplier in the same gradual way as the horizontal component.
+                if (Mathf.Abs(releaseVelocity.y) > multiplierVelocityThreshold)
+                {
+                    float lerp = Mathf.Clamp01((Mathf.Abs(releaseVelocity.y) - multiplierVelocityThreshold) * (1.0f / multiplierVelocityGradient));
+                    releaseVelocity.y = Mathf.Lerp(releaseVelocity.y, releaseVelocity.y * grabbableObject.VerticalReleaseMultiplier, lerp);
+                }
+            }
+            else
+            {
+                releaseVelocity.y *= grabbableObject.VerticalReleaseMultiplier;
+            }
+            
+            // Check if the object's rigidbody needs to be made dynamic
+
+            Rigidbody rigidBodyToRelease = null;
+
+            if (isMultiHands == false || grabber == null)
+            {
+                _currentManipulations.Remove(grabbableObject);
+
+                if (grabbableObject.RigidBodySource != null && grabbableObject.CanUseRigidBody && grabbableObject.RigidBodyDynamicOnRelease)
+                {
+                    if (!GetDirectChildrenLookAtBeingGrabbed(grabbableObject).Any())
+                    {
+                        rigidBodyToRelease = grabbableObject.RigidBodySource;
+                    }
+                }
+            }
+
+            // Check if the object's parent grabbable rigidbody needs to be made dynamic, if this is the last grab that keeps holding it
+
+            UxrGrabbableObject grabbableParentLookAt = grabbableObject.ParentLookAts.FirstOrDefault();
+
+            if (rigidBodyToRelease == null && grabbableParentLookAt != null && grabbableParentLookAt.RigidBodySource != null && grabbableParentLookAt.CanUseRigidBody && grabbableParentLookAt.RigidBodyDynamicOnRelease)
+            {
+                if (!grabbableParentLookAt.IsBeingGrabbed && !GetDirectChildrenLookAtBeingGrabbed(grabbableParentLookAt).Any())
+                {
+                    rigidBodyToRelease = grabbableParentLookAt.RigidBodySource;
+                }
+            }
+
+            if (rigidBodyToRelease != null && releaseVelocity.IsValid())
+            {
+                if (position == null)
+                {
+                    // Locally, update the position update for this frame when releasing because physics are still not enabled
+                    releasePosition             += releaseVelocity * Time.deltaTime;
+                    rigidBodyToRelease.position += releasePosition;
+                }
+                else
+                {
+                    // Use the parameters passed
+                    rigidBodyToRelease.position = releasePosition;
+                    rigidBodyToRelease.rotation = releaseRotation;
+                }
+            }
+
+            // Process and raise event(s)
+
+            // Avoid creating list of multiple releases if the release is just a single grabber
+            List<(UxrGrabber, int)> multipleReleases = grabber != null ? new List<(UxrGrabber, int)>() : null; 
+
+            foreach (UxrGrabber grb in manipulationInfo.Grabbers)
+            {
+                if (grb == grabber || grabber == null)
+                {
+                    int grbPoint = GetGrabbedPoint(grb);
+
+                    UxrManipulationEventArgs releasingEventArgs = UxrManipulationEventArgs.FromRelease(grabbableObject,
+                                                                                                       sourceAnchor,
+                                                                                                       grb,
+                                                                                                       grbPoint,
+                                                                                                       isMultiHands && grabber != null,
+                                                                                                       isMultiHands && grabber != null,
+                                                                                                       releaseVelocity,
+                                                                                                       releaseAngularVelocity);
+
+                    OnObjectReleasing(releasingEventArgs, propagateEvents);
+
+                    if (grabbableObject)
+                    {
+                        if (propagateEvents)
+                        {
+                            grabbableObject.RaiseReleasingEvent(releasingEventArgs);
+                        }
+
+                        manipulationInfo.NotifyEndGrab(grb, grabbableObject, grbPoint);
+                    }
+
+                    grb.GrabbedObject = null;
+
+                    multipleReleases?.Add((grb, grbPoint));
+                }
+            }
+
+            // Make rigidbody dynamic if there is one
+
+            if (rigidBodyToRelease != null)
+            {
+                rigidBodyToRelease.isKinematic = false;
+
+                if (releaseVelocity.IsValid())
+                {
+                    rigidBodyToRelease.AddForce(releaseVelocity, ForceMode.VelocityChange);
+                }
+
+                if (releaseAngularVelocity.IsValid())
+                {
+                    rigidBodyToRelease.AddTorque(releaseAngularVelocity, ForceMode.VelocityChange);
+                }
+            }
+            
+            // Remove grabber(s)
+            
+            if (grabber == null)
+            {
+                manipulationInfo.RemoveAll();
+            }
+            else
+            {
+                manipulationInfo.RemoveGrab(grabber);
+            }
+
+            // Raise event(s)
+
+            if (multipleReleases != null)
+            {
+                foreach ((UxrGrabber, int) releaseInfo in multipleReleases)
+                {
+                    RaiseReleaseEvent(releaseInfo.Item1, releaseInfo.Item2);    
+                }
+            }
+            else
+            {
+                RaiseReleaseEvent(grabber, grabbedPoint);
+            }
+
+            void RaiseReleaseEvent(UxrGrabber targetGrabber, int targetGrabPoint)
+            {
+                UxrManipulationEventArgs releasedEventArgs = UxrManipulationEventArgs.FromRelease(grabbableObject,
+                                                                                                  sourceAnchor,
+                                                                                                  targetGrabber,
+                                                                                                  targetGrabPoint,
+                                                                                                  isMultiHands && grabber != null,
+                                                                                                  isMultiHands && grabber != null,
+                                                                                                  releaseVelocity,
+                                                                                                  releaseAngularVelocity);
+
+                OnObjectReleased(releasedEventArgs, propagateEvents);
+
+                if (grabbableObject && propagateEvents)
+                {
+                    grabbableObject.RaiseReleasedEvent(releasedEventArgs);
+                }
+            }
+
+            EndSyncMethod(new object[] { grabber, grabbableObject, releasePosition, releaseRotation, releaseVelocity, releaseAngularVelocity, propagateEvents });
+        }
+
+        /// <summary>
         ///     Assigns the new parent of a grabbable object that was grabbed.
         /// </summary>
         /// <param name="grabbableObject">Grabbable object to assign a new parent to</param>
@@ -1906,7 +1956,7 @@ namespace UltimateXR.Manipulation
             }
 
             // Default positioning without any snapping
-
+            
             grabbableObject.transform.SetPositionAndRotation(grabber.transform.TransformPoint(GetGrabPointRelativeGrabPosition(grabber)), grabber.transform.rotation * GetGrabPointRelativeGrabRotation(grabber));
 
             // Now process snapping. We compute the required transformations from the current object snapping transform to the grabber. 
@@ -1918,13 +1968,14 @@ namespace UltimateXR.Manipulation
             Quaternion sourceRotation = TransformExt.GetWorldRotation(grabInfo.GrabAlignParentTransformUsed, grabInfo.RelativeGrabAlignRotation);
             Quaternion targetRotation = grabber.transform.rotation;
 
-            if (grabPointInfo.AlignToController)
+            if (grabPointInfo.AlignToController && grabber != null && grabber.Avatar != null && grabber.Avatar.AvatarMode == UxrAvatarMode.Local)
             {
                 // Align the object to the controller. Useful for weapons or things that need directional precision.
+                // In externally updated avatars (multiplayer, replays...), this doesn't need to be computed because the hand position/rotation is already sampled.
 
                 sourceRotation = grabPointInfo.AlignToControllerAxes != null ? grabPointInfo.AlignToControllerAxes.rotation : grabbableObject.transform.rotation;
 
-                UxrController3DModel controller3DModel = grabber != null && grabber.Avatar != null ? grabber.Avatar.ControllerInput.GetController3DModel(grabber.Side) : null;
+                UxrController3DModel controller3DModel = grabber.Avatar.ControllerInput.GetController3DModel(grabber.Side);
 
                 if (controller3DModel != null)
                 {

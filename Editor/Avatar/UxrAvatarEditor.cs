@@ -17,6 +17,7 @@ using UltimateXR.Editor.Manipulation.HandPoses;
 using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Manipulation.HandPoses;
+using UltimateXR.Networking;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -394,6 +395,10 @@ namespace UltimateXR.Editor.Avatar
                                 }
 
                                 EditorGUILayout.EndHorizontal();
+                            }
+                            else if (avatar.GetComponent<IUxrNetworkAvatar>() != null)
+                            {
+                                EditorGUILayout.HelpBox(IsMultiplayerPrefab, MessageType.Warning);
                             }
                             else
                             {
@@ -825,6 +830,7 @@ namespace UltimateXR.Editor.Avatar
         private const string NeedsAvatarControllerHelp = "The avatar needs an UxrAvatarController component that will take care of updating all its components. You can add an UxrStandardAvatarController component or provide your own for advanced custom avatar handling.";
         private const string NeedsFingerSetup          = "The avatar rig has no hand or finger bone references assigned yet. They are required to use hand poses and set up hand integrations.";
         private const string NeedsIntegrationHelp      = "The avatar has no support for tracking/input devices yet. You can use one of the below integrations to leverage this work for you. The hand size will only determine the type of hands that will be shown when the input controllers are visualized instead of the avatar hands.";
+        private const string IsMultiplayerPrefab       = "This avatar is a prefab intended for multiplayer. Multiplayer prefabs are spawned at runtime, either by the user or with the help of UxrNetworkManager, and should not be pre-instantiated in the scene. Please consider removing this avatar from the scene.";
         private const string BigHandsIntegrationGuid   = "2f7a5d0166ab0d041bed38f7cc6affef";
         private const string SmallHandsIntegrationGuid = "dde1cc2a360069149a781772e8410006";
 

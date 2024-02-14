@@ -1,8 +1,10 @@
 // --------------------------------------------------------------------------------------------------------------------
-// <copyright file="UxrProxy.cs" company="VRMADA">
+// <copyright file="UxrDummy.cs" company="VRMADA">
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Core.Unique;
+
 namespace UltimateXR.Core.Components
 {
     /// <summary>
@@ -13,10 +15,10 @@ namespace UltimateXR.Core.Components
     ///     If there is no reference to this platform (it might be the result of performing a raycast and not because a script
     ///     has a reference to it, for instance), there needs to be a way to get the same GameObject in the other PCS.
     ///     Since <see cref="UxrComponent" /> has a way to identify and obtain components (<see cref="UxrComponent.UniqueId" />
-    ///     and <see cref="UxrComponent.TryGetComponentById" />), a simple way to send references through the network is by
-    ///     using a <see cref="UxrProxy" /> component on the GameObject.
+    ///     and <see cref="UxrUniqueIdImplementer.TryGetComponentById" />), a simple way to send references through the network
+    ///     is by using a <see cref="UxrDummy" /> component on the GameObject.
     /// </summary>
-    public sealed class UxrProxy : UxrComponent
+    public sealed class UxrDummy : UxrComponent
     {
     }
 }

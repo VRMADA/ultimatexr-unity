@@ -357,6 +357,11 @@ namespace UltimateXR.Haptics.Helpers
         /// <param name="e">Event parameters</param>
         protected override void OnObjectConstraintsFinished(UxrApplyConstraintsEventArgs e)
         {
+            if (UxrAvatar.LocalAvatar == null)
+            {
+                return;
+            }
+            
             Vector3    localPosition = UxrAvatar.LocalAvatar.transform.InverseTransformPoint(e.GrabbableObject.transform.position);
             Quaternion localRotation = Quaternion.Inverse(UxrAvatar.LocalAvatar.transform.rotation) * e.GrabbableObject.transform.rotation;
             

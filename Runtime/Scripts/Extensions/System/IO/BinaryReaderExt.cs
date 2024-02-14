@@ -6,9 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using UltimateXR.Core.Components;
+using UltimateXR.Core.Math;
 using UltimateXR.Core.Serialization;
-using UltimateXR.Core.StateSync;
+using UltimateXR.Core.Unique;
 using UltimateXR.Exceptions;
 using UnityEngine;
 
@@ -54,10 +54,29 @@ namespace UltimateXR.Extensions.System.IO
         /// <param name="reader">Reader</param>
         /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
         /// <returns>Enum object</returns>
-        /// <exception cref="FormatException">The compressed data is corrupt</exception>
         public static T ReadEnum<T>(this BinaryReader reader, int serializationVersion)
         {
             return (T)Enum.ToObject(typeof(T), reader.ReadCompressedInt32(serializationVersion));
+        }
+
+        /// <summary>
+        ///     Reads a string written using <see cref="BinaryWriterExt.WriteStringWithNullCheck" />.
+        /// </summary>
+        /// <param name="reader">Reader</param>
+        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
+        /// <returns>String or null</returns>
+        public static string ReadStringWithNullCheck(this BinaryReader reader)
+        {
+            // Serialized as: null-check (bool), string
+
+            bool nullCheck = reader.ReadBoolean();
+
+            if (!nullCheck)
+            {
+                return null;
+            }
+
+            return reader.ReadString();
         }
 
         /// <summary>
@@ -96,6 +115,17 @@ namespace UltimateXR.Extensions.System.IO
         }
 
         /// <summary>
+        ///     Reads a type, which has been serialized as a 16 byte array.
+        /// </summary>
+        /// <param name="reader">Reader</param>
+        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
+        /// <returns>The Guid</returns>
+        public static Guid ReadGuid(this BinaryReader reader, int serializationVersion)
+        {
+            return new Guid(reader.ReadBytes(16));
+        }
+
+        /// <summary>
         ///     Reads an array.
         /// </summary>
         /// <param name="reader">Reader</param>
@@ -104,7 +134,7 @@ namespace UltimateXR.Extensions.System.IO
         /// <returns>The array</returns>
         /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
         /// <exception cref="FormatException">The compressed data is corrupt</exception>
-        /// <exception cref="UxrComponentNotFoundException">An <see cref="UxrComponent" /> was not found when deserializing</exception>
+        /// <exception cref="UxrComponentNotFoundException">An <see cref="IUxrUniqueId" /> was not found when deserializing</exception>
         /// <exception cref="UxrSerializableClassNotFoundException">
         ///     A class that implements the <see cref="IUxrSerializable" />
         ///     interface was not found when deserializing
@@ -138,7 +168,7 @@ namespace UltimateXR.Extensions.System.IO
         /// <returns>The object array</returns>
         /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
         /// <exception cref="FormatException">The compressed data is corrupt</exception>
-        /// <exception cref="UxrComponentNotFoundException">An <see cref="UxrComponent" /> was not found when deserializing</exception>
+        /// <exception cref="UxrComponentNotFoundException">An <see cref="IUxrUniqueId" /> was not found when deserializing</exception>
         /// <exception cref="UxrSerializableClassNotFoundException">
         ///     A class that implements the <see cref="IUxrSerializable" />
         ///     interface was not found when deserializing
@@ -173,7 +203,7 @@ namespace UltimateXR.Extensions.System.IO
         /// <returns>The list</returns>
         /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
         /// <exception cref="FormatException">The compressed data is corrupt</exception>
-        /// <exception cref="UxrComponentNotFoundException">An <see cref="UxrComponent" /> was not found when deserializing</exception>
+        /// <exception cref="UxrComponentNotFoundException">An <see cref="IUxrUniqueId" /> was not found when deserializing</exception>
         /// <exception cref="UxrSerializableClassNotFoundException">
         ///     A class that implements the <see cref="IUxrSerializable" />
         ///     interface was not found when deserializing
@@ -209,7 +239,7 @@ namespace UltimateXR.Extensions.System.IO
         /// <returns>The list</returns>
         /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
         /// <exception cref="FormatException">The compressed data is corrupt</exception>
-        /// <exception cref="UxrComponentNotFoundException">An <see cref="UxrComponent" /> was not found when deserializing</exception>
+        /// <exception cref="UxrComponentNotFoundException">An <see cref="IUxrUniqueId" /> was not found when deserializing</exception>
         /// <exception cref="UxrSerializableClassNotFoundException">
         ///     A class that implements the <see cref="IUxrSerializable" />
         ///     interface was not found when deserializing
@@ -245,7 +275,7 @@ namespace UltimateXR.Extensions.System.IO
         /// <returns>The dictionary</returns>
         /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
         /// <exception cref="FormatException">The compressed data is corrupt</exception>
-        /// <exception cref="UxrComponentNotFoundException">An <see cref="UxrComponent" /> was not found when deserializing</exception>
+        /// <exception cref="UxrComponentNotFoundException">An <see cref="IUxrUniqueId" /> was not found when deserializing</exception>
         /// <exception cref="UxrSerializableClassNotFoundException">
         ///     A class that implements the <see cref="IUxrSerializable" />
         ///     interface was not found when deserializing
@@ -375,23 +405,32 @@ namespace UltimateXR.Extensions.System.IO
         }
 
         /// <summary>
-        ///     Reads a <see cref="UxrComponent" />. Only the unique ID (string) will be read. The component will be retrieved
-        ///     using the ID with <see cref="UxrComponent.TryGetComponentById" />.
+        ///     Reads a component that implements <see cref="IUxrUniqueId" />. Only the unique ID (string) will be read.
+        ///     The component will be retrieved using the ID with <see cref="UxrUniqueIdImplementer.TryGetComponentById" />.
         /// </summary>
         /// <param name="reader">Reader</param>
         /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
-        /// <returns>UltimateXR component (<see cref="UxrComponent" />)</returns>
+        /// <returns>Component that implements the <see cref="IUxrUniqueId" /> interface</returns>
         /// <exception cref="UxrComponentNotFoundException">The given component could not be found using the Id</exception>
-        public static UxrComponent ReadUxrComponent(this BinaryReader reader, int serializationVersion)
+        public static IUxrUniqueId ReadUniqueComponent(this BinaryReader reader, int serializationVersion)
         {
-            string componentId = reader.ReadString();
+            // Serialized as: null-check (bool), Guid
 
-            if (string.IsNullOrEmpty(componentId))
+            bool nullCheck = reader.ReadBoolean();
+
+            if (!nullCheck)
             {
                 return null;
             }
 
-            if (UxrComponent.TryGetComponentById(componentId, out UxrComponent component))
+            Guid componentId = reader.ReadGuid(serializationVersion);
+
+            if (componentId == default)
+            {
+                return null;
+            }
+
+            if (UxrUniqueIdImplementer.TryGetComponentById(componentId, out IUxrUniqueId component))
             {
                 return component;
             }
@@ -400,16 +439,16 @@ namespace UltimateXR.Extensions.System.IO
         }
 
         /// <summary>
-        ///     Reads a <see cref="UxrComponent" />. Only the unique ID (string) will be read. The component will be retrieved
-        ///     using the ID with <see cref="UxrComponent.TryGetComponentById" />.
+        ///     Reads a component that implements <see cref="IUxrUniqueId" />. Only the unique ID (string) will be read.
+        ///     The component will be retrieved using the ID with <see cref="UxrUniqueIdImplementer.TryGetComponentById" />.
         /// </summary>
         /// <param name="reader">Reader</param>
         /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
-        /// <returns>UltimateXR component (<see cref="UxrComponent" />)</returns>
+        /// <returns>Component that implements the <see cref="IUxrUniqueId" /> interface</returns>
         /// <exception cref="UxrComponentNotFoundException">The given component could not be found using the Id</exception>
-        public static T ReadUxrComponent<T>(this BinaryReader reader, int serializationVersion) where T : UxrComponent<T>
+        public static T ReadUniqueComponent<T>(this BinaryReader reader, int serializationVersion) where T : Component, IUxrUniqueId
         {
-            return ReadUxrComponent(reader, serializationVersion) as T;
+            return ReadUniqueComponent(reader, serializationVersion) as T;
         }
 
         /// <summary>
@@ -420,7 +459,7 @@ namespace UltimateXR.Extensions.System.IO
         /// <returns>Object with the IUxrSerializable interface, which can be casted to the correct type</returns>
         /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
         /// <exception cref="FormatException">The compressed data is corrupt</exception>
-        /// <exception cref="UxrComponentNotFoundException">An <see cref="UxrComponent" /> was not found when deserializing</exception>
+        /// <exception cref="UxrComponentNotFoundException">An <see cref="IUxrUniqueId" /> was not found when deserializing</exception>
         /// <exception cref="UxrSerializableClassNotFoundException">
         ///     A class that implements the <see cref="IUxrSerializable" />
         ///     interface was not found when deserializing
@@ -453,23 +492,35 @@ namespace UltimateXR.Extensions.System.IO
         }
 
         /// <summary>
-        ///     Reads a <see cref="UxrComponent" />. Only the unique ID (string) will be read. The component will be retrieved
-        ///     using the ID with <see cref="UxrComponent.TryGetComponentById" />. It has support for null references.
+        ///     Reads an object that implements the <see cref="IUxrSerializable" /> interface. It has support for null references.
         /// </summary>
         /// <param name="reader">Reader</param>
         /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
-        /// <returns>UltimateXR component (<see cref="UxrComponent" />)</returns>
+        /// <returns>Object with the IUxrSerializable interface, which can be casted to the correct type</returns>
         /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
         /// <exception cref="FormatException">The compressed data is corrupt</exception>
-        /// <exception cref="UxrComponentNotFoundException">An <see cref="UxrComponent" /> was not found when deserializing</exception>
+        /// <exception cref="UxrComponentNotFoundException">An <see cref="IUxrUniqueId" /> was not found when deserializing</exception>
         /// <exception cref="UxrSerializableClassNotFoundException">
         ///     A class that implements the <see cref="IUxrSerializable" />
         ///     interface was not found when deserializing
         /// </exception>
-        public static T ReadUxrSerializable<T>(this BinaryReader reader, int serializationVersion) where T : IUxrSerializable
+        public static T ReadUxrSerializable<T>(this BinaryReader reader, int serializationVersion) where T : class, IUxrSerializable
         {
             IUxrSerializable serializable = ReadUxrSerializable(reader, serializationVersion);
-            return (T)serializable;
+            return serializable as T;
+        }
+
+        /// <summary>
+        ///     Reads an <see cref="UxrAxis" /> value.
+        /// </summary>
+        /// <param name="reader">Reader</param>
+        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
+        /// <returns>Axis value</returns>
+        /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
+        /// <exception cref="FormatException">The compressed data is corrupt</exception>
+        public static UxrAxis ReadAxis(this BinaryReader reader, int serializationVersion)
+        {
+            return ReadCompressedInt32(reader, serializationVersion);
         }
 
         /// <summary>
@@ -486,7 +537,7 @@ namespace UltimateXR.Extensions.System.IO
         /// </returns>
         /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
         /// <exception cref="FormatException">The compressed data is corrupt</exception>
-        /// <exception cref="UxrComponentNotFoundException">An <see cref="UxrComponent" /> was not found when deserializing</exception>
+        /// <exception cref="UxrComponentNotFoundException">An <see cref="IUxrUniqueId" /> was not found when deserializing</exception>
         /// <exception cref="UxrSerializableClassNotFoundException">
         ///     A class that implements the <see cref="IUxrSerializable" />
         ///     interface was not found when deserializing
@@ -510,7 +561,7 @@ namespace UltimateXR.Extensions.System.IO
         /// </returns>
         /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
         /// <exception cref="FormatException">The compressed data is corrupt</exception>
-        /// <exception cref="UxrComponentNotFoundException">An <see cref="UxrComponent" /> was not found when deserializing</exception>
+        /// <exception cref="UxrComponentNotFoundException">An <see cref="IUxrUniqueId" /> was not found when deserializing</exception>
         /// <exception cref="UxrSerializableClassNotFoundException">
         ///     A class that implements the <see cref="IUxrSerializable" />
         ///     interface was not found when deserializing
@@ -595,6 +646,11 @@ namespace UltimateXR.Extensions.System.IO
                 return reader.ReadType(serializationVersion);
             }
 
+            if (varType is UxrVarType.Guid)
+            {
+                return reader.ReadGuid(serializationVersion);
+            }
+
             if (varType is UxrVarType.Array)
             {
                 Type elementType = reader.ReadType(serializationVersion);
@@ -659,14 +715,19 @@ namespace UltimateXR.Extensions.System.IO
                 return reader.ReadMatrix(serializationVersion);
             }
 
-            if (varType is UxrVarType.UxrComponent)
+            if (varType is UxrVarType.IUxrUnique)
             {
-                return reader.ReadUxrComponent(serializationVersion);
+                return reader.ReadUniqueComponent(serializationVersion);
             }
 
             if (varType is UxrVarType.IUxrSerializable)
             {
                 return reader.ReadUxrSerializable(serializationVersion);
+            }
+
+            if (varType is UxrVarType.UxrAxis)
+            {
+                return reader.ReadAxis(serializationVersion);
             }
 
             throw new ArgumentOutOfRangeException(nameof(varType), varType, $"Deserializing unknown {nameof(UxrVarType)} ({varType})");
@@ -684,7 +745,7 @@ namespace UltimateXR.Extensions.System.IO
         /// <returns>The object</returns>
         /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
         /// <exception cref="FormatException">The compressed data is corrupt</exception>
-        /// <exception cref="UxrComponentNotFoundException">An <see cref="UxrComponent" /> was not found when deserializing</exception>
+        /// <exception cref="UxrComponentNotFoundException">An <see cref="IUxrUniqueId" /> was not found when deserializing</exception>
         /// <exception cref="UxrSerializableClassNotFoundException">
         ///     A class that implements the <see cref="IUxrSerializable" />
         ///     interface was not found when deserializing
@@ -763,6 +824,11 @@ namespace UltimateXR.Extensions.System.IO
                 return reader.ReadType(serializationVersion);
             }
 
+            if (type == typeof(Guid))
+            {
+                return reader.ReadGuid(serializationVersion);
+            }
+
             if (type.IsArray)
             {
                 if (type.GetElementType() == typeof(object))
@@ -831,14 +897,19 @@ namespace UltimateXR.Extensions.System.IO
                 return reader.ReadMatrix(serializationVersion);
             }
 
-            if (typeof(UxrComponent).IsAssignableFrom(type))
+            if (typeof(IUxrUniqueId).IsAssignableFrom(type))
             {
-                return reader.ReadUxrComponent(serializationVersion);
+                return reader.ReadUniqueComponent(serializationVersion);
             }
 
             if (typeof(IUxrSerializable).IsAssignableFrom(type))
             {
                 return reader.ReadUxrSerializable(serializationVersion);
+            }
+
+            if (type == typeof(UxrAxis))
+            {
+                return reader.ReadAxis(serializationVersion);
             }
 
             throw new ArgumentOutOfRangeException(nameof(T), typeof(T).FullName, $"Deserializing to unknown target type ({typeof(T).FullName}");

@@ -195,7 +195,7 @@ namespace UltimateXR.Animation.GameObjects
 
                     Material[] materials = _renderer.materials;
 
-                    for (var i = 0; i < materials.Length; i++)
+                    for (int i = 0; i < materials.Length; i++)
                     {
                         if (i == _materialSlot || _materialSlot < 0)
                         {
@@ -257,7 +257,7 @@ namespace UltimateXR.Animation.GameObjects
 
             Material[] materials = _renderer.materials;
 
-            for (var i = 0; i < materials.Length; i++)
+            for (int i = 0; i < materials.Length; i++)
             {
                 if (i == _materialSlot || _materialSlot < 0)
                 {

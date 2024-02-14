@@ -3,7 +3,6 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using UltimateXR.Avatar;
 using UltimateXR.Devices;
 using UnityEngine;
 
@@ -14,7 +13,7 @@ namespace UltimateXR.Locomotion
     /// <summary>
     ///     Standard locomotion using an arc projected from the controllers.
     /// </summary>
-    public class UxrTeleportLocomotion : UxrTeleportLocomotionBase
+    public partial class UxrTeleportLocomotion : UxrTeleportLocomotionBase
     {
         #region Inspector Properties/Serialized Fields
 

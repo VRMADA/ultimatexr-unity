@@ -3,9 +3,10 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using UltimateXR.Core;
-using UltimateXR.Core.Components;
+using UltimateXR.Core.Unique;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -14,10 +15,10 @@ using UnityEngine.SceneManagement;
 namespace UltimateXR.Editor.Core
 {
     /// <summary>
-    ///     Class that hooks to Unity scene saving to detect inconsistencies in unique IDs of <see cref="UxrComponent" />
+    ///     Class that hooks to Unity scene saving to detect inconsistencies in unique IDs of <see cref="IUxrUniqueId" />
     ///     components.
     /// </summary>
-    public sealed class UxrComponentIntegrityChecker
+    public static class UxrComponentIntegrityChecker
     {
         #region Public Methods
 
@@ -42,23 +43,23 @@ namespace UltimateXR.Editor.Core
         /// <param name="path">Path to save to</param>
         private static void EditorSceneManager_sceneSaving(Scene scene, string path)
         {
-            // Momentarily don't perform automatic ID generation, since changes might call UxrComponent.OnValidate() which is where automatic ID generation is done.
+            // Momentarily don't perform automatic ID generation, since changes might call OnValidate() which is where automatic ID generation is done.
             EditorPrefs.SetBool(UxrConstants.Editor.AutomaticIdGenerationPrefs, false);
 
-            Dictionary<string, UxrComponent> sceneUxrComponents = new Dictionary<string, UxrComponent>();
+            Dictionary<Guid, IUxrUniqueId> sceneUxrComponents = new Dictionary<Guid, IUxrUniqueId>();
 
             foreach (GameObject rootGameObject in scene.GetRootGameObjects())
             {
-                UxrComponent[] components = rootGameObject.GetComponentsInChildren<UxrComponent>(true);
+                IUxrUniqueId[] components = rootGameObject.GetComponentsInChildren<IUxrUniqueId>(true);
 
-                foreach (UxrComponent component in components)
+                foreach (IUxrUniqueId component in components)
                 {
                     int attemptCount = 0;
 
-                    while (string.IsNullOrEmpty(component.UniqueId) || sceneUxrComponents.ContainsKey(component.UniqueId))
+                    while (component.UniqueId == default || sceneUxrComponents.ContainsKey(component.UniqueId))
                     {
                         // ID is either missing (shouldn't happen) or duplicated (by duplicating a GameObject in the scene). Generate new ID.
-                        component.ChangeUniqueId(UxrComponent.GetNewUniqueId());
+                        component.ChangeUniqueId(UxrUniqueIdImplementer.GetNewUniqueId());
 
                         attemptCount++;
 
@@ -68,7 +69,7 @@ namespace UltimateXR.Editor.Core
                         }
                     }
 
-                    if (!string.IsNullOrEmpty(component.UniqueId) && !sceneUxrComponents.ContainsKey(component.UniqueId))
+                    if (component.UniqueId == default && !sceneUxrComponents.ContainsKey(component.UniqueId))
                     {
                         sceneUxrComponents.Add(component.UniqueId, component);
                     }

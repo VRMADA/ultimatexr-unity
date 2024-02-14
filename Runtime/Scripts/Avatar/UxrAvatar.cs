@@ -95,12 +95,12 @@ namespace UltimateXR.Avatar
         public static event EventHandler<UxrAvatarStartedEventArgs> LocalAvatarStarted;
 
         /// <summary>
-        ///     Called right before an <see cref="UxrAvatar" /> is about to be moved.
+        ///     Event called right before an <see cref="UxrAvatar" /> is about to be moved.
         /// </summary>
         public static event EventHandler<UxrAvatarMoveEventArgs> GlobalAvatarMoving;
 
         /// <summary>
-        ///     Called right after an <see cref="UxrAvatar" /> was moved.
+        ///     Event called right after an <see cref="UxrAvatar" /> was moved.
         /// </summary>
         public static event EventHandler<UxrAvatarMoveEventArgs> GlobalAvatarMoved;
 
@@ -184,13 +184,19 @@ namespace UltimateXR.Avatar
         {
             get
             {
+                if (AvatarMode == UxrAvatarMode.UpdateExternally)
+                {
+                    // This makes sure that when synchronizing multiplayer/replays we use the correct input model 
+                    return _externalControllerInput ?? gameObject.GetOrAddComponent<UxrDummyControllerInput>();
+                }
+                
                 // First look for a controller that is not dummy nor gamepad:
                 UxrControllerInput controllerInput = UxrControllerInput.GetComponents(this).FirstOrDefault(i => i.GetType() != typeof(UxrDummyControllerInput) && i.GetType() != typeof(UxrGamepadInput));
 
                 // No controllers found? Try gamepad
                 if (controllerInput == null)
                 {
-                    controllerInput = UxrControllerInput.GetComponents(this).FirstOrDefault(i => i.GetType() == typeof(UxrGamepadInput));    
+                    controllerInput = UxrControllerInput.GetComponents(this).FirstOrDefault(i => i.GetType() == typeof(UxrGamepadInput));
                 }
 
                 // No controllers found? Return dummy to avoid null reference exceptions.
@@ -198,6 +204,12 @@ namespace UltimateXR.Avatar
                 {
                     UxrDummyControllerInput inputDummy = gameObject.GetOrAddComponent<UxrDummyControllerInput>();
                     return inputDummy;
+                }
+
+                if (_externalControllerInput != controllerInput)
+                {
+                    // Propagate controller input
+                    OnControllerInputChanged(controllerInput);
                 }
 
                 return controllerInput;
@@ -1277,12 +1289,29 @@ namespace UltimateXR.Avatar
             // Cache hand poses by name
 
             CreateHandPoseCache();
+        }
+
+        /// <summary>
+        ///     Makes sure the rig constructor is called when the component is reset.
+        /// </summary>
+        protected override void Reset()
+        {
+            _rig     = new UxrAvatarRig();
+            _rigInfo = new UxrAvatarRigInfo();
+        }
+
+        /// <summary>
+        ///     Additional avatar initialization.
+        /// </summary>
+        protected override void Start()
+        {
+            base.Start();
 
 #if ULTIMATEXR_UNITY_XR_MANAGEMENT
 
             // New Unity XR requires TrackedPoseDriver component in cameras
 
-            if (CameraController != null && _avatarMode == UxrAvatarMode.Local)
+            if (CameraController != null)
             {
                 Camera[] avatarCameras = CameraController.GetComponentsInChildren<Camera>();
 
@@ -1306,24 +1335,9 @@ namespace UltimateXR.Avatar
                 }
             }
 #endif
-        }
 
-        /// <summary>
-        ///     Makes sure the rig constructor is called when the component is reset.
-        /// </summary>
-        protected override void Reset()
-        {
-            _rig     = new UxrAvatarRig();
-            _rigInfo = new UxrAvatarRigInfo();
-        }
-
-        /// <summary>
-        ///     Additional avatar initialization.
-        /// </summary>
-        protected override void Start()
-        {
-            base.Start();
-
+            // Refresh state
+            AvatarMode = _avatarMode;
             RenderMode = _renderMode;
 
             if (AvatarMode == UxrAvatarMode.Local)
@@ -1395,6 +1409,21 @@ namespace UltimateXR.Avatar
         protected virtual void OnHandPoseChanged(UxrAvatarHandPoseChangeEventArgs e)
         {
             HandPoseChanged?.Invoke(this, e);
+        }
+
+        /// <summary>
+        ///     Notifies that the input component changed.
+        /// </summary>
+        /// <param name="controllerInput">New controller input</param>
+        private void OnControllerInputChanged(UxrControllerInput controllerInput)
+        {
+            // Sync this mainly to:
+            //   -Point to the correct ControllerForward direction during multiplayer/replays.
+            //   -Display the correct input 3D models during multiplayer/replays.
+
+            BeginSync();
+            _externalControllerInput = controllerInput;
+            EndSyncMethod(new object[] { controllerInput });
         }
 
         /// <summary>
@@ -1494,6 +1523,7 @@ namespace UltimateXR.Avatar
         private readonly HandState _leftHandState  = new HandState();
         private readonly HandState _rightHandState = new HandState();
 
+        private UxrControllerInput                     _externalControllerInput;
         private float                                  _startCameraHeight;
         private float                                  _startCameraControllerHeight;
         private Camera                                 _camera;

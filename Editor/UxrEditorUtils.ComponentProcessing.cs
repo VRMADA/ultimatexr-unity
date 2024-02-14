@@ -87,6 +87,11 @@ namespace UltimateXR.Editor
             {
                 T c = components[i];
 
+                if (c == null)
+                {
+                    continue;
+                }
+
                 if (progressUpdater != null)
                 {
                     canceled = progressUpdater.Invoke(new UxrProgressInfo("Preprocessing components", $"Object {c.name}, Component {c.GetType().Name} ", (float)i / components.Length));
@@ -338,10 +343,12 @@ namespace UltimateXR.Editor
 
             // Process non-open scenes
 
-            foreach (string scenePath in AssetDatabase.GetAllAssetPaths().Where(path => path.EndsWith(".unity")))
+            foreach (string scenePath in GetAllAssetPathsExceptPackages().Where(path => path.EndsWith(".unity")))
             {
                 if (openScenes.All(s => s.path != scenePath) && PathRequiresProcessing(basePath, scenePath, ignoreUltimateXRAssets))
                 {
+                    Scene scene = default;
+                    
                     try
                     {
                         if (progressUpdater != null)
@@ -354,7 +361,7 @@ namespace UltimateXR.Editor
                             }
                         }
 
-                        Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
+                        scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
 
                         if (ProcessAllNonPrefabInstanceGameObjects(scene, componentProcessor, progressUpdater, out canceled, onlyCheck))
                         {
@@ -396,6 +403,11 @@ namespace UltimateXR.Editor
                     catch (Exception)
                     {
                         Debug.LogWarning($"Error opening scene {scenePath}. Skipping...");
+
+                        if (scene != default)
+                        {
+                            EditorSceneManager.CloseScene(scene, true);
+                        }
                     }
                 }
             }
@@ -684,7 +696,7 @@ namespace UltimateXR.Editor
 
                     foreach (T component in components)
                     {
-                        if (GetInnermostNon3DModelPrefabRoot(component, out GameObject prefab, out GameObject prefabInstance, out T componentInPrefab))
+                        if (component != null && GetInnermostNon3DModelPrefabRoot(component, out GameObject prefab, out GameObject prefabInstance, out T componentInPrefab))
                         {
                             if (prefab != gameObject)
                             {
@@ -753,7 +765,7 @@ namespace UltimateXR.Editor
         /// </summary>
         /// <param name="additionalPaths">Paths to process</param>
         /// <param name="basePath">Project base path to process</param>
-        /// <param name="processBasePath">Whether to process all prefabs in <paramref name="basePath"/></param>
+        /// <param name="processBasePath">Whether to process all prefabs in <paramref name="basePath" /></param>
         /// <param name="ignoreUltimateXRAssets">Whether to ignore components in assets in UltimateXR folders</param>
         /// <typeparam name="T">Component type</typeparam>
         /// <returns>Sorted prefab path list</returns>
@@ -773,7 +785,7 @@ namespace UltimateXR.Editor
 
                 if (processBasePath)
                 {
-                    foreach (string prefabPath in AssetDatabase.GetAllAssetPaths())
+                    foreach (string prefabPath in GetAllAssetPathsExceptPackages())
                     {
                         if (AssetDatabase.GetMainAssetTypeAtPath(prefabPath) == typeof(GameObject) && PathRequiresProcessing(basePath, prefabPath, ignoreUltimateXRAssets) && !additionalPaths.Contains(prefabPath))
                         {
@@ -800,7 +812,7 @@ namespace UltimateXR.Editor
 
             IEnumerable<string> GetPrefabsToProcess()
             {
-                foreach (string prefabPath in AssetDatabase.GetAllAssetPaths())
+                foreach (string prefabPath in GetAllAssetPathsExceptPackages())
                 {
                     if (AssetDatabase.GetMainAssetTypeAtPath(prefabPath) == typeof(GameObject) && PathRequiresProcessing(basePath, prefabPath, ignoreUltimateXRAssets))
                     {
@@ -876,7 +888,7 @@ namespace UltimateXR.Editor
 
                 foreach (T component in components)
                 {
-                    if (GetInnermostNon3DModelPrefabRoot(component, out GameObject originalPrefab, out GameObject prefabInstance, out T componentInPrefab))
+                    if (component != null && GetInnermostNon3DModelPrefabRoot(component, out GameObject originalPrefab, out GameObject prefabInstance, out T componentInPrefab))
                     {
                         // Only process those prefabs that are originally in this prefab and don't come from any prefab above in the hierarchy
 
@@ -1072,6 +1084,15 @@ namespace UltimateXR.Editor
                     componentInPrefab = PrefabUtility.GetCorrespondingObjectFromSource(componentInPrefab);
                 }
             }
+        }
+
+        /// <summary>
+        ///     Same as AssetDatabase.GetAllAssetPaths() but filtering out assets from packages.
+        /// </summary>
+        /// <returns>List of asset paths filtering out assets from packages</returns>
+        private static string[] GetAllAssetPathsExceptPackages()
+        {
+            return AssetDatabase.GetAllAssetPaths().Where(p => !p.StartsWith("Packages/")).ToArray();
         }
 
         #endregion

@@ -50,6 +50,13 @@ namespace UltimateXR.Editor.Networking
 
             EditorGUILayout.HelpBox("The network manager automatically gives multi-user capabilities to the application using any of the available systems. Add it to the first scene in the project.", MessageType.Info);
 
+            IEnumerable<UxrAvatar> sceneMultiplayerAvatars = FindObjectsOfType<UxrAvatar>().Where(a => a.GetComponent<IUxrNetworkAvatar>() != null);
+
+            if (sceneMultiplayerAvatars.Any())
+            {
+                EditorGUILayout.HelpBox($"In multiplayer sessions, avatar prefabs will be spawned at runtime instead of being pre-instantiated in the scene. Consider removing the following multiplayer avatars from the scene: {string.Join(", ", sceneMultiplayerAvatars.Select(a => a.name))}", MessageType.Warning);
+            }
+            
             // Initialize
 
             _networkImplementation      = PropNetworkImplementation.objectReferenceValue as UxrNetworkImplementation;
@@ -188,7 +195,7 @@ namespace UltimateXR.Editor.Networking
                 {
                     EditorGUILayout.HelpBox("To use networking you need to install any of the supported systems. Check the SDK Manager for setup:", MessageType.Info);
 
-                    if (UxrEditorUtils.CenteredButton(new GUIContent("Open SDK Manager")))
+                    if (UxrEditorUtils.CenteredButton(ContentOpenSdkManagerWindow))
                     {
                         UxrSdkManagerWindow.ShowWindow(UxrSdkLocator.SupportType.Networking);
                     }
@@ -197,9 +204,55 @@ namespace UltimateXR.Editor.Networking
                 {
                     EditorGUILayout.HelpBox("To use voice transmission you need to install any of the supported systems. Check the SDK Manager for setup:", MessageType.Info);
 
-                    if (UxrEditorUtils.CenteredButton(new GUIContent("Open SDK Manager")))
+                    if (UxrEditorUtils.CenteredButton(ContentOpenSdkManagerWindow))
                     {
                         UxrSdkManagerWindow.ShowWindow(UxrSdkLocator.SupportType.Networking);
+                    }
+                }
+                
+                // If it's not installed, show status
+
+                if (_networkingIndex > 0)
+                {
+                    UxrSdkLocator locator = UxrSdkManager.SDKLocators.FirstOrDefault(l => l.Support == UxrSdkLocator.SupportType.Networking &&
+                                                                                          l.Name == availableNetworkSdks[_networkingIndex] &&
+                                                                                          (l.CurrentState == UxrSdkLocator.State.Available || l.CurrentState == UxrSdkLocator.State.CurrentTargetNotSupported));
+
+                    if (locator == null)
+                    {
+                        EditorGUILayout.HelpBox($"{availableNetworkSdks[_networkingIndex]} is not installed. Use the SDK Manager to review the networking SDKs:", MessageType.Warning);
+
+                        EditorGUILayout.BeginHorizontal();
+                        GUILayout.Space(EditorGUIUtility.labelWidth);
+
+                        if (GUILayout.Button(ContentOpenSdkManagerWindow))
+                        {
+                            UxrSdkManagerWindow.ShowWindow(UxrSdkLocator.SupportType.Networking);
+                        }
+
+                        EditorGUILayout.EndHorizontal();
+                    }
+                }
+
+                if (_networkingVoiceIndex > 0)
+                {
+                    UxrSdkLocator locator = UxrSdkManager.SDKLocators.FirstOrDefault(l => l.Support == UxrSdkLocator.SupportType.VoiceOverNetwork &&
+                                                                                          l.Name == availableNetworkVoiceSdks[_networkingVoiceIndex] &&
+                                                                                          (l.CurrentState == UxrSdkLocator.State.Available || l.CurrentState == UxrSdkLocator.State.CurrentTargetNotSupported));
+
+                    if (locator == null)
+                    {
+                        EditorGUILayout.HelpBox($"{availableNetworkVoiceSdks[_networkingVoiceIndex]} is not installed. Use the SDK Manager to review the networking SDKs:", MessageType.Warning);
+
+                        EditorGUILayout.BeginHorizontal();
+                        GUILayout.Space(EditorGUIUtility.labelWidth);
+
+                        if (GUILayout.Button(ContentOpenSdkManagerWindow))
+                        {
+                            UxrSdkManagerWindow.ShowWindow(UxrSdkLocator.SupportType.VoiceOverNetwork);
+                        }
+
+                        EditorGUILayout.EndHorizontal();
                     }
                 }
 
@@ -813,7 +866,7 @@ namespace UltimateXR.Editor.Networking
 
                     if (_networkImplementation != null)
                     {
-                        IEnumerable<Component> addedComponents = _networkImplementation.AddNetworkRigidbody(info.TargetComponent.gameObject, !info.TargetComponent.UsesGrabbableParentDependency);
+                        IEnumerable<Component> addedComponents = _networkImplementation.AddNetworkRigidbody(info.TargetComponent.gameObject, !info.TargetComponent.UsesGrabbableParentDependency, UxrNetworkRigidbodyFlags.All);
                         UxrNetworkComponentReferences.RegisterNetworkComponents(info.TargetComponent.gameObject, new List<GameObject>(), addedComponents, UxrNetworkComponentReferences.Origin.Network);
 
                         _networkImplementation.SetNetworkRigidbodyKinematic(info.TargetComponent.gameObject, true);
@@ -958,6 +1011,8 @@ namespace UltimateXR.Editor.Networking
         {
             // Destroy components
 
+            List<string> destroyErrors = new List<string>();
+
             for (int i = 0; i < PropCreatedGlobalComponents.arraySize; ++i)
             {
                 Component component = (Component)PropCreatedGlobalComponents.GetArrayElementAtIndex(i).objectReferenceValue;
@@ -973,14 +1028,23 @@ namespace UltimateXR.Editor.Networking
                 }
                 else
                 {
+                    string path = i < PropCreatedGlobalComponentPaths.arraySize ? $" at {PropCreatedGlobalComponentPaths.GetArrayElementAtIndex(i).stringValue}" : string.Empty;
+
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        destroyErrors.Add($"Network component: {path}");
+                    }
+                    
                     if (UxrGlobalSettings.Instance.LogLevelNetworking >= UxrLogLevel.Warnings)
                     {
-                        Debug.LogWarning($"{UxrConstants.NetworkingModule} A network component could not deleted. Double check in your scene for any leftovers.");
+                        Debug.LogWarning($"{UxrConstants.NetworkingModule} A network component could not be deleted{path}. Double check in your scene for any leftovers.");
                     }
                 }
             }
 
             PropCreatedGlobalComponents.ClearArray();
+            PropCreatedGlobalComponentPaths.ClearArray();
+            serializedObject.ApplyModifiedProperties();
 
             // Destroy GameObjects
 
@@ -999,15 +1063,24 @@ namespace UltimateXR.Editor.Networking
                 }
                 else
                 {
+                    string path = i < PropCreatedGlobalGameObjectPaths.arraySize ? $" at {PropCreatedGlobalGameObjectPaths.GetArrayElementAtIndex(i).stringValue}" : string.Empty;
+
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        destroyErrors.Add($"Network GameObject: {path}");
+                    }
+                    
                     if (UxrGlobalSettings.Instance.LogLevelNetworking >= UxrLogLevel.Warnings)
                     {
-                        Debug.LogWarning($"{UxrConstants.NetworkingModule} A network GameObject could not deleted. Double check in your scene for any leftovers.");
+                        Debug.LogWarning($"{UxrConstants.NetworkingModule} A network GameObject could not be deleted{path}. Double check in your scene for any leftovers.");
                     }
                 }
             }
 
             PropCreatedGlobalGameObjects.ClearArray();
-
+            PropCreatedGlobalGameObjectPaths.ClearArray();
+            serializedObject.ApplyModifiedProperties();
+            
             // Setup and register added elements
 
             if (networkImplementation != null)
@@ -1017,12 +1090,21 @@ namespace UltimateXR.Editor.Networking
                 if (newGameObjects != null && newGameObjects.Any())
                 {
                     UxrEditorUtils.AssignSerializedPropertyArray(PropCreatedGlobalGameObjects, newGameObjects);
+                    UxrEditorUtils.AssignSerializedPropertySimpleTypeArray(PropCreatedGlobalGameObjectPaths, newGameObjects.Select(go => go != null ? go.GetPathUnderScene() : "null"));
+                    serializedObject.ApplyModifiedProperties();
                 }
 
                 if (newComponents != null && newComponents.Any())
                 {
                     UxrEditorUtils.AssignSerializedPropertyArray(PropCreatedGlobalComponents, newComponents);
+                    UxrEditorUtils.AssignSerializedPropertySimpleTypeArray(PropCreatedGlobalComponentPaths, newComponents.Select(c => c != null ? c.GetPathUnderScene() : "null"));
+                    serializedObject.ApplyModifiedProperties();
                 }
+            }
+
+            if (destroyErrors.Any())
+            {
+                EditorUtility.DisplayDialog("Warning", $"The following networking elements could not be deleted correctly. Please delete them manually:\n\n{string.Join("\n", destroyErrors)}", UxrConstants.Editor.Ok);
             }
         }
 
@@ -1034,6 +1116,8 @@ namespace UltimateXR.Editor.Networking
         /// </param>
         private void SetupGlobal(IUxrNetworkVoiceImplementation networkVoiceImplementation)
         {
+            List<string> destroyErrors = new List<string>();
+            
             // Destroy components in reverse order because they are added in order that avoids automatic addition of dependencies. Otherwise deleting would add the dependency because it's missing.
 
             for (int i = 0; i < PropCreatedGlobalVoiceComponents.arraySize; ++i)
@@ -1047,14 +1131,23 @@ namespace UltimateXR.Editor.Networking
                 }
                 else
                 {
+                    string path = i < PropCreatedGlobalVoiceComponentPaths.arraySize ? $" at {PropCreatedGlobalVoiceComponentPaths.GetArrayElementAtIndex(i).stringValue}" : string.Empty;
+
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        destroyErrors.Add($"Network voice component: {path}");
+                    }
+                    
                     if (UxrGlobalSettings.Instance.LogLevelNetworking >= UxrLogLevel.Warnings)
                     {
-                        Debug.LogWarning($"{UxrConstants.NetworkingModule} A network component could not deleted. Double check in your scene for any leftovers.");
+                        Debug.LogWarning($"{UxrConstants.NetworkingModule} A network component could not be deleted{path}. Double check in your scene for any leftovers.");
                     }
                 }
             }
 
             PropCreatedGlobalVoiceComponents.ClearArray();
+            PropCreatedGlobalVoiceComponentPaths.ClearArray();
+            serializedObject.ApplyModifiedProperties();
 
             // Destroy GameObjects
 
@@ -1069,14 +1162,23 @@ namespace UltimateXR.Editor.Networking
                 }
                 else
                 {
+                    string path = i < PropCreatedGlobalVoiceGameObjectPaths.arraySize ? $" at {PropCreatedGlobalVoiceGameObjectPaths.GetArrayElementAtIndex(i).stringValue}" : string.Empty;
+
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        destroyErrors.Add($"Network voice GameObject: {path}");
+                    }
+                    
                     if (UxrGlobalSettings.Instance.LogLevelNetworking >= UxrLogLevel.Warnings)
                     {
-                        Debug.LogWarning($"{UxrConstants.NetworkingModule} A network GameObject could not deleted. Double check in your scene for any leftovers.");
+                        Debug.LogWarning($"{UxrConstants.NetworkingModule} A network GameObject could not be deleted{path}. Double check in your scene for any leftovers.");
                     }
                 }
             }
 
             PropCreatedGlobalVoiceGameObjects.ClearArray();
+            PropCreatedGlobalVoiceGameObjectPaths.ClearArray();
+            serializedObject.ApplyModifiedProperties();
 
             // Setup and register added elements
 
@@ -1087,12 +1189,21 @@ namespace UltimateXR.Editor.Networking
                 if (newGameObjects != null && newGameObjects.Any())
                 {
                     UxrEditorUtils.AssignSerializedPropertyArray(PropCreatedGlobalVoiceGameObjects, newGameObjects);
+                    UxrEditorUtils.AssignSerializedPropertySimpleTypeArray(PropCreatedGlobalVoiceGameObjectPaths, newGameObjects.Select(go => go != null ? go.GetPathUnderScene() : "null"));
+                    serializedObject.ApplyModifiedProperties();
                 }
 
                 if (newComponents != null && newComponents.Any())
                 {
                     UxrEditorUtils.AssignSerializedPropertyArray(PropCreatedGlobalVoiceComponents, newComponents);
+                    UxrEditorUtils.AssignSerializedPropertySimpleTypeArray(PropCreatedGlobalVoiceComponentPaths, newComponents.Select(c => c != null ? c.GetPathUnderScene() : "null"));
+                    serializedObject.ApplyModifiedProperties();
                 }
+            }
+
+            if (destroyErrors.Any())
+            {
+                EditorUtility.DisplayDialog("Warning", $"The following networking voice elements could not be deleted correctly. Please delete them manually:\n\n{string.Join("\n", destroyErrors)}", UxrConstants.Editor.Ok);
             }
         }
 
@@ -1220,6 +1331,7 @@ namespace UltimateXR.Editor.Networking
         private static GUIContent ContentNetworkSystem           { get; } = new GUIContent("Network System",               "Selects which networking system will be used");
         private static GUIContent ContentUseSameSdkVoice         { get; } = new GUIContent("Use Voice Capabilities",       "Whether to use the voice capabilities of the networking SDK");
         private static GUIContent ContentNetworkVoiceSystem      { get; } = new GUIContent("Network Voice System",         "Selects which system will be used for networked voice transmission");
+        private static GUIContent ContentOpenSdkManagerWindow    { get; } = new GUIContent("Open SDK Manager",             "Opens the SDK Manager to review the networking SDKs");
         private static GUIContent ContentShowGlobalInfo          { get; } = new GUIContent("View Component Info",          "Lists the components that were added globally for the current networking SDK");
         private static GUIContent ContentSetupAvatar             { get; } = new GUIContent("Register avatar",              "Sets up the avatar for networking using the currently selected networking SDK");
         private static GUIContent ContentShowAvatarInfo          { get; } = new GUIContent("View Info",                    "Lists the components that were added to the avatar to set it up using the current networking SDK");
@@ -1239,40 +1351,48 @@ namespace UltimateXR.Editor.Networking
 
         private const string NoSdk = "None";
 
-        private const string PropertyNameNetworkImplementation           = "_networkImplementation";
-        private const string PropertyNameNetworkVoiceImplementation      = "_networkVoiceImplementation";
-        private const string PropertyNameUseSameSdkVoice                 = "_useSameSdkVoice";
-        private const string PropertyNameCreatedGlobalGameObjects        = "_createdGlobalGameObjects";
-        private const string PropertyNameCreatedGlobalComponents         = "_createdGlobalComponents";
-        private const string PropertyNameCreatedGlobalVoiceGameObjects   = "_createdGlobalVoiceGameObjects";
-        private const string PropertyNameCreatedGlobalVoiceComponents    = "_createdGlobalVoiceComponents";
-        private const string PropertyNameRegisteredAvatars               = "_registeredAvatars";
-        private const string PropertyNameAvatarPrefab                    = "_avatarPrefab";
-        private const string PropertyNamePhysicsAddProjectScenes         = "_grabbablePhysicsAddProjectScenes";
-        private const string PropertyNamePhysicsAddPathPrefabs           = "_grabbablePhysicsAddPathPrefabs";
-        private const string PropertyNamePhysicsPathRoot                 = "_grabbablePhysicsPathRoot";
-        private const string PropertyNamePhysicsOnlyLog                  = "_grabbablePhysicsOnlyLog";
-        private const string PropertyNamePhysicsSetupInfo                = "_grabbablePhysicsSetupInfo";
-        private const string PropertyNamePhysicsInfoSdkUsed              = "_sdkUsed";
-        private const string PropertyNamePhysicsInfoProcessedScenePaths  = "_processedScenePaths";
-        private const string PropertyNamePhysicsInfoProcessedPathPrefabs = "_processedPathPrefabs";
-        private const string PropertyNamePhysicsInfoProcessedRootPath    = "_processedRootPath";
-        private const string PropertyNamePhysicsInfoProcessedPrefabs     = "_processedPrefabs";
-        private const string PropertyNamePhysicsInfoDebugInfoLines       = "_debugInfoLines";
+        private const string PropertyNameNetworkImplementation             = "_networkImplementation";
+        private const string PropertyNameNetworkVoiceImplementation        = "_networkVoiceImplementation";
+        private const string PropertyNameUseSameSdkVoice                   = "_useSameSdkVoice";
+        private const string PropertyNameCreatedGlobalGameObjects          = "_createdGlobalGameObjects";
+        private const string PropertyNameCreatedGlobalComponents           = "_createdGlobalComponents";
+        private const string PropertyNameCreatedGlobalVoiceGameObjects     = "_createdGlobalVoiceGameObjects";
+        private const string PropertyNameCreatedGlobalVoiceComponents      = "_createdGlobalVoiceComponents";
+        private const string PropertyNameCreatedGlobalGameObjectPaths      = "_createdGlobalGameObjectPaths";
+        private const string PropertyNameCreatedGlobalComponentPaths       = "_createdGlobalComponentPaths";
+        private const string PropertyNameCreatedGlobalVoiceGameObjectPaths = "_createdGlobalVoiceGameObjectPaths";
+        private const string PropertyNameCreatedGlobalVoiceComponentPaths  = "_createdGlobalVoiceComponentPaths";
+        private const string PropertyNameRegisteredAvatars                 = "_registeredAvatars";
+        private const string PropertyNameAvatarPrefab                      = "_avatarPrefab";
+        private const string PropertyNamePhysicsAddProjectScenes           = "_grabbablePhysicsAddProjectScenes";
+        private const string PropertyNamePhysicsAddPathPrefabs             = "_grabbablePhysicsAddPathPrefabs";
+        private const string PropertyNamePhysicsPathRoot                   = "_grabbablePhysicsPathRoot";
+        private const string PropertyNamePhysicsOnlyLog                    = "_grabbablePhysicsOnlyLog";
+        private const string PropertyNamePhysicsSetupInfo                  = "_grabbablePhysicsSetupInfo";
+        private const string PropertyNamePhysicsInfoSdkUsed                = "_sdkUsed";
+        private const string PropertyNamePhysicsInfoProcessedScenePaths    = "_processedScenePaths";
+        private const string PropertyNamePhysicsInfoProcessedPathPrefabs   = "_processedPathPrefabs";
+        private const string PropertyNamePhysicsInfoProcessedRootPath      = "_processedRootPath";
+        private const string PropertyNamePhysicsInfoProcessedPrefabs       = "_processedPrefabs";
+        private const string PropertyNamePhysicsInfoDebugInfoLines         = "_debugInfoLines";
 
-        private SerializedProperty PropNetworkImplementation         => serializedObject.FindProperty(PropertyNameNetworkImplementation);
-        private SerializedProperty PropNetworkVoiceImplementation    => serializedObject.FindProperty(PropertyNameNetworkVoiceImplementation);
-        private SerializedProperty PropUseSameSdkVoice               => serializedObject.FindProperty(PropertyNameUseSameSdkVoice);
-        private SerializedProperty PropCreatedGlobalGameObjects      => serializedObject.FindProperty(PropertyNameCreatedGlobalGameObjects);
-        private SerializedProperty PropCreatedGlobalComponents       => serializedObject.FindProperty(PropertyNameCreatedGlobalComponents);
-        private SerializedProperty PropCreatedGlobalVoiceGameObjects => serializedObject.FindProperty(PropertyNameCreatedGlobalVoiceGameObjects);
-        private SerializedProperty PropCreatedGlobalVoiceComponents  => serializedObject.FindProperty(PropertyNameCreatedGlobalVoiceComponents);
-        private SerializedProperty PropRegisteredAvatars             => serializedObject.FindProperty(PropertyNameRegisteredAvatars);
-        private SerializedProperty PropPhysicsAddProjectScenes       => serializedObject.FindProperty(PropertyNamePhysicsAddProjectScenes);
-        private SerializedProperty PropPhysicsAddPathPrefabs         => serializedObject.FindProperty(PropertyNamePhysicsAddPathPrefabs);
-        private SerializedProperty PropPhysicsAddPathRoot            => serializedObject.FindProperty(PropertyNamePhysicsPathRoot);
-        private SerializedProperty PropPhysicsOnlyLog                => serializedObject.FindProperty(PropertyNamePhysicsOnlyLog);
-        private SerializedProperty PropPhysicsSetupInfo              => serializedObject.FindProperty(PropertyNamePhysicsSetupInfo);
+        private SerializedProperty PropNetworkImplementation             => serializedObject.FindProperty(PropertyNameNetworkImplementation);
+        private SerializedProperty PropNetworkVoiceImplementation        => serializedObject.FindProperty(PropertyNameNetworkVoiceImplementation);
+        private SerializedProperty PropUseSameSdkVoice                   => serializedObject.FindProperty(PropertyNameUseSameSdkVoice);
+        private SerializedProperty PropCreatedGlobalGameObjects          => serializedObject.FindProperty(PropertyNameCreatedGlobalGameObjects);
+        private SerializedProperty PropCreatedGlobalComponents           => serializedObject.FindProperty(PropertyNameCreatedGlobalComponents);
+        private SerializedProperty PropCreatedGlobalVoiceGameObjects     => serializedObject.FindProperty(PropertyNameCreatedGlobalVoiceGameObjects);
+        private SerializedProperty PropCreatedGlobalVoiceComponents      => serializedObject.FindProperty(PropertyNameCreatedGlobalVoiceComponents);
+        private SerializedProperty PropCreatedGlobalGameObjectPaths      => serializedObject.FindProperty(PropertyNameCreatedGlobalGameObjectPaths);
+        private SerializedProperty PropCreatedGlobalComponentPaths       => serializedObject.FindProperty(PropertyNameCreatedGlobalComponentPaths);
+        private SerializedProperty PropCreatedGlobalVoiceGameObjectPaths => serializedObject.FindProperty(PropertyNameCreatedGlobalVoiceGameObjectPaths);
+        private SerializedProperty PropCreatedGlobalVoiceComponentPaths  => serializedObject.FindProperty(PropertyNameCreatedGlobalVoiceComponentPaths);
+        private SerializedProperty PropRegisteredAvatars                 => serializedObject.FindProperty(PropertyNameRegisteredAvatars);
+        private SerializedProperty PropPhysicsAddProjectScenes           => serializedObject.FindProperty(PropertyNamePhysicsAddProjectScenes);
+        private SerializedProperty PropPhysicsAddPathPrefabs             => serializedObject.FindProperty(PropertyNamePhysicsAddPathPrefabs);
+        private SerializedProperty PropPhysicsAddPathRoot                => serializedObject.FindProperty(PropertyNamePhysicsPathRoot);
+        private SerializedProperty PropPhysicsOnlyLog                    => serializedObject.FindProperty(PropertyNamePhysicsOnlyLog);
+        private SerializedProperty PropPhysicsSetupInfo                  => serializedObject.FindProperty(PropertyNamePhysicsSetupInfo);
 
         private UxrNetworkManager _networkManager;
         private List<string>      _availableNetworkSdks;

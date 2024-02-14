@@ -18,7 +18,7 @@ namespace UltimateXR.Editor.Sdks.Multiplayer
         #region Public Overrides UxrSdkLocator
 
         /// <inheritdoc />
-        public override SupportType Support => SupportType.Networking;
+        public override SupportType Support => SupportType.VoiceOverNetwork;
 
         /// <inheritdoc />
         public override string Name => UxrConstants.SdkPhotonVoice;
@@ -96,7 +96,7 @@ namespace UltimateXR.Editor.Sdks.Multiplayer
         /// <summary>
         ///     Allows to remove dependencies from the project in case the user removed SDK folders manually.
         /// </summary>
-        [MenuItem(UxrConstants.Editor.MenuPathSdksNetworking + "Remove Symbols for Photon Voice", priority = UxrConstants.Editor.PriorityMenuPathSdksNetworking)]
+        [MenuItem(UxrConstants.Editor.MenuPathSdksNetworkingVoice + "Remove Symbols for Photon Voice", priority = UxrConstants.Editor.PriorityMenuPathSdksNetworkingVoice)]
         private static void RemoveSymbols()
         {
             UxrSdkManager.RemoveSymbols(new UxrSdkLocatorPhotonVoice());

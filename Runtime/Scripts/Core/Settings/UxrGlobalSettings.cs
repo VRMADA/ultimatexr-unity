@@ -4,6 +4,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.IO;
+using UltimateXR.Core.Serialization;
 using UnityEditor;
 using UnityEngine;
 
@@ -24,9 +25,14 @@ namespace UltimateXR.Core.Settings
         [SerializeField] private UxrLogLevel _logLevelDevices      = UxrLogLevel.Relevant;
         [SerializeField] private UxrLogLevel _logLevelLocomotion   = UxrLogLevel.Relevant;
         [SerializeField] private UxrLogLevel _logLevelManipulation = UxrLogLevel.Relevant;
-        [SerializeField] private UxrLogLevel _logLevelNetworking   = UxrLogLevel.Warnings;
+        [SerializeField] private UxrLogLevel _logLevelNetworking   = UxrLogLevel.Relevant;
         [SerializeField] private UxrLogLevel _logLevelUI           = UxrLogLevel.Warnings;
         [SerializeField] private UxrLogLevel _logLevelWeapons      = UxrLogLevel.Relevant;
+
+        [SerializeField] private UxrSerializationFormat _netFormatInitialState        = UxrSerializationFormat.BinaryGzip;
+        [SerializeField] private UxrSerializationFormat _netFormatStateSync           = UxrSerializationFormat.BinaryUncompressed;
+        [SerializeField] private bool                   _syncGrabbablePhysics         = true;
+        [SerializeField] private float                  _grabbableSyncIntervalSeconds = UxrConstants.Networking.DefaultGrabbableSyncIntervalSeconds;
 
         #endregion
 
@@ -101,7 +107,7 @@ namespace UltimateXR.Core.Settings
             get => _logLevelLocomotion;
             set => _logLevelLocomotion = value;
         }
-        
+
         /// <summary>
         ///     Gets or sets the log level for manipulation events.
         /// </summary>
@@ -136,6 +142,44 @@ namespace UltimateXR.Core.Settings
         {
             get => _logLevelWeapons;
             set => _logLevelWeapons = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the format of the network message that contains the initial state of the scene upon joining.
+        /// </summary>
+        public UxrSerializationFormat NetFormatInitialState
+        {
+            get => _netFormatInitialState;
+            set => _netFormatInitialState = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the format of the network messages to synchronize state changes.
+        /// </summary>
+        public UxrSerializationFormat NetFormatStateSync
+        {
+            get => _netFormatStateSync;
+            set => _netFormatStateSync = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets whether to manually sync physics-driven grabbable objects that do not have native networking
+        ///     components such as NetworkTransform/NetworkRigidbody.
+        /// </summary>
+        public bool SyncGrabbablePhysics
+        {
+            get => _syncGrabbablePhysics;
+            set => _syncGrabbablePhysics = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets, when using <see cref="SyncGrabbablePhysics" />, the interval in seconds synchronization messages are
+        ///     sent.
+        /// </summary>
+        public float GrabbableSyncIntervalSeconds
+        {
+            get => _grabbableSyncIntervalSeconds;
+            set => _grabbableSyncIntervalSeconds = value;
         }
 
         #endregion

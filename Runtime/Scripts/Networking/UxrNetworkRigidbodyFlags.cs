@@ -11,5 +11,6 @@ namespace UltimateXR.Networking
     public enum UxrNetworkRigidbodyFlags
     {
         None = 0,
+        All = None // Leave for future implementations
     }
 }

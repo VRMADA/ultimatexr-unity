@@ -22,7 +22,12 @@ namespace UltimateXR.Editor.Sdks
             /// <summary>
             ///     Networking support.
             /// </summary>
-            Networking
+            Networking,
+
+            /// <summary>
+            ///     Voice over network support.
+            /// </summary>
+            VoiceOverNetwork
         }
 
         #endregion

@@ -14,7 +14,7 @@ namespace UltimateXR.Core.Instantiation
 {
     /// <summary>
     ///     The Instance Manager is responsible for making sure that relevant objects that are instantiated and destroyed at
-    ///     runtime, are synchronized through the network in multi-player environments. </br>
+    ///     runtime, are synchronized through the network in multi-player environments. <br/>
     ///     It also allows to change <see cref="Transform" /> parameters of GameObjects in the scene, and keep them in sync
     ///     on all clients.
     /// </summary>
@@ -52,21 +52,12 @@ namespace UltimateXR.Core.Instantiation
         ///     Called when an object was destroyed. The event parameter is the <see cref="UxrComponent.UniqueId" /> of a
         ///     <see cref="UxrComponent" /> component in the root GameObject that was destroyed.
         /// </summary>
-        public event Action<string> Destroyed;
+        public event Action<Guid> Destroyed;
 
         /// <summary>
         ///     Gets all the available prefabs registered in the instance manager.
         /// </summary>
-        public IEnumerable<UxrComponent> AvailablePrefabs
-        {
-            get
-            {
-                foreach (UxrComponent component in _registeredPrefabs)
-                {
-                    yield return component;
-                }
-            }
-        }
+        public IReadOnlyList<UxrComponent> AvailablePrefabs => _registeredPrefabs;
 
         #endregion
 
@@ -74,7 +65,7 @@ namespace UltimateXR.Core.Instantiation
 
         /// <summary>
         ///     Instantiates a new GameObject using a prefab defined by an <see cref="UxrComponent" /> on its root.
-        ///     If there is no need for any specific <see cref="UxrComponent" />, a dummy <see cref="UxrProxy" /> can be used.
+        ///     If there is no need for any specific <see cref="UxrComponent" />, a dummy <see cref="UxrDummy" /> can be used.
         ///     The reason to require an <see cref="UxrComponent" /> is to be able to identify the prefab using a Unique ID and,
         ///     more importantly, assigning the same Unique ID to all instances in the different clients. This includes also all
         ///     other <see cref="UxrComponent" /> components in the hierarchy, which will also have the same unique Id in all
@@ -85,9 +76,9 @@ namespace UltimateXR.Core.Instantiation
         /// <param name="parent">Parent object to parent it to, or null to not parent it</param>
         /// <param name="position">World position</param>
         /// <param name="rotation">World rotation</param>
-        /// <param name="uniqueId">Unique ID or null to generate a new random unique ID</param>
+        /// <param name="uniqueId">Unique ID or default to generate a new random unique ID</param>
         /// <returns>New instance</returns>
-        public UxrComponent InstantiateGameObject(UxrComponent prefab, UxrComponent parent, Vector3 position, Quaternion rotation, string uniqueId = null)
+        public UxrComponent InstantiateGameObject(UxrComponent prefab, UxrComponent parent, Vector3 position, Quaternion rotation, Guid uniqueId)
         {
             CheckInitialized();
             return InstantiateGameObjectInternal(prefab.UniqueId, parent, position, rotation, uniqueId);
@@ -97,7 +88,7 @@ namespace UltimateXR.Core.Instantiation
         ///     Destroys a GameObject.
         /// </summary>
         /// <param name="component">
-        ///     Any <see cref="UxrComponent" /> in the root of the GameObject. Use <see cref="UxrProxy" /> if
+        ///     Any <see cref="UxrComponent" /> in the root of the GameObject. Use <see cref="UxrDummy" /> if
         ///     there is no need for any specific <see cref="UxrComponent" />
         /// </param>
         public void DestroyGameObject(UxrComponent component)
@@ -106,7 +97,7 @@ namespace UltimateXR.Core.Instantiation
             {
                 BeginSync();
 
-                string id = component.UniqueId;
+                Guid id = component.UniqueId;
                 Destroying?.Invoke(component);
                 Destroy(component.gameObject);
                 Destroyed?.Invoke(id);
@@ -120,7 +111,7 @@ namespace UltimateXR.Core.Instantiation
         /// </summary>
         /// <param name="component">
         ///     Any <see cref="UxrComponent" /> on the GameObject. If there is no need for any specific
-        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrProxy" /> can be used.
+        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrDummy" /> can be used.
         /// </param>
         /// <param name="newParent">The new parent</param>
         /// <param name="clearLocalPositionAndRotation">Whether to set the local position and rotation to zero after parenting</param>
@@ -147,7 +138,7 @@ namespace UltimateXR.Core.Instantiation
         /// </summary>
         /// <param name="component">
         ///     Any <see cref="UxrComponent" /> on the GameObject. If there is no need for any specific
-        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrProxy" /> can be used.
+        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrDummy" /> can be used.
         /// </param>
         /// <param name="position">The new local position</param>
         public void SetLocalPosition(UxrComponent component, Vector3 position)
@@ -167,7 +158,7 @@ namespace UltimateXR.Core.Instantiation
         /// </summary>
         /// <param name="component">
         ///     Any <see cref="UxrComponent" /> on the GameObject. If there is no need for any specific
-        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrProxy" /> can be used.
+        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrDummy" /> can be used.
         /// </param>
         /// <param name="position">The new position</param>
         public void SetPosition(UxrComponent component, Vector3 position)
@@ -187,7 +178,7 @@ namespace UltimateXR.Core.Instantiation
         /// </summary>
         /// <param name="component">
         ///     Any <see cref="UxrComponent" /> on the GameObject. If there is no need for any specific
-        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrProxy" /> can be used.
+        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrDummy" /> can be used.
         /// </param>
         /// <param name="rotation">The new local rotation</param>
         public void SetLocalRotation(UxrComponent component, Quaternion rotation)
@@ -207,7 +198,7 @@ namespace UltimateXR.Core.Instantiation
         /// </summary>
         /// <param name="component">
         ///     Any <see cref="UxrComponent" /> on the GameObject. If there is no need for any specific
-        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrProxy" /> can be used.
+        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrDummy" /> can be used.
         /// </param>
         /// <param name="rotation">The new rotation</param>
         public void SetRotation(UxrComponent component, Quaternion rotation)
@@ -228,7 +219,7 @@ namespace UltimateXR.Core.Instantiation
         /// </summary>
         /// <param name="component">
         ///     Any <see cref="UxrComponent" /> on the GameObject. If there is no need for any specific
-        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrProxy" /> can be used.
+        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrDummy" /> can be used.
         /// </param>
         /// <param name="position">The new position</param>
         /// <param name="rotation">The new rotation</param>
@@ -250,7 +241,7 @@ namespace UltimateXR.Core.Instantiation
         /// </summary>
         /// <param name="component">
         ///     Any <see cref="UxrComponent" /> on the GameObject. If there is no need for any specific
-        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrProxy" /> can be used.
+        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrDummy" /> can be used.
         /// </param>
         /// <param name="position">The new local position</param>
         /// <param name="rotation">The new local rotation</param>
@@ -271,7 +262,7 @@ namespace UltimateXR.Core.Instantiation
         /// </summary>
         /// <param name="component">
         ///     Any <see cref="UxrComponent" /> on the GameObject. If there is no need for any specific
-        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrProxy" /> can be used.
+        ///     <see cref="UxrComponent" />, a dummy <see cref="UxrDummy" /> can be used.
         /// </param>
         /// <param name="scale">The new scale</param>
         public void SetScale(UxrComponent component, Vector3 scale)
@@ -313,7 +304,7 @@ namespace UltimateXR.Core.Instantiation
                 return;
             }
 
-            _prefabsById = new Dictionary<string, UxrComponent>();
+            _prefabsById = new Dictionary<Guid, UxrComponent>();
 
             foreach (UxrComponent prefab in AvailablePrefabs)
             {
@@ -329,8 +320,8 @@ namespace UltimateXR.Core.Instantiation
         /// <param name="position">World position</param>
         /// <param name="rotation">World rotation</param>
         /// <param name="uniqueId">New unique ID or null to generate one</param>
-        /// <returns></returns>
-        private UxrComponent InstantiateGameObjectInternal(string prefabUniqueId, UxrComponent parent, Vector3 position, Quaternion rotation, string uniqueId = null)
+        /// <returns>Instantiated object</returns>
+        private UxrComponent InstantiateGameObjectInternal(Guid prefabUniqueId, UxrComponent parent, Vector3 position, Quaternion rotation, Guid uniqueId = default)
         {
             UxrComponent newInstance = null;
 
@@ -342,10 +333,12 @@ namespace UltimateXR.Core.Instantiation
 
                 Transform parentTransform = parent != null ? parent.transform : null;
                 newInstance = Instantiate(prefab, position, rotation, parentTransform);
+                
+                // We use a trick where we sync the call with the generated Unique ID as parameter. 
 
-                if (uniqueId == null)
+                if (uniqueId == default)
                 {
-                    uniqueId = Guid.NewGuid().ToString();
+                    uniqueId = Guid.NewGuid();
                 }
 
                 newInstance.ChangeUniqueId(uniqueId, true);
@@ -362,7 +355,7 @@ namespace UltimateXR.Core.Instantiation
 
         #region Private Types & Data
 
-        private Dictionary<string, UxrComponent> _prefabsById;
+        private Dictionary<Guid, UxrComponent> _prefabsById;
 
         #endregion
     }

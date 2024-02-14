@@ -27,24 +27,27 @@ namespace UltimateXR.Core
             public const string PropertyBehaviourEnabled = "m_Enabled";
             public const string PropertyObjectHideFlags  = "m_ObjectHideFlags";
 
-            public const string MenuPathRoot              = "Tools/UltimateXR/";
-            public const string MenuPathAvatar            = "Tools/UltimateXR/Avatar/";
-            public const string MenuPathNetworking        = "Tools/UltimateXR/Networking/";
-            public const string MenuPathSdks              = "Tools/UltimateXR/SDKs/";
-            public const string MenuPathSdksInputTracking = "Tools/UltimateXR/SDKs/InputTracking/";
-            public const string MenuPathSdksNetworking    = "Tools/UltimateXR/SDKs/Networking/";
-            public const string MenuPathUtils             = "Tools/UltimateXR/Utils/";
+            public const string MenuPathRoot                = "Tools/UltimateXR/";
+            public const string MenuPathAvatar              = "Tools/UltimateXR/Avatar/";
+            public const string MenuPathAddAvatar           = "Tools/UltimateXR/Avatar/Add built-in avatar to scene/";
+            public const string MenuPathNetworking          = "Tools/UltimateXR/Networking/";
+            public const string MenuPathSdks                = "Tools/UltimateXR/SDKs/";
+            public const string MenuPathSdksInputTracking   = "Tools/UltimateXR/SDKs/Input Tracking/";
+            public const string MenuPathSdksNetworking      = "Tools/UltimateXR/SDKs/Networking/";
+            public const string MenuPathSdksNetworkingVoice = "Tools/UltimateXR/SDKs/Voice Over Network/";
+            public const string MenuPathUtils               = "Tools/UltimateXR/Utils/";
 
-            public const int PriorityMenuPathAvatar            = 1;
-            public const int PriorityMenuPathNetworking        = 2;
-            public const int PriorityMenuPathSdks              = 3;
-            public const int PriorityMenuPathSdksInputTracking = 4;
-            public const int PriorityMenuPathSdksNetworking    = 6;
-            public const int PriorityMenuPathUtils             = 8;
-            public const int PriorityMenuPathRoot              = 50;
+            public const int PriorityMenuPathAvatar              = 1;
+            public const int PriorityMenuPathNetworking          = 2;
+            public const int PriorityMenuPathSdks                = 3;
+            public const int PriorityMenuPathSdksInputTracking   = 4;
+            public const int PriorityMenuPathSdksNetworking      = 6;
+            public const int PriorityMenuPathSdksNetworkingVoice = 8;
+            public const int PriorityMenuPathUtils               = 10;
+            public const int PriorityMenuPathRoot                = 500;
             
             /// <summary>
-            ///     Editor prefs key for whether automatic unique ID generation for <see cref="UxrComponent" /> is performed in
+            ///     Editor prefs key for whether automatic unique ID generation for <see cref="IUxrUnique" /> is performed in
             ///     OnValidate().
             /// </summary>
             public const string AutomaticIdGenerationPrefs = "UltimateXR.Editor.AutomaticUniqueIdGeneration";

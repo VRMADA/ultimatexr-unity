@@ -259,13 +259,6 @@ namespace UltimateXR.Manipulation
 
         #endregion
 
-        #region Public Overrides UxrComponent
-
-        /// <inheritdoc />
-        public override string SyncTargetName => "Grab Manager";
-
-        #endregion
-
         #region Internal Methods
 
         /// <summary>
@@ -429,7 +422,7 @@ namespace UltimateXR.Manipulation
             {
                 Debug.Log($"{UxrConstants.ManipulationModule} Trying to grab using {e.Grabber}.");
             }
-            
+
             if (propagateEvent)
             {
                 GrabTrying?.Invoke(this, e);
@@ -626,6 +619,13 @@ namespace UltimateXR.Manipulation
                 PlacedObjectRangeLeft?.Invoke(this, e);
             }
         }
+
+        #endregion
+
+        #region Protected Overrides UxrComponent
+
+        /// <inheritdoc />
+        protected override string StateSyncName => "Grab Manager";
 
         #endregion
 
@@ -975,7 +975,7 @@ namespace UltimateXR.Manipulation
 
         #region Private Types & Data
 
-        private readonly Dictionary<UxrGrabbableObject, RuntimeManipulationInfo>         _currentManipulations   = new Dictionary<UxrGrabbableObject, RuntimeManipulationInfo>();
+        private          Dictionary<UxrGrabbableObject, RuntimeManipulationInfo>         _currentManipulations   = new Dictionary<UxrGrabbableObject, RuntimeManipulationInfo>();
         private readonly Dictionary<UxrGrabbableObjectAnchor, GrabbableObjectAnchorInfo> _grabbableObjectAnchors = new Dictionary<UxrGrabbableObjectAnchor, GrabbableObjectAnchorInfo>();
 
         #endregion

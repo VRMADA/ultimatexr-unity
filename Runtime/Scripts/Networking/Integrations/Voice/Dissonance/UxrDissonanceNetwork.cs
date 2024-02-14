@@ -6,12 +6,12 @@
 using System.Collections.Generic;
 using UltimateXR.Avatar;
 using UltimateXR.Core;
-using UltimateXR.Extensions.Unity;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 #if ULTIMATEXR_USE_DISSONANCE_SDK
+using UltimateXR.Extensions.Unity;
 using Dissonance;
 #endif
 

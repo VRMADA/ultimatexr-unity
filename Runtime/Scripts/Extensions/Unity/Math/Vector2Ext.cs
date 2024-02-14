@@ -6,6 +6,7 @@
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+using UltimateXR.Core;
 using UltimateXR.Extensions.System;
 using UnityEngine;
 
@@ -26,6 +27,28 @@ namespace UltimateXR.Extensions.Unity.Math
         #endregion
 
         #region Public Methods
+
+        /// <summary>
+        ///     Compares two Unity Vector2 objects for equality with a specified precision threshold.
+        /// </summary>
+        /// <param name="a">The first Vector2 to compare</param>
+        /// <param name="b">The second Vector2 to compare</param>
+        /// <param name="precisionThreshold">
+        ///     The precision threshold for float comparisons. Defaults to
+        ///     <see cref="UxrConstants.Math.DefaultPrecisionThreshold" />.
+        /// </param>
+        /// <returns>
+        ///     <c>true</c> if the Vector2 objects are equal; otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        ///     This method performs a component-wise comparison between two Vector2 objects.
+        ///     Each component is compared using the specified precision threshold for float comparisons.
+        /// </remarks>
+        public static bool EqualsUsingPrecision(this Vector2 a, Vector2 b, float precisionThreshold = UxrConstants.Math.DefaultPrecisionThreshold)
+        {
+            return Mathf.Abs(a.x - b.x) <= precisionThreshold &&
+                   Mathf.Abs(a.y - b.y) <= precisionThreshold;
+        }
 
         /// <summary>
         ///     Checks whether the given vector has any NaN component.

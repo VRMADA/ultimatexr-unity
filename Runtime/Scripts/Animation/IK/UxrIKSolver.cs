@@ -37,6 +37,11 @@ namespace UltimateXR.Animation.IK
         public event Action Solved;
 
         /// <summary>
+        ///     Gets whether the component is initialized.
+        /// </summary>
+        public abstract bool Initialized { get; }
+
+        /// <summary>
         ///     Gets if the solver needs to be updated automatically.
         /// </summary>
         public bool NeedsAutoUpdate => gameObject.activeInHierarchy && enabled && SolverEnabled && !ManualUpdate;

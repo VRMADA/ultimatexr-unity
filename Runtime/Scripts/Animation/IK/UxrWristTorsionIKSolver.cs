@@ -36,6 +36,13 @@ namespace UltimateXR.Animation.IK
 
         #endregion
 
+        #region Public Overrides UxrIKSolver
+
+        /// <inheritdoc />
+        public override bool Initialized => _initialized;
+
+        #endregion
+
         #region Unity
 
         /// <summary>
@@ -50,6 +57,8 @@ namespace UltimateXR.Animation.IK
 
             UxrUniversalLocalAxes handUniversalLocalAxes = Avatar.AvatarRigInfo.GetArmInfo(_handSide).HandUniversalLocalAxes;
             _torsionLocalAxis = transform.InverseTransformDirection(handUniversalLocalAxes.WorldForward).GetClosestAxis();
+
+            _initialized = true;
         }
 
         #endregion
@@ -69,6 +78,7 @@ namespace UltimateXR.Animation.IK
 
         #region Private Types & Data
 
+        private bool        _initialized;
         private UxrHandSide _handSide;
         private Quaternion  _startLocalRotation;
         private Vector3     _torsionLocalAxis;

@@ -12,14 +12,18 @@ namespace UltimateXR.Mechanics.Weapons
     ///     Base class for weapons. Weapons are used by <see cref="UxrActor" /> components to inflict damage to other actor
     ///     components.
     /// </summary>
-    public abstract class UxrWeapon : UxrGrabbableObjectComponent<UxrWeapon>
+    public abstract partial class UxrWeapon : UxrGrabbableObjectComponent<UxrWeapon>
     {
         #region Public Types & Data
 
         /// <summary>
         ///     Gets who is in possession of the weapon, to attribute the inflicted damage to.
         /// </summary>
-        public UxrActor Owner { get; protected set; }
+        public UxrActor Owner
+        {
+            get => _owner;
+            protected set => _owner = value;
+        }
 
         #endregion
 
@@ -59,6 +63,12 @@ namespace UltimateXR.Mechanics.Weapons
 
         /// <inheritdoc />
         protected override bool IsGrabbableObjectRequired => false;
+
+        #endregion
+
+        #region Private Types & Data
+
+        private UxrActor _owner;
 
         #endregion
     }

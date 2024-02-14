@@ -19,6 +19,15 @@ namespace UltimateXR.Animation.IK
     /// </summary>
     public sealed partial class UxrBodyIK
     {
+        #region Public Types & Data
+
+        /// <summary>
+        ///     Gets whether the object was initialized.
+        /// </summary>
+        public bool Initialized { get; private set; }
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>
@@ -26,14 +35,15 @@ namespace UltimateXR.Animation.IK
         /// </summary>
         /// <param name="avatar">Avatar that the IK will be computed for</param>
         /// <param name="settings">IK settings to use</param>
-        /// <param name="usesExternalArmIK">Whether the avatar uses arm IK from other side</param>
-        /// <param name="usesExternalLegIK">Whether the avatar uses leg IK from other side</param>
+        /// <param name="usesExternalArmIK">Whether the avatar uses an arm IK</param>
+        /// <param name="usesExternalLegIK">Whether the avatar uses leg IK</param>
         public void Initialize(UxrAvatar avatar, UxrBodyIKSettings settings, bool usesExternalArmIK, bool usesExternalLegIK)
         {
+            Initialized      = true;
             _avatar          = avatar;
             _avatarTransform = avatar.transform;
             _settings        = settings;
-            
+
             // Get body root
 
             if (avatar.AvatarRig.Head.Head == null)
@@ -42,7 +52,7 @@ namespace UltimateXR.Animation.IK
                 {
                     Debug.LogError($"{UxrConstants.AvatarModule} Avatar {avatar.name} has no head setup in the {nameof(UxrAvatar)}'s Rig field");
                 }
-                
+
                 return;
             }
 
@@ -106,7 +116,7 @@ namespace UltimateXR.Animation.IK
                 {
                     Debug.LogWarning($"{UxrConstants.AvatarModule} No common avatar body root found. If there is an avatar body it will not follow the head position.");
                 }
-                
+
                 _avatarBodyRoot = new GameObject("Dummy Root").transform;
                 _avatarBodyRoot.SetParent(_avatarTransform);
                 _avatarBodyRoot.SetPositionAndRotation(_avatarTransform.position, _avatarTransform.rotation);
@@ -251,7 +261,7 @@ namespace UltimateXR.Animation.IK
 
             float rotationSpeedMultiplier = Vector3.Angle(_avatarForward.forward, _avatarForwardTarget) / 30.0f;
             float maxForwardDegreesDelta  = AvatarRotationDegreesPerSecond * rotationSpeedMultiplier * _settings.BodyPivotRotationSpeed * Time.deltaTime;
-            
+
             _avatarForward.rotation = Quaternion.RotateTowards(Quaternion.LookRotation(_avatarForward.forward, _avatar.transform.up),
                                                                Quaternion.LookRotation(_avatarForwardTarget,   _avatar.transform.up),
                                                                smoothForwardRotation ? maxForwardDegreesDelta : 180.0f);
@@ -370,7 +380,7 @@ namespace UltimateXR.Animation.IK
             {
                 boneInfo.Transform.SetPositionAndRotation(boneInfo.Position, boneInfo.Rotation);
             }
-            
+
             if (_settings.LockBodyPivot)
             {
                 _avatarForward.position = _avatar.transform.TransformPoint(localAvatarPivotPos);
@@ -481,8 +491,14 @@ namespace UltimateXR.Animation.IK
         /// <param name="e">Move event parameters</param>
         public void NotifyAvatarMoved(UxrAvatarMoveEventArgs e)
         {
+            if (!Initialized)
+            {
+                return;
+            }
+            
             float angle = Vector3.SignedAngle(e.OldForward, e.NewForward, _avatar.transform.up);
-            _avatarForwardTarget = Quaternion.AngleAxis(angle, _avatar.transform.up) * _avatarForwardTarget;
+            _avatarForwardTarget  = Quaternion.AngleAxis(angle, _avatar.transform.up) * _avatarForwardTarget;
+            _straightSpineForward = Quaternion.AngleAxis(angle, _avatar.transform.up) * _straightSpineForward;
         }
 
         #endregion
@@ -492,7 +508,7 @@ namespace UltimateXR.Animation.IK
         /// <summary>
         ///     Computes an world position based on an offset from an object.
         /// </summary>
-        /// <param name="axes">The axes <paramref name="offset"/> refer to</param>
+        /// <param name="axes">The axes <paramref name="offset" /> refer to</param>
         /// <param name="transform">The object origin</param>
         /// <param name="offset">The offset components</param>
         /// <returns>Offset vector</returns>
