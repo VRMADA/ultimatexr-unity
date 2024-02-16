@@ -105,6 +105,11 @@ namespace UltimateXR.Core.Serialization
                 return UxrVarType.Type;
             }
 
+            if (obj is Guid)
+            {
+                return UxrVarType.Guid;
+            }
+
             // C# collections
             
             if (type.IsArray)
