@@ -285,8 +285,8 @@ namespace UltimateXR.Core.Components
         public void RegisterUniqueIdIfNecessary()
         {
             UniqueIdImplementer.InitializeUniqueIdIfNecessary(this,
-                                                              (c, id) => c.UniqueId = id,
                                                               c => c.UniqueIdImplementer,
+                                                              (c, id) => c.UniqueId = id,
                                                               (c, oldId, newId) => c.OnUniqueIdChanging(oldId, newId),
                                                               (c, oldId, newId) => c.OnUniqueIdChanged(oldId, newId),
                                                               c => c.OnRegistering(),
@@ -294,24 +294,48 @@ namespace UltimateXR.Core.Components
         }
 
         /// <inheritdoc />
-        public Guid ChangeUniqueId(Guid newUniqueId, bool recursive = false)
+        public Guid ChangeUniqueId(Guid newUniqueId)
         {
             return UniqueIdImplementer.ChangeUniqueId(newUniqueId,
-                                                      (c, id) => c.UniqueId = id,
                                                       c => c.UniqueIdImplementer,
+                                                      (c, id) => c.UniqueId = id,
                                                       (c, oldId, newId) => c.OnUniqueIdChanging(oldId, newId),
                                                       (c, oldId, newId) => c.OnUniqueIdChanged(oldId, newId),
                                                       c => c.OnRegistering(),
-                                                      c => c.OnRegistered(),
-                                                      recursive);
+                                                      c => c.OnRegistered());
+        }
+
+        /// <inheritdoc />
+        public void CombineUniqueId(Guid guid, bool recursive = false)
+        {
+            UniqueIdImplementer.CombineUniqueId(guid,
+                                                c => c.UniqueIdImplementer,
+                                                (c, id) => c.UniqueId = id,
+                                                (c, oldId, newId) => c.OnUniqueIdChanging(oldId, newId),
+                                                (c, oldId, newId) => c.OnUniqueIdChanged(oldId, newId),
+                                                c => c.OnRegistering(),
+                                                c => c.OnRegistered(),
+                                                recursive);
         }
 
         #endregion
 
-        #region Explicit IUxrStateSync
+        #region Explicit IUxrUniqueId
 
         /// <inheritdoc />
-        string IUxrStateSync.Name => StateSyncName;
+        Guid IUxrUniqueId.CombineIdSource => this != null ? UniqueIdImplementer.CombineIdSource : Guid.Empty;
+
+        /// <inheritdoc />
+        Component IUxrUniqueId.Component => this;
+
+        /// <inheritdoc />
+        string IUxrUniqueId.UnityPrefabId => this != null ? __prefabGuid : null;
+
+        /// <inheritdoc />
+        GameObject IUxrUniqueId.GameObject => this != null ? gameObject : null;
+
+        /// <inheritdoc />
+        Transform IUxrUniqueId.Transform => this != null ? transform : null;
 
         #endregion
 
@@ -924,17 +948,6 @@ namespace UltimateXR.Core.Components
         {
             StateSyncImplementer.EndSyncState(OnStateChanged, e);
         }
-
-        #endregion
-
-        #region Protected Types & Data
-
-        /// <summary>
-        ///     Gets the name of the object, to identify it in debug strings. Uses Unity's name object by default, but it can be
-        ///     overriden to provide a better, comprehensible name.
-        /// </summary>
-        /// <returns>Name of the object</returns>
-        protected virtual string StateSyncName => name;
 
         #endregion
 

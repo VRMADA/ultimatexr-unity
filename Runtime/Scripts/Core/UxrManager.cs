@@ -280,36 +280,46 @@ namespace UltimateXR.Core
                     {
                         if (unique is IUxrStateSave stateSave)
                         {
-                            bool serialize = ignoreRoots == null || !ignoreRoots.Any(go => (unique as Component).transform.HasParent(go.transform));
+                            bool serialize = ignoreRoots == null || !ignoreRoots.Any(go => unique.Transform.HasParent(go.transform));
 
                             if (!serialize)
                             {
                                 continue;
                             }
-                            
-                            if (stateSave.SerializeState(serializer, stateSave.StateSerializationVersion, level, UxrStateSaveOptions.DontCacheChanges | UxrStateSaveOptions.DontSerialize))
+
+                            try
                             {
-                                long before = format == UxrSerializationFormat.BinaryUncompressed ? writer.BaseStream.Position : 0;
-
-                                writer.WriteUniqueComponent(unique);
-                                writer.Write(stateSave.StateSerializationVersion);
-                                stateSave.SerializeState(serializer, stateSave.StateSerializationVersion, level);
-
-                                long after = format == UxrSerializationFormat.BinaryUncompressed ? writer.BaseStream.Position : 0;
-
-                                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Debug)
+                                if (stateSave.SerializeState(serializer, stateSave.StateSerializationVersion, level, UxrStateSaveOptions.DontCacheChanges | UxrStateSaveOptions.DontSerialize))
                                 {
-                                    if (format == UxrSerializationFormat.BinaryUncompressed)
-                                    {
-                                        Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Serialized {(unique as Component).name} ({unique.GetType().Name}) to {after - before} bytes. Id is {unique.UniqueId}.");
-                                    }
-                                    else
-                                    {
-                                        Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Serialized {(unique as Component).name} ({unique.GetType().Name}). Id is {unique.UniqueId}.");
-                                    }
-                                }
+                                    long before = format == UxrSerializationFormat.BinaryUncompressed ? writer.BaseStream.Position : 0;
 
-                                count++;
+                                    writer.WriteUniqueComponent(unique);
+                                    writer.Write(stateSave.StateSerializationVersion);
+                                    stateSave.SerializeState(serializer, stateSave.StateSerializationVersion, level);
+
+                                    long after = format == UxrSerializationFormat.BinaryUncompressed ? writer.BaseStream.Position : 0;
+
+                                    if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Debug)
+                                    {
+                                        if (format == UxrSerializationFormat.BinaryUncompressed)
+                                        {
+                                            Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Serialized {unique.Component.name} ({unique.GetType().Name}) to {after - before} bytes. Id is {unique.UniqueId}.");
+                                        }
+                                        else
+                                        {
+                                            Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Serialized {unique.Component.name} ({unique.GetType().Name}). Id is {unique.UniqueId}.");
+                                        }
+                                    }
+
+                                    count++;
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+                                {
+                                    Debug.LogError($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Error serializing component {unique.Component.name} ({unique.GetType().Name}): {e}");
+                                }
                             }
                         }
                     }
@@ -334,11 +344,11 @@ namespace UltimateXR.Core
         /// <param name="serializedState">Serialized state</param>
         public void LoadStateChanges(byte[] serializedState)
         {
-            if (serializedState == null)
+            if (serializedState == null || serializedState.Length == 0)
             {
                 if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Warnings)
                 {
-                    Debug.LogWarning($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Input bytes is null.");
+                    Debug.LogWarning($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Input bytes is null or empty.");
                 }
 
                 return;
@@ -370,7 +380,14 @@ namespace UltimateXR.Core
                     break;
                 }
 
-                default: throw new ArgumentOutOfRangeException();
+                default:
+                    
+                    if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+                    {
+                        Debug.LogError($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Serialized data format is unknown ({format}).");
+                    }
+
+                    return;
             }
 
             void DeserializeUncompressed(Stream inputStream)
@@ -399,7 +416,7 @@ namespace UltimateXR.Core
 
                             if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Debug)
                             {
-                                Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Deserialized {(unique as Component).name} ({unique.GetType().Name}). Id is {unique.UniqueId}.");
+                                Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Deserialized {unique.Component.name} ({unique.GetType().Name}). Id is {unique.UniqueId}.");
                             }
 
                             count++;

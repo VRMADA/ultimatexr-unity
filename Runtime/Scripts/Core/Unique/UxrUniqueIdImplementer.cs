@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using UltimateXR.Core.Components;
+using UltimateXR.Core.Instantiation;
 using UltimateXR.Core.Settings;
 using UnityEngine;
 
@@ -31,15 +32,45 @@ namespace UltimateXR.Core.Unique
         {
             get
             {
-                foreach (KeyValuePair<Type, UxrUniqueIdImplementer> pair in s_allImplementers)
+                // TODO: We want to prioritize the UxrInstanceManager so that when deserializing, we get the instance data
+                // always before the instances themselves. This way instances are created/destroyed before any instance data and
+                // there are no "instance not found" exceptions.
+                // Ideally we would have a sorting order in IUxrUniqueId but for now we want to avoid sorting.
+
+                IUxrUniqueId instanceManager = UxrInstanceManager.HasInstance ? UxrInstanceManager.Instance : null;
+
+                if (instanceManager != null)
+                {
+                    yield return instanceManager;
+                }
+
+                foreach (KeyValuePair<Type, UxrUniqueIdImplementer> pair in s_implementerTypes)
                 {
                     foreach (IUxrUniqueId unique in pair.Value.GetAllComponentsInternal())
                     {
-                        yield return unique;
+                        if (unique != instanceManager && unique != null && unique.GameObject != null)
+                        {
+                            yield return unique;
+                        }
                     }
                 }
             }
         }
+
+        /// <summary>
+        ///     Gets or sets the unique Id used for combination by <see cref="UxrUniqueIdImplementer{T}.CombineUniqueId"/>.
+        /// </summary>
+        public Guid CombineIdSource { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the original unique Id.
+        /// </summary>
+        public Guid OriginalUniqueId { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the component that was initialized.
+        /// </summary>
+        public IUxrUniqueId InitializedComponent { get; set; }
 
         #endregion
 
@@ -66,7 +97,7 @@ namespace UltimateXR.Core.Unique
         {
             // Iterate over component types. By default it should contain the UxrComponent implementer only.
 
-            foreach (KeyValuePair<Type, UxrUniqueIdImplementer> pair in s_allImplementers)
+            foreach (KeyValuePair<Type, UxrUniqueIdImplementer> pair in s_implementerTypes)
             {
                 if (pair.Value.TryGetComponentByIdInternal(id, out component))
                 {
@@ -88,7 +119,7 @@ namespace UltimateXR.Core.Unique
         /// <returns>Whether the given ID was found and a component is returned</returns>
         public static bool TryGetComponentById<T>(Guid id, out T component) where T : Component, IUxrUniqueId
         {
-            foreach (KeyValuePair<Type, UxrUniqueIdImplementer> pair in s_allImplementers)
+            foreach (KeyValuePair<Type, UxrUniqueIdImplementer> pair in s_implementerTypes)
             {
                 if (pair.Value.TryGetComponentByIdInternal(id, out IUxrUniqueId unique))
                 {
@@ -131,15 +162,32 @@ namespace UltimateXR.Core.Unique
         /// <summary>
         ///     Registers an implementer type if it wasn't already registered. This allows to statically get components of custom
         ///     types based on their ID using <see cref="TryGetComponentById" />.
+        ///     Also registers the implementer so that it can be retrieved using the component as key.
         /// </summary>
+        /// <param name="targetComponent">The target component</param>
         /// <param name="implementer">The implementer</param>
-        /// <param name="getComponentById">A func that returns a component of type T based on the ID or null if it wasn't found.</param>
-        protected void RegisterImplementerIfNecessary<T>(UxrUniqueIdImplementer<T> implementer) where T : Component, IUxrUniqueId
+        protected void RegisterImplementer<T>(T targetComponent, UxrUniqueIdImplementer<T> implementer) where T : Component, IUxrUniqueId
         {
-            if (!s_allImplementers.ContainsKey(typeof(T)))
+            if (!s_implementerTypes.ContainsKey(typeof(T)))
             {
-                s_allImplementers.Add(typeof(T), implementer);
+                s_implementerTypes.Add(typeof(T), implementer);
             }
+
+            if (!s_allImplementers.ContainsKey(targetComponent))
+            {
+                s_allImplementers.Add(targetComponent, implementer);
+            }
+        }
+
+        /// <summary>
+        ///     Unregisters the implementer.
+        /// </summary>
+        /// <param name="targetComponent">The target component</param>
+        /// <param name="implementer">The implementer</param>
+        /// <typeparam name="T">The component type</typeparam>
+        protected void UnregisterImplementer<T>(T targetComponent, UxrUniqueIdImplementer<T> implementer) where T : Component, IUxrUniqueId
+        {
+            s_allImplementers.Remove(targetComponent);
         }
 
         #endregion
@@ -156,9 +204,15 @@ namespace UltimateXR.Core.Unique
         #region Private Types & Data
 
         /// <summary>
-        ///     All components, including those of custom types.
+        ///     Contains the first implementer registered for each type, including <see cref="UxrComponent" /> and any user custom
+        ///     types.
         /// </summary>
-        private static readonly Dictionary<Type, UxrUniqueIdImplementer> s_allImplementers = new Dictionary<Type, UxrUniqueIdImplementer>();
+        private static readonly Dictionary<Type, UxrUniqueIdImplementer> s_implementerTypes = new Dictionary<Type, UxrUniqueIdImplementer>();
+
+        /// <summary>
+        ///     Contains the implementer for each component.
+        /// </summary>
+        private static readonly Dictionary<IUxrUniqueId, UxrUniqueIdImplementer> s_allImplementers = new Dictionary<IUxrUniqueId, UxrUniqueIdImplementer>();
 
         #endregion
     }

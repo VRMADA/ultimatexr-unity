@@ -15,6 +15,7 @@ using UltimateXR.Core.StateSave;
 using UltimateXR.Core.StateSync;
 using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.System.Collections;
+using UltimateXR.Core.Instantiation;
 using Fusion;
 #endif
 
@@ -79,7 +80,7 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
                 LocalDisabledGameObjects.ForEach(o => o.SetActive(false));
             }
 
-            avatar.ChangeUniqueId(uniqueId.GetGuid(), true);
+            avatar.CombineUniqueId(uniqueId.GetGuid(), true);
         }
 
         #endregion
@@ -107,6 +108,11 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
 
             AvatarSpawned?.Invoke();
 
+            if (UxrInstanceManager.HasInstance)
+            {
+                UxrInstanceManager.Instance.NotifyNetworkSpawn(Avatar.gameObject);
+            }
+
             if (Object.HasInputAuthority)
             {
                 byte[] localAvatarState = UxrManager.Instance.SaveStateChanges(new List<GameObject> { Avatar.gameObject }, null, UxrStateSaveLevel.ChangesSinceBeginning, UxrGlobalSettings.Instance.NetFormatInitialState);
@@ -130,7 +136,12 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
             {
                 UxrManager.ComponentStateChanged -= UxrManager_ComponentStateChanged;
             }
-
+            
+            if (UxrGlobalSettings.Instance.LogLevelNetworking >= UxrLogLevel.Relevant)
+            {
+                Debug.Log($"{UxrConstants.NetworkingModule} {nameof(UxrPhotonFusionAvatar)}.{nameof(Despawned)}: Is Local? {IsLocal}, Name: {AvatarName}");
+            }
+            
             AvatarDespawned?.Invoke();
         }
 
@@ -258,7 +269,7 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
                 {
                     if (UxrGlobalSettings.Instance.LogLevelNetworking >= UxrLogLevel.Verbose)
                     {
-                        Debug.Log($"{UxrConstants.NetworkingModule} Sending {serializedEvent.Length} bytes from {component.Name} ({component.UniqueId}) {eventArgs}");
+                        Debug.Log($"{UxrConstants.NetworkingModule} Sending {serializedEvent.Length} bytes from {component.Component.name} ({component.UniqueId}) {eventArgs}");
                     }
 
                     RPC_ComponentStateChanged(serializedEvent);

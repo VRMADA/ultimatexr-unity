@@ -13,6 +13,7 @@ using UnityEditor;
 #if ULTIMATEXR_USE_MIRROR_SDK
 using System.Linq;
 using UltimateXR.Core.Settings;
+using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Manipulation;
 using Mirror;
@@ -86,7 +87,7 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
             }
 
             NetworkIdentity avatarNetworkIdentity = avatar.gameObject.GetOrAddComponent<NetworkIdentity>();
-            
+
             UxrMirrorAvatar mirrorAvatar = avatar.GetOrAddComponent<UxrMirrorAvatar>();
             newComponents.Add(mirrorAvatar);
 
@@ -108,11 +109,19 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
 
             Undo.RegisterFullObjectHierarchyUndo(avatar.gameObject, "Setup Mirror Avatar");
 
+#endif
+        }
+
+        /// <inheritdoc />
+        public override void SetupPostProcess(IEnumerable<UxrAvatar> avatarPrefabs)
+        {
+#if ULTIMATEXR_USE_MIRROR_SDK && UNITY_EDITOR
+
             NetworkManager mirrorNetworkManager = FindObjectOfType<NetworkManager>();
 
-            if (mirrorNetworkManager != null && mirrorNetworkManager.playerPrefab == null)
+            if (mirrorNetworkManager != null)
             {
-                mirrorNetworkManager.playerPrefab = PrefabUtility.GetCorrespondingObjectFromSource(avatar).gameObject;
+                mirrorNetworkManager.playerPrefab = avatarPrefabs.Any() ? avatarPrefabs.First().gameObject : null;
                 Undo.RegisterCompleteObjectUndo(mirrorNetworkManager, "Setup Mirror Avatar");
             }
 
@@ -166,17 +175,17 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
                     {
                         Debug.LogWarning($"{UxrConstants.NetworkingModule} Ignoring physics-driven grabbable object {grabbableObject.GetPathUnderScene()} because there is already a parent physics-driven grabbable object ({physicsDrivenParent.GetPathUnderScene()}) and Mirror doesn't support nested NetworkIdentity components. UltimateXR will sync the rigidbody using RPC calls.");
                     }
-                    
+
                     yield break;
                 }
             }
-            
+
             // Building list forces evaluation of AddNetworkTransform IEnumerable and creates the components
-            List<Behaviour> networkTransformComponents = new List<Behaviour>(AddNetworkTransform(gameObject, worldSpace, UxrNetworkTransformFlags.All)); 
+            List<Behaviour> networkTransformComponents = new List<Behaviour>(AddNetworkTransform(gameObject, worldSpace, UxrNetworkTransformFlags.All));
 
             NetworkRigidbodyUnreliable networkRigidbody = gameObject.GetOrAddComponent<NetworkRigidbodyUnreliable>();
             yield return networkRigidbody;
-            
+
             // Return transform components after, so that when removing the components the NetworkRigidbody is removed before the identity. Otherwise Mirror will complain.  
 
             foreach (Behaviour newBehaviour in networkTransformComponents)
@@ -192,40 +201,23 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
         /// <inheritdoc />
         public override void EnableNetworkTransform(GameObject gameObject, bool enable)
         {
-#if ULTIMATEXR_USE_MIRROR_SDK && UNITY_EDITOR
-            NetworkTransformUnreliable networkTransform = gameObject.GetComponent<NetworkTransformUnreliable>();
+#if ULTIMATEXR_USE_MIRROR_SDK
 
-            if (networkTransform)
-            {
-                networkTransform.SetEnabled(enable);
-            }
+            NetworkTransformUnreliable[] networkTransforms = gameObject.GetComponentsInChildren<NetworkTransformUnreliable>();
+            networkTransforms.ForEach(nt => nt.SetEnabled(enable));
+
 #endif
         }
 
         /// <inheritdoc />
         public override void EnableNetworkRigidbody(GameObject gameObject, bool enable)
         {
-#if ULTIMATEXR_USE_MIRROR_SDK && UNITY_EDITOR
+#if ULTIMATEXR_USE_MIRROR_SDK
             EnableNetworkTransform(gameObject, enabled);
 
-            NetworkRigidbodyUnreliable networkRigidbody = gameObject.GetComponent<NetworkRigidbodyUnreliable>();
-
-            if (networkRigidbody)
-            {
-                networkRigidbody.SetEnabled(enable);
-            }
+            NetworkRigidbodyUnreliable[] networkRigidbodies = gameObject.GetComponentsInChildren<NetworkRigidbodyUnreliable>();
+            networkRigidbodies.ForEach(nrb => nrb.SetEnabled(enable));
 #endif
-        }
-
-        /// <inheritdoc />
-        public override void SetNetworkRigidbodyKinematic(GameObject gameObject, bool isKinematic)
-        {
-            Rigidbody rigidbody = gameObject.GetComponent<Rigidbody>();
-
-            if (rigidbody != null)
-            {
-                rigidbody.isKinematic = isKinematic;
-            }
         }
 
         /// <inheritdoc />
@@ -311,7 +303,7 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
         #region Unity
 
         /// <summary>
-        /// Initializes the component.
+        ///     Initializes the component.
         /// </summary>
         protected override void Start()
         {
@@ -364,17 +356,17 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
                         NetworkManager.singleton.StopClient();
                     }
                 }
-                
+
                 return;
             }
 
-            GUI.Box(new Rect(0, PosY, ButtonWidth, LabelHeight), "Network Address:");
+            GUI.Box(new Rect(0,                PosY, ButtonWidth,     LabelHeight), "Network Address:");
             GUI.Box(new Rect(ButtonWidth + 10, PosY, ButtonWidth / 2, LabelHeight), "Port:");
-            
+
             PosY += LabelHeight;
 
-            _networkAddress = GUI.TextField(new Rect(0, PosY, ButtonWidth, LabelHeight), _networkAddress);
-            _networkPort    = GUI.TextField(new Rect(ButtonWidth + 10, PosY, ButtonWidth / 2, LabelHeight), _networkPort);
+            _networkAddress =  GUI.TextField(new Rect(0,                PosY, ButtonWidth,     LabelHeight), _networkAddress);
+            _networkPort    =  GUI.TextField(new Rect(ButtonWidth + 10, PosY, ButtonWidth / 2, LabelHeight), _networkPort);
             PosY            += ButtonHeight;
 
             if (NetworkManager.singleton != null)
@@ -424,7 +416,7 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
 
         private string _networkAddress = DefaultNetworkAddress;
         private string _networkPort    = DefaultNetworkPort;
-        
+
         #endregion
 
 #endif

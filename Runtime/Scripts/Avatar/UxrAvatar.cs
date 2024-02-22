@@ -320,6 +320,11 @@ namespace UltimateXR.Avatar
                 {
                     Camera newCamera = GetComponentInChildren<Camera>();
 
+                    if (newCamera == null)
+                    {
+                        newCamera = GetComponentInChildren<Camera>(true);
+                    }
+
                     if (newCamera != null)
                     {
                         _camera = newCamera;
@@ -454,6 +459,14 @@ namespace UltimateXR.Avatar
                             audioListener.enabled = isLocalAvatar;
                         }
                     }
+                }
+
+                if (value == UxrAvatarMode.Local && _started && !_localStartedInvoked)
+                {
+                    // Avatar had a delayed switch to local, probably due to a spawn in multiplayer
+
+                    LocalAvatarStarted?.Invoke(this, new UxrAvatarStartedEventArgs(this));
+                    _localStartedInvoked = true;
                 }
             }
         }
@@ -1343,7 +1356,10 @@ namespace UltimateXR.Avatar
             if (AvatarMode == UxrAvatarMode.Local)
             {
                 LocalAvatarStarted?.Invoke(this, new UxrAvatarStartedEventArgs(this));
+                _localStartedInvoked = true;
             }
+
+            _started = true;
         }
 
         /// <summary>
@@ -1523,6 +1539,8 @@ namespace UltimateXR.Avatar
         private readonly HandState _leftHandState  = new HandState();
         private readonly HandState _rightHandState = new HandState();
 
+        private bool                                   _started;
+        private bool                                   _localStartedInvoked;
         private UxrControllerInput                     _externalControllerInput;
         private float                                  _startCameraHeight;
         private float                                  _startCameraControllerHeight;

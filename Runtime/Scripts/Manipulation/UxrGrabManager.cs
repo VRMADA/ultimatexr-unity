@@ -622,13 +622,6 @@ namespace UltimateXR.Manipulation
 
         #endregion
 
-        #region Protected Overrides UxrComponent
-
-        /// <inheritdoc />
-        protected override string StateSyncName => "Grab Manager";
-
-        #endregion
-
         #region Private Methods
 
         /// <summary>

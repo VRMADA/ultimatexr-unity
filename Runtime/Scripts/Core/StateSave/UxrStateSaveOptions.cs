@@ -34,6 +34,11 @@ namespace UltimateXR.Core.StateSave
         /// <summary>
         ///     Forces to set the current options as the initial and latest states.
         /// </summary>
-        ForceResetChangesCache = 1 << 2
+        ForceResetChangesCache = 1 << 2,
+
+        /// <summary>
+        ///     Notifies that it is gathering the first initial state.
+        /// </summary>
+        FirstFrame = 1 << 3
     }
 }

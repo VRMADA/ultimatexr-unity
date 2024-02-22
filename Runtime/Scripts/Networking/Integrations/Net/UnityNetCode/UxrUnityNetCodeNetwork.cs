@@ -7,17 +7,18 @@ using System.Collections.Generic;
 using UltimateXR.Avatar;
 using UltimateXR.Core;
 using UnityEngine;
-#if UNITY_EDITOR
+#if ULTIMATEXR_USE_UNITY_NETCODE && UNITY_EDITOR
 using UnityEditor;
 #endif
 
 #if ULTIMATEXR_USE_UNITY_NETCODE
 using System.Linq;
+using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Manipulation;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
-using NetworkObject = Unity.Netcode.NetworkObject;
+using NetworkObject    = Unity.Netcode.NetworkObject;
 using NetworkRigidbody = Unity.Netcode.Components.NetworkRigidbody;
 using NetworkTransform = Unity.Netcode.Components.NetworkTransform;
 #endif
@@ -94,12 +95,18 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
 
             newComponents.AddRange(avatarComponents.ToList().Concat(cameraComponents).Concat(leftHandComponents).Concat(rightHandComponents));
             Undo.RegisterFullObjectHierarchyUndo(avatar.gameObject, "Setup NetCode Avatar");
+#endif
+        }
 
+        /// <inheritdoc />
+        public override void SetupPostProcess(IEnumerable<UxrAvatar> avatarPrefabs)
+        {
+#if ULTIMATEXR_USE_UNITY_NETCODE && UNITY_EDITOR
             NetworkManager netCodeNetworkManager = FindObjectOfType<NetworkManager>();
 
-            if (netCodeNetworkManager != null && netCodeNetworkManager.NetworkConfig.PlayerPrefab == null)
+            if (netCodeNetworkManager != null && netCodeNetworkManager.NetworkConfig.PlayerPrefab == null && avatarPrefabs.Any())
             {
-                netCodeNetworkManager.NetworkConfig.PlayerPrefab = PrefabUtility.GetCorrespondingObjectFromSource(avatar).gameObject;
+                netCodeNetworkManager.NetworkConfig.PlayerPrefab = avatarPrefabs.First().gameObject;
                 Undo.RegisterCompleteObjectUndo(netCodeNetworkManager, "Setup NetCode Avatar");
             }
 #endif
@@ -158,40 +165,22 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
         /// <inheritdoc />
         public override void EnableNetworkTransform(GameObject gameObject, bool enable)
         {
-#if ULTIMATEXR_USE_UNITY_NETCODE && UNITY_EDITOR
-            NetworkTransform networkTransform = gameObject.GetComponent<NetworkTransform>();
+#if ULTIMATEXR_USE_UNITY_NETCODE
+            NetworkTransform[] networkTransforms = gameObject.GetComponentsInChildren<NetworkTransform>();
+            networkTransforms.ForEach(nt => nt.SetEnabled(enable));
 
-            if (networkTransform)
-            {
-                networkTransform.SetEnabled(enable);
-            }
 #endif
         }
 
         /// <inheritdoc />
         public override void EnableNetworkRigidbody(GameObject gameObject, bool enable)
         {
-#if ULTIMATEXR_USE_UNITY_NETCODE && UNITY_EDITOR
+#if ULTIMATEXR_USE_UNITY_NETCODE
             EnableNetworkTransform(gameObject, enabled);
 
-            NetworkRigidbody networkRigidbody = gameObject.GetComponent<NetworkRigidbody>();
-
-            if (networkRigidbody)
-            {
-                networkRigidbody.SetEnabled(enable);
-            }
+            NetworkRigidbody[] networkRigidbodies = gameObject.GetComponentsInChildren<NetworkRigidbody>();
+            networkTransforms.ForEach(nrb => nrb.SetEnabled(enable));
 #endif
-        }
-
-        /// <inheritdoc />
-        public override void SetNetworkRigidbodyKinematic(GameObject gameObject, bool isKinematic)
-        {
-            Rigidbody rigidbody = gameObject.GetComponent<Rigidbody>();
-
-            if (rigidbody != null)
-            {
-                rigidbody.isKinematic = isKinematic;
-            }
         }
 
         /// <inheritdoc />

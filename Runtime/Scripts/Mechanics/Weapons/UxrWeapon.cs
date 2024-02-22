@@ -36,7 +36,34 @@ namespace UltimateXR.Mechanics.Weapons
         {
             base.Awake();
 
+            UxrActor.GlobalUnregistering += UxrActor_GlobalUnregistering;
+
             Owner = GetComponentInParent<UxrActor>();
+        }
+
+        /// <summary>
+        ///     Called when it's going to be destroyed.
+        /// </summary>
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            UxrActor.GlobalUnregistering -= UxrActor_GlobalUnregistering;
+        }
+
+        #endregion
+
+        #region Event Handling Methods
+
+        /// <summary>
+        ///     Called whenever an actor is about to be destroyed.
+        /// </summary>
+        /// <param name="actor"></param>
+        private void UxrActor_GlobalUnregistering(UxrActor actor)
+        {
+            if (Owner == actor)
+            {
+                Owner = null;
+            }
         }
 
         #endregion

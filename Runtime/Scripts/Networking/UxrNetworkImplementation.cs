@@ -30,6 +30,9 @@ namespace UltimateXR.Networking
         public abstract void SetupAvatar(UxrAvatar avatar, out List<GameObject> newGameObjects, out List<Component> newComponents);
 
         /// <inheritdoc />
+        public abstract void SetupPostProcess(IEnumerable<UxrAvatar> avatarPrefabs);
+
+        /// <inheritdoc />
         public abstract IEnumerable<Behaviour> AddNetworkTransform(GameObject gameObject, bool worldSpace, UxrNetworkTransformFlags networkTransformFlags);
 
         /// <inheritdoc />
@@ -40,9 +43,6 @@ namespace UltimateXR.Networking
 
         /// <inheritdoc />
         public abstract void EnableNetworkRigidbody(GameObject gameObject, bool enable);
-
-        /// <inheritdoc />
-        public abstract void SetNetworkRigidbodyKinematic(GameObject gameObject, bool isKinematic);
 
         /// <inheritdoc />
         public abstract bool HasAuthority(GameObject gameObject);

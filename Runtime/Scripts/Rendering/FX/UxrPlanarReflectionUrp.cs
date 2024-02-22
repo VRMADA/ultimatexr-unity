@@ -97,6 +97,12 @@ namespace UltimateXR.Rendering.FX
                 _reflectionTextureRight = null;
             }
 
+            if (_renderCameraObject)
+            {
+                Destroy(_renderCameraObject);
+                _renderCameraObject = null;
+            }
+
             _reflectionCameras.Clear();
         }
 
@@ -378,9 +384,16 @@ namespace UltimateXR.Rendering.FX
 
             if (!reflectionCamera)
             {
-                GameObject go = new GameObject($"{nameof(UxrPlanarReflectionUrp)} Camera", typeof(Camera), typeof(Skybox));
-                reflectionCamera = go.GetComponent<Camera>();
-
+                if (_renderCameraObject != null)
+                {
+                    reflectionCamera = _renderCameraObject.GetComponent<Camera>();
+                }
+                else
+                {
+                    _renderCameraObject = new GameObject($"{nameof(UxrPlanarReflectionUrp)} Camera", typeof(Camera), typeof(Skybox));
+                    reflectionCamera    = _renderCameraObject.GetComponent<Camera>();
+                }
+                
                 if (XRSettings.enabled == false)
                 {
                     reflectionCamera.fieldOfView = 60.0f;
@@ -456,6 +469,7 @@ namespace UltimateXR.Rendering.FX
 
         // Internal
 
+        private GameObject    _renderCameraObject;
         private RenderTexture _reflectionTextureLeft;
         private RenderTexture _reflectionTextureRight;
         private int           _oldReflectionTextureSize;

@@ -5,7 +5,6 @@
 // --------------------------------------------------------------------------------------------------------------------
 using UltimateXR.Core;
 using UltimateXR.Core.StateSave;
-using UnityEngine;
 
 namespace UltimateXR.Avatar
 {

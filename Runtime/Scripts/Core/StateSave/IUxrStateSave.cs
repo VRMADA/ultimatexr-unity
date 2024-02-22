@@ -9,7 +9,7 @@ using UltimateXR.Core.Unique;
 namespace UltimateXR.Core.StateSave
 {
     /// <summary>
-    ///     Interface for classes to load/save their partial or complete state. This can be used to save
+    ///     Interface for components to load/save their partial or complete state. This can be used to save
     ///     complete sessions to disk to restore the session later. It can also be used to save partial states
     ///     in a timeline to implement replay functionality.<br />
     ///     To leverage the implementation of this interface, consider using <see cref="UxrStateSaveImplementer{T}" />.<br />
@@ -19,7 +19,7 @@ namespace UltimateXR.Core.StateSave
         #region Public Types & Data
 
         /// <summary>
-        ///     Gets the current serialization version of the class that implements the interface. It has the same goal as
+        ///     Gets the current serialization version of the component type that implements the interface. It has the same goal as
         ///     <see cref="UxrConstants.Serialization.CurrentBinaryVersion" /> but this version property is specific to each class
         ///     that implements the <see cref="IUxrStateSave" /> interface, which may be used outside the UltimateXR scope,
         ///     in user specific classes that want to benefit from state serialization.<br />
@@ -46,7 +46,7 @@ namespace UltimateXR.Core.StateSave
         bool RequiresTransformSerialization(UxrStateSaveLevel level);
 
         /// <summary>
-        ///     Serializes or deserializes the object state.
+        ///     Serializes or deserializes the component state.
         /// </summary>
         /// <param name="serializer">Serializer to use</param>
         /// <param name="serializationVersion">

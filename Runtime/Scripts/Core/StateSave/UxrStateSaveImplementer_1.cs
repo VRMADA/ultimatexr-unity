@@ -161,10 +161,11 @@ namespace UltimateXR.Core.StateSave
             {
                 if (!options.HasFlag(UxrStateSaveOptions.DontSerialize))
                 {
+                    /*
                     if (!string.IsNullOrEmpty(name) && !serializer.IsReading)
                     {
                         Debug.Log($"Component {_targetComponent} value {name} changed from {_initialValues[name]} to {value}");
-                    }
+                    }*/
 
                     serializer.SerializeAnyVar(ref value);
                 }
@@ -365,7 +366,10 @@ namespace UltimateXR.Core.StateSave
         public void NotifyEndOfFirstFrame()
         {
             // Cache the initial state after the first frame. We use a dummy serializer in write mode to initialize the changes cache without saving any data.
-            _targetComponent.SerializeState(UxrDummySerializer.WriteModeSerializer, _targetComponent.StateSerializationVersion, UxrStateSaveLevel.ChangesSinceBeginning, UxrStateSaveOptions.DontSerialize | UxrStateSaveOptions.ForceResetChangesCache);
+            _targetComponent.SerializeState(UxrDummySerializer.WriteModeSerializer,
+                                            _targetComponent.StateSerializationVersion,
+                                            UxrStateSaveLevel.ChangesSinceBeginning,
+                                            UxrStateSaveOptions.DontSerialize | UxrStateSaveOptions.ForceResetChangesCache | UxrStateSaveOptions.FirstFrame);
         }
 
         #endregion

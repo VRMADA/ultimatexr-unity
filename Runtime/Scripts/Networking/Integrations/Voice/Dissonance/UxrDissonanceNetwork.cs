@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using UltimateXR.Avatar;
 using UltimateXR.Core;
 using UnityEngine;
-#if UNITY_EDITOR
+#if ULTIMATEXR_USE_DISSONANCE_SDK && UNITY_EDITOR
 using UnityEditor;
 #endif
 #if ULTIMATEXR_USE_DISSONANCE_SDK

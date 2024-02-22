@@ -41,12 +41,22 @@ namespace UltimateXR.Networking
         void SetupGlobal(UxrNetworkManager networkManager, out List<GameObject> newGameObjects, out List<Component> newComponents);
 
         /// <summary>
-        ///     Adds network synchronization functionality to an <see cref="UxrAvatar" />.
+        ///     Adds network synchronization functionality to an <see cref="UxrAvatar" />. Each avatar passed as argument is an
+        ///     instance of a prefab in the <see cref="UxrNetworkManager" /> avatar list.
+        ///     All changes will be applied to the prefab after the setup returns and the avatar instance will be destroyed. To get
+        ///     references to the actual prefabs to, for example, fill a list of spawnable prefabs, use
+        ///     <see cref="SetupPostProcess" />.
         /// </summary>
         /// <param name="avatar">The avatar to add functionality to</param>
         /// <param name="newGameObjects">Returns a list of GameObjects that were created, if any</param>
         /// <param name="newComponents">Returns a list of components that were created, if any</param>
         void SetupAvatar(UxrAvatar avatar, out List<GameObject> newGameObjects, out List<Component> newComponents);
+
+        /// <summary>
+        ///     Called after the setup finished. At this point the modifications on the avatar prefabs have been applied.
+        ///     This can be used to fill a list of spawnable prefabs which is a common requirement in networking SDKs.
+        /// </summary>
+        void SetupPostProcess(IEnumerable<UxrAvatar> avatarPrefabs);
 
         /// <summary>
         ///     Adds network synchronization functionality to a <see cref="Transform" />.
@@ -79,13 +89,6 @@ namespace UltimateXR.Networking
         /// <param name="gameObject">GameObject where the network rigidbody is located</param>
         /// <param name="enable">Whether to enable or disable the component</param>
         void EnableNetworkRigidbody(GameObject gameObject, bool enable);
-
-        /// <summary>
-        ///     Sets a network rigidbody isKinematic state.
-        /// </summary>
-        /// <param name="gameObject">GameObject where the network rigidbody is located</param>
-        /// <param name="isKinematic">The new kinematic state</param>
-        void SetNetworkRigidbodyKinematic(GameObject gameObject, bool isKinematic);
 
         /// <summary>
         ///     Gets whether the current client has the authority over a network GameObject.

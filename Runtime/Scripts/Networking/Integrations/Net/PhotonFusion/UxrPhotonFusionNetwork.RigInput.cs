@@ -4,12 +4,6 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 #if ULTIMATEXR_USE_PHOTONFUSION_SDK
-
-// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="UxrPhotonFusionNetwork.RigInput.cs" company="VRMADA">
-//   Copyright (c) VRMADA, All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
 using Fusion;
 using UnityEngine;
 
@@ -17,7 +11,7 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
 {
     public partial class UxrPhotonFusionNetwork
     {
-        #region Private Types & Data
+        #region Public Types & Data
 
         /// <summary>
         ///     Stores all the input information that describes an avatar to be used in client/server mode.

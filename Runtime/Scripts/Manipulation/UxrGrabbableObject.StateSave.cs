@@ -93,6 +93,12 @@ namespace UltimateXR.Manipulation
             bool isKinematic = _rigidBodySource && _rigidBodySource.isKinematic;
             bool isSleeping  = _rigidBodySource && _rigidBodySource.IsSleeping();
 
+            if (!isReading && options.HasFlag(UxrStateSaveOptions.FirstFrame))
+            {
+                // To avoid changes, because IsSleeping() will return false the first frame. We force it to be sleeping the first frame. 
+                isSleeping = true;
+            }
+
             SerializeStateValue(level, options, nameof(isKinematic), ref isKinematic);
             SerializeStateValue(level, options, nameof(isSleeping),  ref isSleeping);
 

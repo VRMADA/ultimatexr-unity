@@ -10,7 +10,7 @@ namespace UltimateXR.Core.StateSync
 {
     /// <summary>
     ///     <para>
-    ///         Interface for classes to synchronize their state changes. State changes can be intercepted,
+    ///         Interface for components to synchronize their state changes. State changes can be intercepted,
     ///         serialized, deserialized and be reproduced back in a different environment. This can be used to
     ///         synchronize state changes in a network session or save state changes to disk.
     ///     </para>
@@ -30,15 +30,9 @@ namespace UltimateXR.Core.StateSync
         #region Public Types & Data
 
         /// <summary>
-        ///     Event raised when a relevant state of an object changed and requires storage/synchronization.
+        ///     Event raised when a relevant state of a component changed and requires synchronization.
         /// </summary>
         event EventHandler<UxrSyncEventArgs> StateChanged;
-
-        /// <summary>
-        ///     Gets the name of the object, to identify it in debug strings.
-        /// </summary>
-        /// <returns>Name of the object</returns>
-        public string Name { get; }
 
         #endregion
 

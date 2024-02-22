@@ -3,26 +3,27 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
 using UltimateXR.Avatar;
 using UltimateXR.Core;
-using UltimateXR.Core.Settings;
-using UltimateXR.Core.Threading.TaskControllers;
-using UltimateXR.Extensions.Unity;
-using UltimateXR.Manipulation;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using Behaviour = UnityEngine.Behaviour;
-#if UNITY_EDITOR
+#if ULTIMATEXR_USE_PHOTONFUSION_SDK && UNITY_EDITOR
 using UnityEditor;
 #endif
 #if ULTIMATEXR_USE_PHOTONFUSION_SDK
+using System;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
+using UltimateXR.Core.Settings;
+using UltimateXR.Core.Threading.TaskControllers;
+using UltimateXR.Extensions.System.Collections;
+using UltimateXR.Extensions.Unity;
+using UltimateXR.Manipulation;
+using UnityEngine.SceneManagement;
 using Fusion;
 using Fusion.Sockets;
+using Behaviour = UnityEngine.Behaviour;
 #endif
 
 namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
@@ -60,7 +61,6 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
             newComponents  = new List<Component>();
 
 #if ULTIMATEXR_USE_PHOTONFUSION_SDK && UNITY_EDITOR
-
             Component newComponent = networkManager.GetComponent<NetworkRunner>();
 
             if (newComponent == null)
@@ -82,7 +82,6 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
 
             if (avatar == null)
             {
-                return;
             }
 
 #if ULTIMATEXR_USE_PHOTONFUSION_SDK && UNITY_EDITOR
@@ -131,10 +130,15 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
         }
 
         /// <inheritdoc />
+        public override void SetupPostProcess(IEnumerable<UxrAvatar> avatarPrefabs)
+        {
+            
+        }
+
+        /// <inheritdoc />
         public override IEnumerable<Behaviour> AddNetworkTransform(GameObject gameObject, bool worldSpace, UxrNetworkTransformFlags networkTransformFlags)
         {
 #if ULTIMATEXR_USE_PHOTONFUSION_SDK && UNITY_EDITOR
-
             if (networkTransformFlags.HasFlag(UxrNetworkTransformFlags.ChildTransform) == false)
             {
                 NetworkObject networkObject = gameObject.GetOrAddComponent<NetworkObject>();
@@ -153,7 +157,6 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
         public override IEnumerable<Behaviour> AddNetworkRigidbody(GameObject gameObject, bool worldSpace, UxrNetworkRigidbodyFlags networkRigidbodyFlagsFlags)
         {
 #if ULTIMATEXR_USE_PHOTONFUSION_SDK && UNITY_EDITOR
-
             NetworkObject    networkObject    = gameObject.GetOrAddComponent<NetworkObject>();
             NetworkRigidbody networkRigidbody = gameObject.GetOrAddComponent<NetworkRigidbody>();
 
@@ -170,12 +173,8 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
         public override void EnableNetworkTransform(GameObject gameObject, bool enable)
         {
 #if ULTIMATEXR_USE_PHOTONFUSION_SDK
-            NetworkTransform networkTransform = gameObject.GetComponent<NetworkTransform>();
-
-            if (networkTransform)
-            {
-                networkTransform.SetEnabled(enable);
-            }
+            NetworkTransform[] networkTransforms = gameObject.GetComponentsInChildren<NetworkTransform>();
+            networkTransforms.ForEach(nt => nt.SetEnabled(enable));
 #endif
         }
 
@@ -183,26 +182,15 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
         public override void EnableNetworkRigidbody(GameObject gameObject, bool enable)
         {
 #if ULTIMATEXR_USE_PHOTONFUSION_SDK
-            NetworkRigidbody networkRigidbody = gameObject.GetComponent<NetworkRigidbody>();
-
-            if (networkRigidbody)
-            {
-                networkRigidbody.SetEnabled(enable);
-            }
+            NetworkRigidbody[] networkRigidbodies = gameObject.GetComponentsInChildren<NetworkRigidbody>();
+            networkRigidbodies.ForEach(nrb => nrb.SetEnabled(enable));
 #endif
-        }
-
-        /// <inheritdoc />
-        public override void SetNetworkRigidbodyKinematic(GameObject gameObject, bool isKinematic)
-        {
-            // Photon fusion uses the rigidbody.isKinematic directly, no need to change it.
         }
 
         /// <inheritdoc />
         public override bool HasAuthority(GameObject gameObject)
         {
 #if ULTIMATEXR_USE_PHOTONFUSION_SDK
-
             if (_networkRunner == null)
             {
                 return false;
@@ -225,7 +213,6 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
         public override void RequestAuthority(GameObject gameObject)
         {
 #if ULTIMATEXR_USE_PHOTONFUSION_SDK
-
             if (_networkRunner && _networkRunner.GameMode == GameMode.Shared)
             {
                 NetworkObject networkObject = gameObject.GetComponent<NetworkObject>();
@@ -242,7 +229,6 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
         public override void CheckReassignGrabAuthority(GameObject gameObject)
         {
 #if ULTIMATEXR_USE_PHOTONFUSION_SDK
-
             UxrGrabbableObject grabbableObject = gameObject.GetComponent<UxrGrabbableObject>();
             NetworkObject      networkObject   = gameObject.GetComponent<NetworkObject>();
 

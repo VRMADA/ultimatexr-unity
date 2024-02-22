@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using UltimateXR.Core.Components;
 using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.Unity;
 using UnityEngine;
@@ -41,9 +42,7 @@ namespace UltimateXR.Core.Unique
         public UxrUniqueIdImplementer(T targetComponent)
         {
             _targetComponent = targetComponent;
-
-            // Registers the implementer of type T so that it can be used by UxrUniqueIdImplementer.TryGetComponentById().
-            RegisterImplementerIfNecessary(this);
+            RegisterImplementer(targetComponent, this);
         }
 
         /// <summary>
@@ -63,11 +62,12 @@ namespace UltimateXR.Core.Unique
         ///     changes the ID. Since this might happen right after instantiation, before Awake() gets called at
         ///     the end of the frame, it might need to be called there before.
         /// </summary>
+        /// <param name="component">Component to initialize</param>
+        /// <param name="getImplementer">A function that gets the implementer from a component</param>
         /// <param name="assignId">
         ///     An action that allows to assign a unique ID to a component. This avoids exposing the
         ///     unique ID as public.
         /// </param>
-        /// <param name="getImplementer">A func that returns the implementer of a given component</param>
         /// <param name="onChanging">
         ///     An optional delegate that will be called right before assigning a new ID to a component.
         ///     The parameters passed are the component, the old ID and the new ID.
@@ -84,17 +84,17 @@ namespace UltimateXR.Core.Unique
         ///     An optional delegate that will be called right after registering a new component with its
         ///     ID. The parameter passed is the component.
         /// </param>
-        public void InitializeUniqueIdIfNecessary(T                                  component,
-                                                  Action<T, Guid>                    assignId,
-                                                  Func<T, UxrUniqueIdImplementer<T>> getImplementer,
-                                                  Action<T, Guid, Guid>              onChanging,
-                                                  Action<T, Guid, Guid>              onChanged,
-                                                  Action<T>                          onRegistering,
-                                                  Action<T>                          onRegistered)
+        public void InitializeUniqueIdIfNecessary(T                               component,
+                                                  Func<T, UxrUniqueIdImplementer> getImplementer,
+                                                  Action<T, Guid>                 assignId,
+                                                  Action<T, Guid, Guid>           onChanging,
+                                                  Action<T, Guid, Guid>           onChanged,
+                                                  Action<T>                       onRegistering,
+                                                  Action<T>                       onRegistered)
         {
-            UxrUniqueIdImplementer<T> implementer = getImplementer(component);
+            UxrUniqueIdImplementer implementer = getImplementer(component);
 
-            if (implementer._initializedComponent == component)
+            if (ReferenceEquals(implementer.InitializedComponent, component))
             {
                 return;
             }
@@ -117,24 +117,78 @@ namespace UltimateXR.Core.Unique
             }
 
             // Store original unique ID
-            implementer._originalUniqueId = component.UniqueId;
+            implementer.OriginalUniqueId = component.UniqueId;
 
             // Register, taking care of collisions
             RegisterUniqueId(component, assignId, onChanging, onChanged, onRegistering, onRegistered, component.UniqueId);
-            implementer._initializedComponent = component;
+            implementer.InitializedComponent = component;
         }
 
         /// <summary>
-        ///     Changes the object's unique Id, optionally changing all children recursively based on the
-        ///     parent unique ID. This is useful in multiplayer environments to make sure that network
-        ///     instantiated objects share the same ID, including all children.
+        ///     Tries to change the object's unique Id, ensuring no collisions with an existing Id.
         /// </summary>
         /// <param name="newUniqueId">New id to try to assign</param>
+        /// <param name="getImplementer">A function that gets the implementer from a component</param>
         /// <param name="assignId">
         ///     An action that allows to assign a unique ID to a component. This avoids exposing the
         ///     unique ID as public.
         /// </param>
-        /// <param name="getImplementer">A func that returns the implementer of a given component</param>
+        /// <param name="onChanging">
+        ///     An optional delegate that will be called right before assigning a new ID to a component.
+        ///     The parameters passed are the component, the old ID and the new ID.
+        /// </param>
+        /// <param name="onChanged">
+        ///     An optional delegate that will be called right after a new ID has been assigned to a component.
+        ///     The parameters passed are the component, the old ID and the new ID.
+        /// </param>
+        /// <param name="onRegistering">
+        ///     An optional delegate that will be called right before registering a new component with its
+        ///     ID. The parameter passed is the component.
+        /// </param>
+        /// <param name="onRegistered">
+        ///     An optional delegate that will be called right after registering a new component with its
+        ///     ID. The parameter passed is the component.
+        /// </param>
+        /// <returns>
+        ///     The new unique ID. If the requested unique already existed, the returned value will be different
+        ///     to make sure it is unique
+        /// </returns>
+        public Guid ChangeUniqueId(Guid                            newUniqueId,
+                                   Func<T, UxrUniqueIdImplementer> getImplementer,
+                                   Action<T, Guid>                 assignId,
+                                   Action<T, Guid, Guid>           onChanging,
+                                   Action<T, Guid, Guid>           onChanged,
+                                   Action<T>                       onRegistering,
+                                   Action<T>                       onRegistered)
+        {
+            // If called during edit-time, simply generate unique IDs
+
+            if (!Application.isPlaying)
+            {
+                assignId.Invoke(_targetComponent, GetNewUniqueId());
+                return _targetComponent.UniqueId;
+            }
+
+            // At runtime, generate new ID for the component.
+
+            // Make sure original ID has been initialized.
+            InitializeUniqueIdIfNecessary(_targetComponent, getImplementer, assignId, onChanging, onChanged, onRegistering, onRegistered);
+
+            // Register new ID.
+            RegisterUniqueId(_targetComponent, assignId, onChanging, onChanged, onRegistering, onRegistered, newUniqueId);
+
+            return _targetComponent.UniqueId;
+        }
+
+        /// <summary>
+        ///     <see cref="IUxrUniqueId.CombineUniqueId" />.
+        /// </summary>
+        /// <param name="guid">Id to combine the existing Ids with</param>
+        /// <param name="getImplementer">A function that gets the implementer from a component</param>
+        /// <param name="assignId">
+        ///     An action that allows to assign a unique ID to a component. This avoids exposing the
+        ///     unique ID as public.
+        /// </param>
         /// <param name="onChanging">
         ///     An optional delegate that will be called right before assigning a new ID to a component.
         ///     The parameters passed are the component, the old ID and the new ID.
@@ -152,65 +206,36 @@ namespace UltimateXR.Core.Unique
         ///     ID. The parameter passed is the component.
         /// </param>
         /// <param name="recursive">
-        ///     Whether to change also the unique ID's of the child components in the same GameObject
-        ///     and all children, based on the new unique ID.
+        ///     Whether to change also the unique Ids of the child components in the same GameObject
+        ///     and all children.
         /// </param>
-        /// <returns>
-        ///     The new unique ID. If the requested unique already existed, the returned value will be different
-        ///     to make sure it is unique
-        /// </returns>
-        public Guid ChangeUniqueId(Guid                               newUniqueId,
-                                   Action<T, Guid>                    assignId,
-                                   Func<T, UxrUniqueIdImplementer<T>> getImplementer,
-                                   Action<T, Guid, Guid>              onChanging,
-                                   Action<T, Guid, Guid>              onChanged,
-                                   Action<T>                          onRegistering,
-                                   Action<T>                          onRegistered,
-                                   bool                               recursive)
+        public void CombineUniqueId(Guid                            guid,
+                                    Func<T, UxrUniqueIdImplementer> getImplementer,
+                                    Action<T, Guid>                 assignId,
+                                    Action<T, Guid, Guid>           onChanging,
+                                    Action<T, Guid, Guid>           onChanged,
+                                    Action<T>                       onRegistering,
+                                    Action<T>                       onRegistered,
+                                    bool                            recursive)
         {
-            // If called during edit-time, simply generate unique IDs
+            T[] components = recursive ? _targetComponent.GetComponentsInChildren<T>(true) : new[] { _targetComponent };
 
-            if (!Application.isPlaying)
+            foreach (T unique in components)
             {
-                T[] components = _targetComponent.GetComponentsInChildren<T>(true);
+                // Make sure original ID has been initialized.
+                InitializeUniqueIdIfNecessary(unique, getImplementer, assignId, onChanging, onChanged, onRegistering, onRegistered);
 
-                foreach (T unique in components)
+                UxrUniqueIdImplementer implementer = getImplementer(unique);
+
+                if (implementer != null)
                 {
-                    assignId.Invoke(unique, GetNewUniqueId());
-                }
+                    Guid originalUniqueId = implementer.OriginalUniqueId != default ? implementer.OriginalUniqueId : unique.UniqueId;
+                    implementer.CombineIdSource = guid;
 
-                return _targetComponent.UniqueId;
-            }
-
-            // Make sure original ID has been initialized.
-            InitializeUniqueIdIfNecessary(_targetComponent, assignId, getImplementer, onChanging, onChanged, onRegistering, onRegistered);
-
-            // During play time, generate new ID for the component and if recursion was requested, generate
-            // "relative" IDs for the children to make sure that they are generated equally in different computers
-            RegisterUniqueId(_targetComponent, assignId, onChanging, onChanged, onRegistering, onRegistered, newUniqueId);
-
-            if (recursive)
-            {
-                // Re-generate IDs for all components in same GameObject and children based on relative unique id:
-
-                T[] components = _targetComponent.GetComponentsInChildren<T>(true);
-
-                foreach (T unique in components)
-                {
-                    if (unique != _targetComponent)
-                    {
-                        // Make sure original ID has been initialized.
-                        InitializeUniqueIdIfNecessary(unique, assignId, getImplementer, onChanging, onChanged, onRegistering, onRegistered);
-
-                        Guid originalUniqueId = getImplementer(unique)._originalUniqueId != default ? getImplementer(unique)._originalUniqueId : unique.UniqueId;
-
-                        // This makes sure that the children will also get the same unique ID on all devices 
-                        RegisterUniqueId(unique, assignId, onChanging, onChanged, onRegistering, onRegistered, GuidExt.Combine(originalUniqueId, newUniqueId));
-                    }
+                    // Ensure the same ID on all devices using the combination 
+                    RegisterUniqueId(unique, assignId, onChanging, onChanged, onRegistering, onRegistered, GuidExt.Combine(originalUniqueId, guid));
                 }
             }
-
-            return _targetComponent.UniqueId;
         }
 
         /// <summary>
@@ -305,6 +330,7 @@ namespace UltimateXR.Core.Unique
         public void NotifyOnDestroy()
         {
             s_componentsById.Remove(_targetComponent.UniqueId);
+            UnregisterImplementer(_targetComponent, this);
         }
 
         #endregion
@@ -461,10 +487,7 @@ namespace UltimateXR.Core.Unique
         #region Private Types & Data
 
         private static readonly Dictionary<Guid, T> s_componentsById = new Dictionary<Guid, T>();
-
-        private readonly T    _targetComponent;
-        private          T    _initializedComponent;
-        private          Guid _originalUniqueId;
+        private readonly        T                   _targetComponent;
 
         #endregion
     }

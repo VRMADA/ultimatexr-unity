@@ -14,6 +14,7 @@ using UltimateXR.Core.StateSave;
 using UltimateXR.Core.StateSync;
 using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.System.Collections;
+using UltimateXR.Core.Instantiation;
 using Unity.Netcode;
 #endif
 
@@ -22,13 +23,19 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
 #if ULTIMATEXR_USE_UNITY_NETCODE
     public class UxrUnityNetCodeAvatar : NetworkBehaviour, IUxrNetworkAvatar
     {
+        #region Inspector Properties/Serialized Fields
+
+        [Tooltip("List of objects that will be disabled when the avatar is in local mode, to avoid intersections with the camera for example")] [SerializeField] private List<GameObject> _localDisabledGameObjects;
+
+        #endregion
+
         #region Implicit IUxrNetworkAvatar
 
         /// <inheritdoc />
         public IList<GameObject> LocalDisabledGameObjects => _localDisabledGameObjects;
 
         /// <inheritdoc />
-        public bool IsLocal { get; protected set; }
+        public bool IsLocal { get; private set; }
 
         /// <inheritdoc />
         public UxrAvatar Avatar { get; private set; }
@@ -66,7 +73,7 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
                 LocalDisabledGameObjects.ForEach(o => o.SetActive(false));
             }
 
-            avatar.ChangeUniqueId(uniqueId.GetGuid(), true);
+            avatar.CombineUniqueId(uniqueId.GetGuid(), true);
         }
 
         #endregion
@@ -106,7 +113,7 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
                 {
                     if (UxrGlobalSettings.Instance.LogLevelNetworking >= UxrLogLevel.Verbose)
                     {
-                        Debug.Log($"{UxrConstants.NetworkingModule} Sending {serializedEvent.Length} bytes from {component.Name} ({component.UniqueId}) {eventArgs}");
+                        Debug.Log($"{UxrConstants.NetworkingModule} Sending {serializedEvent.Length} bytes from {component.Component.name} ({component.UniqueId}) {eventArgs}");
                     }
 
                     ComponentStateChangedServerRpc(serializedEvent);
@@ -137,6 +144,11 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
 
             AvatarSpawned?.Invoke();
 
+            if (UxrInstanceManager.HasInstance)
+            {
+                UxrInstanceManager.Instance.NotifyNetworkSpawn(Avatar.gameObject);
+            }
+
             if (IsOwner)
             {
                 if (!IsServer)
@@ -166,6 +178,11 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
             if (Avatar && IsOwner)
             {
                 UxrManager.ComponentStateChanged -= UxrManager_ComponentStateChanged;
+            }
+
+            if (UxrGlobalSettings.Instance.LogLevelNetworking >= UxrLogLevel.Relevant)
+            {
+                Debug.Log($"{UxrConstants.NetworkingModule} {nameof(UxrUnityNetCodeAvatar)}.{nameof(OnNetworkDespawn)}: Is Local? {IsLocal}, Name: {AvatarName}");
             }
 
             AvatarDespawned?.Invoke();
@@ -321,8 +338,6 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
         #region Private Types & Data
 
         private static bool s_initialStateLoaded;
-
-        [Tooltip("List of objects that will be disabled when the avatar is in local mode, to avoid intersections with the camera for example")] [SerializeField] private List<GameObject> _localDisabledGameObjects;
 
         private string _avatarName;
 

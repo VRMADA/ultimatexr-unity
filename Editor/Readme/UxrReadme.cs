@@ -11,7 +11,7 @@ namespace UltimateXR.Editor.Readme
     /// <summary>
     ///     Readme data drawn using the custom UxrReadmeEditor inspector script.
     /// </summary>
-    [CreateAssetMenu(fileName = "Readme", menuName = "UltimateXR/Readme", order = 1)]
+    //[CreateAssetMenu(fileName = "Readme", menuName = "UltimateXR/Readme", order = 1)]
     public partial class UxrReadme : ScriptableObject
     {
         #region Inspector Properties/Serialized Fields

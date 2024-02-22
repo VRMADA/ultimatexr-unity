@@ -14,6 +14,7 @@ using UltimateXR.Core.StateSave;
 using UltimateXR.Core.StateSync;
 using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.System.Collections;
+using UltimateXR.Core.Instantiation;
 using Mirror;
 #endif
 
@@ -34,7 +35,7 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
         public IList<GameObject> LocalDisabledGameObjects => _localDisabledGameObjects;
 
         /// <inheritdoc />
-        public bool IsLocal { get; protected set; }
+        public bool IsLocal { get; private set; }
 
         /// <inheritdoc />
         public UxrAvatar Avatar { get; private set; }
@@ -72,7 +73,7 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
                 LocalDisabledGameObjects.ForEach(o => o.SetActive(false));
             }
 
-            avatar.ChangeUniqueId(uniqueId.GetGuid(), true);
+            avatar.CombineUniqueId(uniqueId.GetGuid(), true);
         }
 
         #endregion
@@ -112,7 +113,7 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
                 {
                     if (UxrGlobalSettings.Instance.LogLevelNetworking >= UxrLogLevel.Verbose)
                     {
-                        Debug.Log($"{UxrConstants.NetworkingModule} Sending {serializedEvent.Length} bytes from {component.Name} ({component.UniqueId}) {eventArgs}");
+                        Debug.Log($"{UxrConstants.NetworkingModule} Sending {serializedEvent.Length} bytes from {component.Component.name} ({component.UniqueId}) {eventArgs}");
                     }
 
                     CmdComponentStateChanged(serializedEvent);
@@ -142,6 +143,11 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
             }
 
             AvatarSpawned?.Invoke();
+
+            if (UxrInstanceManager.HasInstance)
+            {
+                UxrInstanceManager.Instance.NotifyNetworkSpawn(Avatar.gameObject);
+            }
 
             if (netIdentity.isOwned)
             {

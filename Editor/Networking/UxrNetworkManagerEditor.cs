@@ -10,6 +10,7 @@ using System.Reflection;
 using UltimateXR.Avatar;
 using UltimateXR.Core;
 using UltimateXR.Core.Components;
+using UltimateXR.Core.Instantiation;
 using UltimateXR.Core.Settings;
 using UltimateXR.Editor.Avatar;
 using UltimateXR.Editor.Core;
@@ -164,6 +165,7 @@ namespace UltimateXR.Editor.Networking
 
                     SetupGlobal(_networkImplementation);
                     SetupAvatars(_networkImplementation);
+                    SetupPostProcess(_networkImplementation);
 
                     // Disable old
                     if (oldImplementation != null)
@@ -602,11 +604,12 @@ namespace UltimateXR.Editor.Networking
         [MenuItem(UxrConstants.Editor.MenuPathNetworking + "Create Network Manager", priority = UxrConstants.Editor.PriorityMenuPathNetworking)]
         private static void InstantiateManagerInScene()
         {
-            UxrNetworkManager existingManager = FindObjectOfType<UxrNetworkManager>();
+            UxrNetworkManager  existingManager         = FindObjectOfType<UxrNetworkManager>();
+            UxrInstanceManager existingInstanceManager = FindObjectOfType<UxrInstanceManager>();
 
             if (existingManager != null)
             {
-                if (EditorUtility.DisplayDialog("Manager already exists", $"{nameof(UxrNetworkManager)} already exists in the scene. Press {UxrConstants.Editor.Ok} to highlight it", UxrConstants.Editor.Ok, UxrConstants.Editor.Cancel))
+                if (EditorUtility.DisplayDialog("Manager already exists", $"{nameof(UxrNetworkManager)} already exists in the scene. Press {UxrConstants.Editor.Ok} to select it", UxrConstants.Editor.Ok, UxrConstants.Editor.Cancel))
                 {
                     Selection.activeGameObject = existingManager.gameObject;
                 }
@@ -614,7 +617,14 @@ namespace UltimateXR.Editor.Networking
                 return;
             }
 
-            GameObject manager = new GameObject(nameof(UxrNetworkManager), typeof(UxrNetworkManager));
+            GameObject manager = new GameObject(nameof(UxrNetworkManager));
+
+            if (existingInstanceManager == null)
+            {
+                manager.AddComponent<UxrInstanceManager>();
+            }
+
+            manager.AddComponent<UxrNetworkManager>();
             manager.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
             Selection.activeGameObject = manager;
             string undoString = $"Create {nameof(UxrNetworkManager)}";
@@ -868,8 +878,6 @@ namespace UltimateXR.Editor.Networking
                     {
                         IEnumerable<Component> addedComponents = _networkImplementation.AddNetworkRigidbody(info.TargetComponent.gameObject, !info.TargetComponent.UsesGrabbableParentDependency, UxrNetworkRigidbodyFlags.All);
                         UxrNetworkComponentReferences.RegisterNetworkComponents(info.TargetComponent.gameObject, new List<GameObject>(), addedComponents, UxrNetworkComponentReferences.Origin.Network);
-
-                        _networkImplementation.SetNetworkRigidbodyKinematic(info.TargetComponent.gameObject, true);
 
                         if (addedComponents.Any())
                         {
@@ -1226,6 +1234,34 @@ namespace UltimateXR.Editor.Networking
         }
 
         /// <summary>
+        ///     Performs the postprocess using the given network implementation.
+        /// </summary>
+        /// <param name="networkImplementation">
+        ///     The network implementation to perform the postprocess with.
+        /// </param>
+        private void SetupPostProcess(IUxrNetworkImplementation networkImplementation)
+        {
+            if (networkImplementation == null)
+            {
+                return;
+            }
+            
+            List<UxrAvatar> registeredAvatarPrefabs = new List<UxrAvatar>();
+
+            for (int i = 0; i < PropRegisteredAvatars.arraySize; ++i)
+            {
+                UxrAvatar avatarPrefab = PropRegisteredAvatars.GetArrayElementAtIndex(i).FindPropertyRelative(PropertyNameAvatarPrefab).objectReferenceValue as UxrAvatar;
+
+                if (avatarPrefab != null)
+                {
+                    registeredAvatarPrefabs.Add(avatarPrefab);
+                }
+            }
+            
+            networkImplementation.SetupPostProcess(registeredAvatarPrefabs);
+        }
+
+        /// <summary>
         ///     Sets up the currently registered avatars using the given network voice implementation.
         /// </summary>
         /// <param name="networkVoiceImplementation">
@@ -1264,6 +1300,11 @@ namespace UltimateXR.Editor.Networking
                     avatarInstance = PrefabUtility.InstantiatePrefab(avatarPrefab) as UxrAvatar;
                     networkImplementation.SetupAvatar(avatarInstance, out List<GameObject> addedGameObjects, out List<Component> addedComponents);
                     UxrNetworkComponentReferences.RegisterNetworkComponents(avatarInstance.gameObject, addedGameObjects, addedComponents, UxrNetworkComponentReferences.Origin.Network);
+
+                    // Initially external to avoid rendering a frame when a new avatar is instantiated.
+                    // The avatar will be switched to the correct mode (local/external) after spawning.
+                    avatarInstance.AvatarMode = UxrAvatarMode.UpdateExternally;
+
                     PrefabUtility.ApplyPrefabInstance(avatarInstance.gameObject, InteractionMode.AutomatedAction);
                 }
                 finally

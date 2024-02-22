@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using UltimateXR.Avatar;
 using UltimateXR.Core;
 using UltimateXR.Core.Components.Singleton;
-using UltimateXR.Core.Instantiation;
 using UltimateXR.Core.Settings;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Manipulation;
@@ -22,7 +21,6 @@ namespace UltimateXR.Networking
     ///     Network Manager. This singleton will take care of all communication between the different users to keep them in
     ///     sync.
     /// </summary>
-    [RequireComponent(typeof(UxrInstanceManager))]
     public partial class UxrNetworkManager : UxrSingleton<UxrNetworkManager>
     {
         #region Inspector Properties/Serialized Fields
@@ -123,6 +121,28 @@ namespace UltimateXR.Networking
             OnAuthorityRequested(gameObject);
         }
 
+        /// <summary>
+        ///     Enables or disables the NetworkTransform on the given object and all its children.
+        /// </summary>
+        /// <param name="target">Target</param>
+        /// <param name="enabled">Enabled state</param>
+        public void SetNetworkTransformEnabled(GameObject target, bool enabled)
+        {
+            NetworkImplementation.EnableNetworkTransform(gameObject, enabled);
+            OnNetworkTransformEnabled(gameObject, enabled);
+        }
+
+        /// <summary>
+        ///     Enables or disables the NetworkRigidbody on the given object and all its children.
+        /// </summary>
+        /// <param name="target">Target</param>
+        /// <param name="enabled">Enabled state</param>
+        public void SetNetworkRigidbodyEnabled(GameObject target, bool enabled)
+        {
+            NetworkImplementation.EnableNetworkRigidbody(target, enabled);
+            OnNetworkRigidbodyEnabled(target, enabled);
+        }
+
         #endregion
 
         #region Unity
@@ -138,6 +158,7 @@ namespace UltimateXR.Networking
             {
                 UxrGrabManager.Instance.ObjectGrabbed  += GrabManager_ObjectGrabbed;
                 UxrGrabManager.Instance.ObjectReleased += GrabManager_ObjectReleased;
+                UxrGrabManager.Instance.ObjectPlaced   += GrabManager_ObjectPlaced;
             }
         }
 
@@ -152,6 +173,7 @@ namespace UltimateXR.Networking
             {
                 UxrGrabManager.Instance.ObjectGrabbed  -= GrabManager_ObjectGrabbed;
                 UxrGrabManager.Instance.ObjectReleased -= GrabManager_ObjectReleased;
+                UxrGrabManager.Instance.ObjectPlaced   -= GrabManager_ObjectPlaced;
             }
         }
 
@@ -172,16 +194,13 @@ namespace UltimateXR.Networking
             {
                 // From not grabbed to grabbed. Switch authority to local avatar if it's the one that grabbed it.
 
-                if (e.Grabber != null && e.Grabber.Avatar == UxrAvatar.LocalAvatar && NetworkImplementation.HasAuthority(e.GrabbableObject.gameObject))
+                if (e.Grabber != null && e.Grabber.Avatar == UxrAvatar.LocalAvatar && !NetworkImplementation.HasAuthority(e.GrabbableObject.gameObject))
                 {
-                    NetworkImplementation.RequestAuthority(e.GrabbableObject.gameObject);
-                    OnAuthorityRequested(e.GrabbableObject.gameObject);
+                    RequestAuthority(e.GrabbableObject.gameObject);
                 }
 
                 // Disable network rigidbody because avatar will drive the grabbed object's transform.
-
-                NetworkImplementation.EnableNetworkRigidbody(e.GrabbableObject.gameObject, false);
-                OnNetworkRigidbodyEnabled(e.GrabbableObject.gameObject, false);
+                SetNetworkRigidbodyEnabled(e.GrabbableObject.gameObject, false);
             }
         }
 
@@ -198,13 +217,31 @@ namespace UltimateXR.Networking
                 if (e.IsGrabbedStateChanged)
                 {
                     // From grabbed to released. Enable network rigidbody.
-                    NetworkImplementation.EnableNetworkRigidbody(e.GrabbableObject.gameObject, true);
-                    OnNetworkRigidbodyEnabled(e.GrabbableObject.gameObject, true);
+                    SetNetworkRigidbodyEnabled(e.GrabbableObject.gameObject, true);
                 }
                 else if (e.Grabber != null && !UxrGrabManager.Instance.IsBeingGrabbedBy(e.GrabbableObject, e.Grabber.Avatar))
                 {
                     // An avatar released its last grip, check if we need to reassign the network authority  
                     NetworkImplementation.CheckReassignGrabAuthority(e.GrabbableObject.gameObject);
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Called when an object was placed to disable the NetworkRigidbody. Checks if the place call comes from a user Place
+        ///     instead of a manipulation event, because manipulation events come from a grab where the rigidbody was already
+        ///     disabled at the time of the grab.
+        /// </summary>
+        /// <param name="sender">Event sender</param>
+        /// <param name="e">Event parameters</param>
+        private void GrabManager_ObjectPlaced(object sender, UxrManipulationEventArgs e)
+        {
+            if (e.GrabbableObject.RigidBodySource != null && e.GrabbableObject.RigidBodyDynamicOnRelease && e.GrabbableObject.CanUseRigidBody)
+            {
+                if (e.Grabber == null)
+                {
+                    // Source is a "manual" place
+                    SetNetworkRigidbodyEnabled(e.GrabbableObject.gameObject, false);
                 }
             }
         }
@@ -251,7 +288,7 @@ namespace UltimateXR.Networking
         {
             if (UxrGlobalSettings.Instance.LogLevelNetworking >= UxrLogLevel.Relevant)
             {
-                Debug.Log($"{UxrConstants.NetworkingModule} Authority requested over GameObject {gameObject.GetPathUnderScene()}.");
+                Debug.Log($"{UxrConstants.NetworkingModule} Authority requested of local avatar over GameObject {gameObject.GetPathUnderScene()}.");
             }
 
             LocalAuthorityRequested?.Invoke(gameObject);
