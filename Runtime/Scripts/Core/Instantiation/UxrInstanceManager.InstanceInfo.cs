@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 using UltimateXR.Core.Serialization;
 using UltimateXR.Core.Unique;
+using UltimateXR.Extensions.Unity;
 using UnityEngine;
 
 namespace UltimateXR.Core.Instantiation
@@ -128,7 +129,7 @@ namespace UltimateXR.Core.Instantiation
                         transform.SetParent(parentTransform);
                     }
 
-                    transform.SetLocalPositionAndRotation(Position, Rotation);
+                    TransformExt.SetLocalPositionAndRotation(transform, Position, Rotation);
                 }
                 else
                 {

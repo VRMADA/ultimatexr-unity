@@ -11,6 +11,7 @@ using UltimateXR.Core.Components.Singleton;
 using UltimateXR.Core.Settings;
 using UltimateXR.Core.StateSync;
 using UltimateXR.Core.Unique;
+using UltimateXR.Extensions.Unity;
 using UltimateXR.Networking;
 using UnityEngine;
 
@@ -817,7 +818,7 @@ namespace UltimateXR.Core.Instantiation
 
             if (clearLocalPositionAndRotation)
             {
-                component.Transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+                TransformExt.SetLocalPositionAndRotation(component.Transform, Vector3.zero, Quaternion.identity);
             }
 
             EndSyncMethod(new object[] { component, newParent, clearLocalPositionAndRotation });
