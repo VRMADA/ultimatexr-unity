@@ -179,7 +179,7 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
             EnableNetworkTransform(gameObject, enabled);
 
             NetworkRigidbody[] networkRigidbodies = gameObject.GetComponentsInChildren<NetworkRigidbody>();
-            networkTransforms.ForEach(nrb => nrb.SetEnabled(enable));
+            networkRigidbodies.ForEach(nrb => nrb.SetEnabled(enable));
 #endif
         }
 
