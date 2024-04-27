@@ -279,6 +279,22 @@ namespace UltimateXR.UI
             return Avatar.ControllerInput.GetButtonsEvent(_handSide, ClickInput, UxrButtonEventType.PressUp);
         }
 
+        /// <summary>
+        ///     Tries to get the position where the laser pointer hits an object.
+        /// </summary>
+        /// <param name="hitPosition">The position where the laser pointer hits an object.</param>
+        /// <returns>True if the laser pointer is enabled and a hit position is calculated, false otherwise.</returns>
+        public bool TryGetLaserHitPosition(out Vector3 _hitPosition)
+        {
+            if (IsLaserEnabled)
+            {
+                _hitPosition = LaserPos + LaserDir * CurrentRayLength;
+                return true;
+            }
+            _hitPosition = Vector3.zero;
+            return false;
+        }
+
         #endregion
 
         #region Unity
