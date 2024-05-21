@@ -33,6 +33,15 @@ namespace UltimateXR.Core.Serialization
 
         #endregion
 
+        #region Implicit IDisposable
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+        }
+
+        #endregion
+
         #region Implicit IUxrSerializer
 
         /// <inheritdoc />
@@ -117,6 +126,11 @@ namespace UltimateXR.Core.Serialization
         }
 
         /// <inheritdoc />
+        public void Serialize<T1, T2>(ref (T1, T2) value)
+        {
+        }
+
+        /// <inheritdoc />
         public void Serialize<T>(ref T[] values)
         {
         }
@@ -138,6 +152,26 @@ namespace UltimateXR.Core.Serialization
 
         /// <inheritdoc />
         public void Serialize<TKey, TValue>(ref Dictionary<TKey, TValue> values)
+        {
+        }
+
+        /// <inheritdoc />
+        public void Serialize<T>(ref HashSet<T> values)
+        {
+        }
+
+        /// <inheritdoc />
+        public void Serialize(ref HashSet<object> values)
+        {
+        }
+
+        /// <inheritdoc />
+        public void Serialize(ref DateTime value)
+        {
+        }
+
+        /// <inheritdoc />
+        public void Serialize(ref TimeSpan value)
         {
         }
 
@@ -192,14 +226,13 @@ namespace UltimateXR.Core.Serialization
         }
 
         /// <inheritdoc />
-        public void SerializeUxrSerializable<T>(ref T obj) where T : class, IUxrSerializable
+        public void SerializeUxrSerializable<T>(ref T obj) where T : IUxrSerializable
         {
         }
 
         /// <inheritdoc />
         public void SerializeAxis(ref UxrAxis axis)
         {
-            
         }
 
         /// <inheritdoc />

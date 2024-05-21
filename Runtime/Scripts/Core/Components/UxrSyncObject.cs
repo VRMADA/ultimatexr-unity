@@ -20,24 +20,35 @@ namespace UltimateXR.Core.Components
     ///     and <see cref="UxrUniqueIdImplementer.TryGetComponentById" />), a simple way to send references through the network
     ///     is by using a <see cref="UxrSyncObject" /> component on the GameObject.
     /// </summary>
-    public class UxrSyncObject : UxrComponent
+    public partial class UxrSyncObject : UxrComponent
     {
         #region Inspector Properties/Serialized Fields
 
         [SerializeField] private bool              _syncTransform;
         [SerializeField] private UxrTransformSpace _transformSpace = UxrTransformSpace.World;
+        [SerializeField] private bool              _syncActiveAndEnabled;
+        [SerializeField] private bool              _syncWhileDisabled;
 
         #endregion
 
-        #region Public Overrides UxrComponent
+        #region Public Types & Data
+
+        /// <summary>
+        ///     Gets whether the transform should be synchronized.
+        /// </summary>
+        public bool SyncTransform => _syncTransform;
+
+        #endregion
+
+        #region Protected Overrides UxrComponent
 
         /// <inheritdoc />
-        public override UxrTransformSpace TransformStateSaveSpace => _transformSpace;
+        protected override UxrTransformSpace TransformStateSaveSpace => _transformSpace;
 
         /// <inheritdoc />
-        public override bool RequiresTransformSerialization(UxrStateSaveLevel level)
+        protected override bool RequiresTransformSerialization(UxrStateSaveLevel level)
         {
-            return _syncTransform;
+            return SyncTransform;
         }
 
         #endregion

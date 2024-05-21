@@ -1046,6 +1046,9 @@ namespace UltimateXR.Locomotion
         /// <param name="validTeleport">Whether the current teleport destination is valid</param>
         private void EnableTeleportObjects(bool enableTarget, bool validTeleport)
         {
+            _teleportTargetEnabled = enableTarget;
+            _teleportTargetValid   = validTeleport;
+            
             // Enable / disable
 
             if (_teleportTarget != null)
@@ -1120,7 +1123,7 @@ namespace UltimateXR.Locomotion
         {
             get
             {
-                if (IsTeleporting || UxrAvatar.LocalAvatarCamera == null)
+                if (IsTeleporting)
                 {
                     // Component is currently teleporting
                     return false;
@@ -1132,7 +1135,7 @@ namespace UltimateXR.Locomotion
                     return false;
                 }
 
-                Vector3 cameraPos          = UxrAvatar.LocalAvatar.CameraPosition;
+                Vector3 cameraPos          = Avatar.CameraPosition;
                 Vector3 cameraToController = ControllerStart - cameraPos;
 
                 return !HasBlockingRaycastHit(cameraPos, cameraToController.normalized, cameraToController.magnitude, out RaycastHit hit);
@@ -1318,6 +1321,8 @@ namespace UltimateXR.Locomotion
         private bool                     _isValidTeleport;
         private Vector3                  _teleportLocalPosition;
         private Vector3                  _teleportLocalDirection;
+        private bool                     _teleportTargetEnabled;
+        private bool                     _teleportTargetValid;
         private LayerMask                _layerMaskRaycast = 0;
         private UxrTeleportTarget        _teleportTarget;
         private UxrTeleportSpawnCollider _lastSpawnCollider;

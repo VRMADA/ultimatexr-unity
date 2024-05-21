@@ -12,9 +12,9 @@ namespace UltimateXR.Locomotion
         #region Protected Overrides UxrComponent
 
         /// <inheritdoc />
-        protected override void SerializeStateInternal(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
+        protected override void SerializeState(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
         {
-            base.SerializeStateInternal(isReading, stateSerializationVersion, level, options);
+            base.SerializeState(isReading, stateSerializationVersion, level, options);
 
             // Locomotion is are already handled through events, we don't serialize parameters in incremental changes
 
@@ -22,11 +22,14 @@ namespace UltimateXR.Locomotion
             {
                 int layerMaskValue = _layerMaskRaycast.value;
 
-                SerializeStateValue(level, options, nameof(layerMaskValue), ref layerMaskValue);
+                SerializeStateValue(level, options, nameof(layerMaskValue),         ref layerMaskValue);
+                SerializeStateValue(level, options, nameof(_teleportTargetEnabled), ref _teleportTargetEnabled);
+                SerializeStateValue(level, options, nameof(_teleportTargetValid),   ref _teleportTargetValid);
 
                 if (isReading)
                 {
                     _layerMaskRaycast.value = layerMaskValue;
+                    EnableTeleportObjects(_teleportTargetEnabled, _teleportTargetValid);
                 }
             }
         }

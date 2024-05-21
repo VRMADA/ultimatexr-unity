@@ -41,6 +41,32 @@ namespace UltimateXR.Networking.Integrations.Net.Mirror
         public override string SdkName => UxrConstants.SdkMirror;
 
         /// <inheritdoc />
+        public override bool IsServer
+        {
+            get
+            {
+#if ULTIMATEXR_USE_MIRROR_SDK
+                return NetworkManager.singleton.isNetworkActive && (NetworkManager.singleton.mode == NetworkManagerMode.Host || NetworkManager.singleton.mode == NetworkManagerMode.ServerOnly);
+#else
+                return false;
+#endif
+            }
+        }
+
+        /// <inheritdoc />
+        public override bool IsClient
+        {
+            get
+            {
+#if ULTIMATEXR_USE_MIRROR_SDK
+                return NetworkManager.singleton.isNetworkActive && (NetworkManager.singleton.mode == NetworkManagerMode.Host || NetworkManager.singleton.mode == NetworkManagerMode.ClientOnly);
+#else
+                return false;
+#endif
+            }
+        }
+
+        /// <inheritdoc />
         public override string NetworkRigidbodyWarning => "Mirror doesn't support nested NetworkIdentity components, which is required when using grabbable rigidbodies with other grabbable rigidbodies attached. If you're using nested grabbable rigidbodies, do not set up NetworkRigidbody components here. Don't worry! UltimateXR will still synchronize them using RPC calls to try to keep the same position/velocity on all clients.";
 
         /// <inheritdoc />

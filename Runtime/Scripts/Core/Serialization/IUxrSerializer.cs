@@ -16,7 +16,7 @@ namespace UltimateXR.Core.Serialization
     ///     write) transparently, avoiding inconsistencies that can happen when using separate serialize/deserialize methods
     ///     on complex data with versioning.
     /// </summary>
-    public interface IUxrSerializer
+    public interface IUxrSerializer : IDisposable
     {
         #region Public Types & Data
 
@@ -128,6 +128,12 @@ namespace UltimateXR.Core.Serialization
         void Serialize(ref Guid value);
 
         /// <summary>
+        ///     Serializes or deserializes a tuple.
+        /// </summary>
+        /// <param name="value">The element to serialize or deserialize</param>
+        void Serialize<T1, T2>(ref (T1, T2) value);
+
+        /// <summary>
         ///     Serializes or deserializes an array.
         /// </summary>
         /// <param name="values">The elements to serialize or deserialize</param>
@@ -160,6 +166,22 @@ namespace UltimateXR.Core.Serialization
         void Serialize(ref List<object> values);
 
         /// <summary>
+        ///     Serializes or deserializes a hash set.
+        /// </summary>
+        /// <param name="values">The elements to serialize or deserialize</param>
+        /// <typeparam name="T">The type of the elements</typeparam>
+        /// <remarks>Implementations must support null</remarks>
+        void Serialize<T>(ref HashSet<T> values);
+
+        /// <summary>
+        ///     Serializes or deserializes a hash set of objects, where each element might be of a different type. The type of each
+        ///     element will be stored next to the object.
+        /// </summary>
+        /// <param name="values">The elements to serialize or deserialize</param>
+        /// <remarks>Implementations must support null</remarks>
+        void Serialize(ref HashSet<object> values);
+
+        /// <summary>
         ///     Serializes or deserializes a dictionary.
         /// </summary>
         /// <param name="values">The values</param>
@@ -167,6 +189,18 @@ namespace UltimateXR.Core.Serialization
         /// <typeparam name="TValue">The value type</typeparam>
         /// <remarks>Implementations must support null</remarks>
         void Serialize<TKey, TValue>(ref Dictionary<TKey, TValue> values);
+
+        /// <summary>
+        ///     Serializes or deserializes a <see cref="DateTime" /> value.
+        /// </summary>
+        /// <param name="value">The element to serialize or deserialize</param>
+        void Serialize(ref DateTime dateTime);
+
+        /// <summary>
+        ///     Serializes or deserializes a <see cref="TimeSpan" /> value.
+        /// </summary>
+        /// <param name="value">The element to serialize or deserialize</param>
+        void Serialize(ref TimeSpan timeSpan);
 
         /// <summary>
         ///     Serializes or deserializes a Vector2 value.
@@ -238,7 +272,7 @@ namespace UltimateXR.Core.Serialization
         /// </summary>
         /// <param name="obj">The element to serialize or deserialize</param>
         /// <remarks>Implementations must support null</remarks>
-        void SerializeUxrSerializable<T>(ref T obj) where T : class, IUxrSerializable;
+        void SerializeUxrSerializable<T>(ref T obj) where T : IUxrSerializable;
 
         /// <summary>
         ///     Serializes or deserializes an <see cref="UxrAxis" /> value.
@@ -247,7 +281,7 @@ namespace UltimateXR.Core.Serialization
         void SerializeAxis(ref UxrAxis axis);
 
         /// <summary>
-        ///     Serializes a variable of a type that is not determined at compile time. When writing it will serialize the type
+        ///     Serializes a variable of a type that is known only at runtime. When writing it will serialize the type
         ///     together with the value so that it can be deserialized back when reading.
         /// </summary>
         /// <param name="obj">The element to serialize or deserialize</param>

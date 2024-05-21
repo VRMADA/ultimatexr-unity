@@ -32,14 +32,22 @@ namespace UltimateXR.Core.Serialization
         Enum         = 13,
         Type         = 20,
         Guid         = 21,
+        Tuple        = 22,
 
         // C# collections
 
-        Array       = 30,
-        ObjectArray = 31,
-        List        = 32,
-        ObjectList  = 33,
-        Dictionary  = 34,
+        Array         = 30,
+        ObjectArray   = 31,
+        List          = 32,
+        ObjectList    = 33,
+        Dictionary    = 34,
+        HashSet       = 35,
+        ObjectHashSet = 36,
+
+        // Other C# types
+
+        DateTime = 50,
+        TimeSpan = 51,
 
         // Unity
 

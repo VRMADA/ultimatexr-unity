@@ -26,6 +26,7 @@ namespace UltimateXR.Core.Settings
         [SerializeField] private UxrLogLevel _logLevelLocomotion   = UxrLogLevel.Relevant;
         [SerializeField] private UxrLogLevel _logLevelManipulation = UxrLogLevel.Relevant;
         [SerializeField] private UxrLogLevel _logLevelNetworking   = UxrLogLevel.Relevant;
+        [SerializeField] private UxrLogLevel _logLevelRendering    = UxrLogLevel.Relevant;
         [SerializeField] private UxrLogLevel _logLevelUI           = UxrLogLevel.Warnings;
         [SerializeField] private UxrLogLevel _logLevelWeapons      = UxrLogLevel.Relevant;
 
@@ -124,6 +125,15 @@ namespace UltimateXR.Core.Settings
         {
             get => _logLevelNetworking;
             set => _logLevelNetworking = value;
+        }
+
+        /// <summary>
+        ///     Gets or sets the log level for rendering events.
+        /// </summary>
+        public UxrLogLevel LogLevelRendering
+        {
+            get => _logLevelRendering;
+            set => _logLevelRendering = value;
         }
 
         /// <summary>

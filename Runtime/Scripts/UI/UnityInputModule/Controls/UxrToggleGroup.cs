@@ -31,14 +31,14 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         public event Action<UxrToggleControlInput> SelectionChanged;
 
         /// <summary>
-        ///     Gets the currently selected toggle component.
-        /// </summary>
-        public UxrToggleControlInput CurrentSelection { get; private set; }
-
-        /// <summary>
         ///     Gets all the current toggle components.
         /// </summary>
         public IList<UxrToggleControlInput> Toggles => _toggles;
+
+        /// <summary>
+        ///     Gets the currently selected toggle component.
+        /// </summary>
+        public UxrToggleControlInput CurrentSelection { get; private set; }
 
         #endregion
 
@@ -52,8 +52,19 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         {
             _toggles.ForEach(t => t.Toggled -= Toggle_Toggled);
             _toggles.Clear();
-            _toggles = GetComponentsInChildren<UxrToggleControlInput>(true).ToList();
-            _toggles.ForEach(t => t.Toggled += Toggle_Toggled);
+
+            _toggles = new List<UxrToggleControlInput>();
+
+            for (int i = 0; i < transform.childCount; ++i)
+            {
+                UxrToggleControlInput toggle = transform.GetChild(i).GetComponent<UxrToggleControlInput>();
+                
+                if (toggle != null && !toggle.IsBeingDestroyed && toggle.isActiveAndEnabled)
+                {
+                    _toggles.Add(toggle);
+                    toggle.Toggled += Toggle_Toggled;
+                }
+            }
 
             CurrentSelection = _toggles.FirstOrDefault(t => t.IsSelected);
 
@@ -65,12 +76,16 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         /// </summary>
         public void ClearCurrentSelection()
         {
+            BeginSync();
+
             if (CurrentSelection != null)
             {
                 CurrentSelection.IsSelected   = false;
                 CurrentSelection.CanBeToggled = true;
                 CurrentSelection              = null;
             }
+
+            EndSyncMethod();
         }
 
         #endregion
@@ -84,7 +99,10 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         {
             base.OnEnable();
 
-            RefreshToggleChildrenList();
+            if (!_toggles.Any())
+            {
+                RefreshToggleChildrenList();
+            }
         }
 
         /// <summary>
@@ -129,6 +147,24 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         /// <param name="toggle">The toggle component that was toggled</param>
         private void Toggle_Toggled(UxrToggleControlInput toggle)
         {
+            NotifyToggle(_toggles.IndexOf(toggle), true);
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        /// <summary>
+        ///     Notifies that a toggle component was toggled.
+        /// </summary>
+        /// <param name="index">The index of the toggle</param>
+        /// <param name="isFromEvent">Whether the call comes from handling a toggle event</param>
+        private void NotifyToggle(int index, bool isFromEvent)
+        {
+            BeginSync();
+
+            UxrToggleControlInput toggle = index >= 0 && index < _toggles.Count ? _toggles[index] : null;
+
             foreach (UxrToggleControlInput t in _toggles)
             {
                 t.CanBeToggled = t != toggle;
@@ -141,7 +177,15 @@ namespace UltimateXR.UI.UnityInputModule.Controls
 
             CurrentSelection = toggle;
 
+            if (CurrentSelection != null && !isFromEvent)
+            {
+                // Since it doesn't come from an event, we need to update the selection manually.
+                CurrentSelection.SetIsSelected(true, false);
+            }
+
             SelectionChanged?.Invoke(toggle);
+
+            EndSyncMethod(new object[] { index, false });
         }
 
         #endregion

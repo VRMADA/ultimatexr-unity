@@ -139,10 +139,24 @@ namespace UltimateXR.Avatar
         /// <param name="transform">Transform to reorient/reposition</param>
         public void ReorientRelativeToAvatar(Transform transform)
         {
+            GetKeepRelativeOrientationToAvatar(transform, out Vector3 position, out Quaternion rotation);
+            transform.SetPositionAndRotation(position, rotation);
+        }
+
+        /// <summary>
+        ///     Gets the new position and rotation an object would need to have to keep the same relative position/rotation to
+        ///     the avatar after moving.
+        /// </summary>
+        /// <param name="transform">The transform to get the new position/rotation of</param>
+        /// <param name="position">The new position</param>
+        /// <param name="rotation">The new rotation</param>
+        public void GetKeepRelativeOrientationToAvatar(Transform transform, out Vector3 position, out Quaternion rotation)
+        {
             Vector3    relativePos = _oldWorldMatrixInverse.MultiplyPoint(transform.position);
             Quaternion relativeRot = _oldRotationInverse * transform.rotation;
 
-            transform.SetPositionAndRotation(NewWorldMatrix.MultiplyPoint(relativePos), NewRotation * relativeRot);
+            position = NewWorldMatrix.MultiplyPoint(relativePos);
+            rotation = NewRotation * relativeRot;
         }
 
         #endregion

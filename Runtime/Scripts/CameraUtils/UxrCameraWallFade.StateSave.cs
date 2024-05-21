@@ -12,9 +12,9 @@ namespace UltimateXR.CameraUtils
         #region Protected Overrides
 
         /// <inheritdoc />
-        protected override void SerializeStateInternal(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
+        protected override void SerializeState(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
         {
-            base.SerializeStateInternal(isReading, stateSerializationVersion, level, options);
+            base.SerializeState(isReading, stateSerializationVersion, level, options);
 
             // Changes are already handled each frame, we don't serialize them in incremental changes
 

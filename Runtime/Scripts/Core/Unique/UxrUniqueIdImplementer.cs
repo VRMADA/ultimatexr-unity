@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using UltimateXR.Core.Components;
-using UltimateXR.Core.Instantiation;
 using UltimateXR.Core.Settings;
 using UnityEngine;
 
@@ -24,34 +23,15 @@ namespace UltimateXR.Core.Unique
         ///     This includes all <see cref="UxrComponent" /> components and all user custom classes that implement
         ///     <see cref="IUxrUniqueId" /> using <see cref="UxrUniqueIdImplementer{T}" />.
         /// </summary>
-        /// <remarks>
-        ///     The interface can be safely casted to <see cref="Component" />, since <see cref="UxrUniqueIdImplementer{T}" />
-        ///     requires T to be both a <see cref="Component" /> and implementing <see cref="IUxrUniqueId" />.
-        /// </remarks>
         public static IEnumerable<IUxrUniqueId> AllComponents
         {
             get
             {
-                // TODO: We want to prioritize the UxrInstanceManager so that when deserializing, we get the instance data
-                // always before the instances themselves. This way instances are created/destroyed before any instance data and
-                // there are no "instance not found" exceptions.
-                // Ideally we would have a sorting order in IUxrUniqueId but for now we want to avoid sorting.
-
-                IUxrUniqueId instanceManager = UxrInstanceManager.HasInstance ? UxrInstanceManager.Instance : null;
-
-                if (instanceManager != null)
-                {
-                    yield return instanceManager;
-                }
-
                 foreach (KeyValuePair<Type, UxrUniqueIdImplementer> pair in s_implementerTypes)
                 {
                     foreach (IUxrUniqueId unique in pair.Value.GetAllComponentsInternal())
                     {
-                        if (unique != instanceManager && unique != null && unique.GameObject != null)
-                        {
-                            yield return unique;
-                        }
+                        yield return unique;
                     }
                 }
             }
@@ -95,7 +75,7 @@ namespace UltimateXR.Core.Unique
         /// <returns>Whether the given ID was found and a component is returned</returns>
         public static bool TryGetComponentById(Guid id, out IUxrUniqueId component)
         {
-            // Iterate over component types. By default it should contain the UxrComponent implementer only.
+            // Iterate over component types. By default, it will contain the UxrComponent implementer only.
 
             foreach (KeyValuePair<Type, UxrUniqueIdImplementer> pair in s_implementerTypes)
             {

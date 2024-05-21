@@ -121,6 +121,32 @@ namespace UltimateXR.Networking
         /// </summary>
         public void DestroyWithAddedComponents()
         {
+            if (Application.isPlaying)
+            {
+                if (_addedComponents != null)
+                {
+                    foreach (Component c in _addedComponents.Where(c => c != null))
+                    {
+                        Destroy(c);
+                    }
+
+                    _addedComponents.Clear();
+                }
+
+                if (_addedGameObjects != null)
+                {
+                    foreach (GameObject g in _addedGameObjects.Where(g => g != null))
+                    {
+                        Destroy(g);
+                    }
+
+                    _addedGameObjects.Clear();
+                }
+                
+                Destroy(this);
+                return;
+            }
+            
 #if UNITY_EDITOR
             for (int i = 0; i < _addedComponents.Count; ++i)
             {

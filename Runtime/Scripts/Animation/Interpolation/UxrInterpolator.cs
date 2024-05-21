@@ -495,7 +495,7 @@ namespace UltimateXR.Animation.Interpolation
 
         #endregion
 
-        #region Private Methods
+        #region Internal Methods
 
         /// <summary>
         ///     Gets a framerate-independent smoothed interpolation value.
@@ -503,10 +503,14 @@ namespace UltimateXR.Animation.Interpolation
         /// <param name="smooth">Smooth value [0.0, 1.0] with 0 meaning no smoothing and 1 maximum smoothing</param>
         /// <param name="deltaTime">Elapsed time in seconds</param>
         /// <returns>Interpolation value [0.0, 1.0]</returns>
-        private static float GetSmoothInterpolationValue(float smooth, float deltaTime)
+        internal static float GetSmoothInterpolationValue(float smooth, float deltaTime)
         {
             return smooth > 0.0f ? (1.0f - Mathf.Clamp01(smooth)) * deltaTime * MaxSmoothSpeed : 1.0f;
         }
+        
+        #endregion
+        
+        #region Private Methods
 
         /// <summary>
         ///     Evaluates a curve using interpolation. This is the core math code that does the actual interpolation.

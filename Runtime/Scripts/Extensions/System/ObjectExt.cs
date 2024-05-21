@@ -170,6 +170,22 @@ namespace UltimateXR.Extensions.System
                 return (T)copiedDict;
             }
 
+            // Check if it's a HashSet<T>
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(HashSet<>))
+            {
+                IEnumerable originalSet = (IEnumerable)obj;
+
+                // Create a new HashSet<T> with the same element type
+                HashSet<object> copiedSet = new HashSet<object>();
+
+                foreach (object item in originalSet)
+                {
+                    copiedSet.Add(DeepCopy(item));
+                }
+
+                return (T)(object)copiedSet;
+            }
+
             // Check if the type implements ICloneable
             if (typeof(ICloneable).IsAssignableFrom(type))
             {

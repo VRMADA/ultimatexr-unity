@@ -36,14 +36,30 @@ namespace UltimateXR.Extensions.System.Math
         ///     Converts a float value representing time in seconds to a formatted string value.
         /// </summary>
         /// <param name="self">Seconds to convert</param>
-        /// <returns>Formatted time hh:mm::ss</returns>
-        public static string SecondsToTimeString(this float self)
+        /// <param name="excludeHoursIfZero">Whether to exclude the hours from the string if they are 0</param>
+        /// <param name="includeMilliseconds">Whether to include the milliseconds in the string</param>
+        /// <returns>
+        ///     Formatted time hh:mm::ss:mmm applying <paramref name="excludeHoursIfZero" /> and
+        ///     <paramref name="includeMilliseconds" /> constraints.
+        /// </returns>
+        public static string SecondsToTimeString(this float self, bool excludeHoursIfZero = false, bool includeMilliseconds = false)
         {
-            int hours   = Mathf.FloorToInt(self / 3600.0f);
-            int minutes = Mathf.FloorToInt((self - hours * 3600.0f) / 60.0f);
-            int seconds = Mathf.FloorToInt(self - hours * 3600.0f - minutes * 60.0f);
+            int hours        = Mathf.FloorToInt(self / 3600.0f);
+            int minutes      = Mathf.FloorToInt((self - hours * 3600.0f) / 60.0f);
+            int seconds      = Mathf.FloorToInt(self - hours * 3600.0f - minutes * 60.0f);
+            int milliseconds = (int)(self * 1000 % 1000);
 
-            return $"{hours:00}:{minutes:00}:{seconds:00}";
+            if (hours >= 1)
+            {
+                return includeMilliseconds ? $"{hours:D2}:{minutes:D2}:{seconds:D2}:{milliseconds:D3}" : $"{hours:D2}:{minutes:D2}:{seconds:D2}";
+            }
+
+            if (excludeHoursIfZero)
+            {
+                return includeMilliseconds ? $"{minutes:D2}:{seconds:D2}:{milliseconds:D3}" : $"{minutes:D2}:{seconds:D2}";
+            }
+
+            return includeMilliseconds ? $"{hours:D2}:{minutes:D2}:{seconds:D2}:{milliseconds:D3}" : $"{hours:D2}:{minutes:D2}:{seconds:D2}";
         }
 
         /// <summary>

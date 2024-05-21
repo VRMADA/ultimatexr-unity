@@ -69,9 +69,9 @@ namespace UltimateXR.Editor.Core
                         }
                     }
 
-                    if (component.UniqueId == default && !sceneUxrComponents.ContainsKey(component.UniqueId))
+                    if (component.UniqueId != default)
                     {
-                        sceneUxrComponents.Add(component.UniqueId, component);
+                        sceneUxrComponents.TryAdd(component.UniqueId, component);
                     }
                 }
             }

@@ -12,9 +12,9 @@ namespace UltimateXR.Locomotion
         #region Protected Overrides UxrComponent
 
         /// <inheritdoc />
-        protected override void SerializeStateInternal(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
+        protected override void SerializeState(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
         {
-            base.SerializeStateInternal(isReading, stateSerializationVersion, level, options);
+            base.SerializeState(isReading, stateSerializationVersion, level, options);
 
             // Teleportation logic is already handled through events, we don't serialize parameters in incremental changes
 
@@ -28,6 +28,11 @@ namespace UltimateXR.Locomotion
                 SerializeStateValue(level, options, nameof(_lastSyncIsTargetEnabled),     ref _lastSyncIsTargetEnabled);
                 SerializeStateValue(level, options, nameof(_lastSyncIsValidTeleport),     ref _lastSyncIsValidTeleport);
                 SerializeStateValue(level, options, nameof(_lastSyncTargetArrowLocalRot), ref _lastSyncTargetArrowLocalRot);
+
+                if (isReading)
+                {
+                    EnableArc(_lastSyncIsArcEnabled, _lastSyncIsValidTeleport);
+                }
             }
         }
 

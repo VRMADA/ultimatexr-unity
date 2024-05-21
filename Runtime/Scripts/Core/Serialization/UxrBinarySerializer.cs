@@ -46,6 +46,15 @@ namespace UltimateXR.Core.Serialization
 
         #endregion
 
+        #region Implicit IDisposable
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+        }
+
+        #endregion
+
         #region Implicit IUxrSerializer
 
         /// <summary>
@@ -116,11 +125,11 @@ namespace UltimateXR.Core.Serialization
         {
             if (IsReading)
             {
-                value = Reader.ReadInt32();
+                value = Reader.ReadCompressedInt32(Version);
             }
             else
             {
-                Writer.Write(value);
+                Writer.WriteCompressedInt32(value);
             }
         }
 
@@ -129,11 +138,11 @@ namespace UltimateXR.Core.Serialization
         {
             if (IsReading)
             {
-                value = Reader.ReadUInt32();
+                value = Reader.ReadCompressedUInt32(Version);
             }
             else
             {
-                Writer.Write(value);
+                Writer.WriteCompressedUInt32(value);
             }
         }
 
@@ -142,11 +151,11 @@ namespace UltimateXR.Core.Serialization
         {
             if (IsReading)
             {
-                value = Reader.ReadInt64();
+                value = Reader.ReadCompressedInt64(Version);
             }
             else
             {
-                Writer.Write(value);
+                Writer.WriteCompressedInt64(value);
             }
         }
 
@@ -155,11 +164,11 @@ namespace UltimateXR.Core.Serialization
         {
             if (IsReading)
             {
-                value = Reader.ReadUInt64();
+                value = Reader.ReadCompressedUInt64(Version);
             }
             else
             {
-                Writer.Write(value);
+                Writer.WriteCompressedUInt64(value);
             }
         }
 
@@ -261,6 +270,19 @@ namespace UltimateXR.Core.Serialization
         }
 
         /// <inheritdoc />
+        public void Serialize<T1, T2>(ref (T1, T2) value)
+        {
+            if (IsReading)
+            {
+                value = Reader.ReadTuple<T1, T2>(Version);
+            }
+            else
+            {
+                Writer.Write(value);
+            }
+        }
+
+        /// <inheritdoc />
         public void Serialize<T>(ref T[] values)
         {
             if (IsReading)
@@ -322,6 +344,58 @@ namespace UltimateXR.Core.Serialization
             else
             {
                 Writer.Write(values);
+            }
+        }
+
+        /// <inheritdoc />
+        public void Serialize<T>(ref HashSet<T> values)
+        {
+            if (IsReading)
+            {
+                values = Reader.ReadHashSet<T>(Version);
+            }
+            else
+            {
+                Writer.Write(values);
+            }
+        }
+
+        /// <inheritdoc />
+        public void Serialize(ref HashSet<object> values)
+        {
+            if (IsReading)
+            {
+                values = Reader.ReadObjectHashSet(Version);
+            }
+            else
+            {
+                Writer.Write(values);
+            }
+        }
+
+        /// <inheritdoc />
+        public void Serialize(ref DateTime value)
+        {
+            if (IsReading)
+            {
+                value = Reader.ReadDateTime(Version);
+            }
+            else
+            {
+                Writer.Write(value);
+            }
+        }
+
+        /// <inheritdoc />
+        public void Serialize(ref TimeSpan value)
+        {
+            if (IsReading)
+            {
+                value = Reader.ReadTimeSpan(Version);
+            }
+            else
+            {
+                Writer.Write(value);
             }
         }
 
@@ -456,11 +530,11 @@ namespace UltimateXR.Core.Serialization
         }
 
         /// <inheritdoc />
-        public void SerializeUxrSerializable<T>(ref T obj) where T : class, IUxrSerializable
+        public void SerializeUxrSerializable<T>(ref T obj) where T : IUxrSerializable
         {
             if (IsReading)
             {
-                obj = Reader.ReadUxrSerializable(Version) as T;
+                obj = (T)Reader.ReadUxrSerializable(Version);
             }
             else
             {

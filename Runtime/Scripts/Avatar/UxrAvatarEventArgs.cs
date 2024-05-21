@@ -8,7 +8,7 @@ namespace UltimateXR.Avatar
     /// <summary>
     ///     Base class for avatar events.
     /// </summary>
-    public abstract class UxrAvatarEventArgs
+    public class UxrAvatarEventArgs
     {
         #region Public Types & Data
 
@@ -25,7 +25,7 @@ namespace UltimateXR.Avatar
         ///     Constructor.
         /// </summary>
         /// <param name="avatar">Avatar</param>
-        protected UxrAvatarEventArgs(UxrAvatar avatar)
+        public UxrAvatarEventArgs(UxrAvatar avatar)
         {
             Avatar = avatar;
         }

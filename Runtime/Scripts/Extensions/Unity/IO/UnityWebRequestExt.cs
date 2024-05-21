@@ -127,6 +127,7 @@ namespace UltimateXR.Extensions.Unity.IO
             ct.ThrowIfCancellationRequested();
             AudioClip result = DownloadHandlerAudioClip.GetContent(req);
             result.name = Path.GetFileNameWithoutExtension(uri);
+
             return result;
         }
 

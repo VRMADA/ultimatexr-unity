@@ -28,11 +28,42 @@ namespace UltimateXR.Extensions.System.IO
         /// <param name="value">Int32 value</param>
         public static void WriteCompressedInt32(this BinaryWriter writer, int value)
         {
+            WriteCompressedUInt32(writer, (uint)value);
+        }
+
+        /// <summary>Writes a 32-bit unsigned integer in a compressed format, so that only the required number of bytes are used.</summary>
+        /// <param name="writer">Writer</param>
+        /// <param name="value">UInt32 value</param>
+        public static void WriteCompressedUInt32(this BinaryWriter writer, uint value)
+        {
             uint num;
 
-            for (num = (uint)value; num >= 128U; num >>= 7)
+            for (num = value; num >= 128U; num >>= 7)
             {
                 writer.Write((byte)(num | 128U));
+            }
+
+            writer.Write((byte)num);
+        }
+
+        /// <summary>Writes a 64-bit integer in a compressed format, so that only the required number of bytes are used.</summary>
+        /// <param name="writer">Writer</param>
+        /// <param name="value">Int64 value</param>
+        public static void WriteCompressedInt64(this BinaryWriter writer, long value)
+        {
+            WriteCompressedUInt64(writer, (ulong)value);
+        }
+
+        /// <summary>Writes a 64-bit unsigned integer in a compressed format, so that only the required number of bytes are used.</summary>
+        /// <param name="writer">Writer</param>
+        /// <param name="value">UInt64 value</param>
+        public static void WriteCompressedUInt64(this BinaryWriter writer, ulong value)
+        {
+            ulong num;
+
+            for (num = value; num >= 128UL; num >>= 7)
+            {
+                writer.Write((byte)(num | 128UL));
             }
 
             writer.Write((byte)num);
@@ -94,6 +125,17 @@ namespace UltimateXR.Extensions.System.IO
         public static void Write(this BinaryWriter writer, Guid guid)
         {
             writer.Write(guid.ToByteArray());
+        }
+
+        /// <summary>
+        ///     Outputs a tuple.
+        /// </summary>
+        /// <param name="writer">Writer</param>
+        /// <param name="tuple">The tuple</param>
+        public static void Write<T1, T2>(this BinaryWriter writer, (T1, T2) tuple)
+        {
+            writer.Write(tuple.Item1);
+            writer.Write(tuple.Item2);
         }
 
         /// <summary>
@@ -234,6 +276,80 @@ namespace UltimateXR.Extensions.System.IO
                     writer.Write(element.Value);
                 }
             }
+        }
+
+        /// <summary>
+        ///     Outputs a HashSet.
+        /// </summary>
+        /// <param name="writer">Writer</param>
+        /// <param name="values">Values</param>
+        /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
+        /// <exception cref="NotSupportedException">
+        ///     A method obtained through reflection that was required for serialization could
+        ///     not be found
+        /// </exception>
+        public static void Write<T>(this BinaryWriter writer, HashSet<T> hashSet)
+        {
+            // Serialized as: null-check (bool), count (int32), elements
+
+            writer.Write(hashSet != null);
+
+            if (hashSet != null)
+            {
+                writer.WriteCompressedInt32(hashSet.Count);
+
+                foreach (T value in hashSet)
+                {
+                    writer.Write(value);
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Outputs a hash set where each element can be of a different type.
+        /// </summary>
+        /// <param name="writer">Writer</param>
+        /// <param name="values">Values</param>
+        /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
+        /// <exception cref="NotSupportedException">
+        ///     A method obtained through reflection that was required for serialization could
+        ///     not be found
+        /// </exception>
+        public static void Write(this BinaryWriter writer, HashSet<object> values)
+        {
+            // Serialized as: null-check (bool), count (int32), elements
+
+            writer.Write(values != null);
+
+            if (values != null)
+            {
+                writer.WriteCompressedInt32(values.Count);
+
+                foreach (object value in values)
+                {
+                    writer.WriteAnyVar(value);
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Outputs a <see cref="DateTime" />.
+        /// </summary>
+        /// <param name="writer">Writer</param>
+        /// <param name="value">Value</param>
+        public static void Write(this BinaryWriter writer, in DateTime value)
+        {
+            writer.WriteCompressedInt64(value.Ticks);
+        }
+
+        /// <summary>
+        ///     Outputs a <see cref="TimeSpan" />.
+        /// </summary>
+        /// <param name="writer">Writer</param>
+        /// <param name="value">Value</param>
+        public static void Write(this BinaryWriter writer, in TimeSpan value)
+        {
+            writer.WriteCompressedInt64(value.Ticks);
         }
 
         /// <summary>
@@ -431,7 +547,14 @@ namespace UltimateXR.Extensions.System.IO
                 // Enum type
                 writer.Write(enumValue.GetType());
             }
-
+            
+            if (type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(Tuple<,>) || type.GetGenericTypeDefinition() == typeof(ValueTuple<,>)))
+            {
+                // Item types
+                writer.Write(type.GetGenericArguments()[0]);
+                writer.Write(type.GetGenericArguments()[1]);
+            }
+            
             if (type.IsArray && type.GetElementType() != typeof(object))
             {
                 // Array element type
@@ -497,25 +620,25 @@ namespace UltimateXR.Extensions.System.IO
 
             if (type == typeof(int))
             {
-                writer.Write(obj is int intValue ? intValue : 0);
+                writer.WriteCompressedInt32(obj is int intValue ? intValue : 0);
                 return;
             }
 
             if (type == typeof(uint))
             {
-                writer.Write(obj is uint uintValue ? uintValue : 0);
+                writer.WriteCompressedUInt32(obj is uint uintValue ? uintValue : 0);
                 return;
             }
 
             if (type == typeof(long))
             {
-                writer.Write(obj is long longValue ? longValue : 0);
+                writer.WriteCompressedInt64(obj is long longValue ? longValue : 0);
                 return;
             }
 
             if (type == typeof(ulong))
             {
-                writer.Write(obj is ulong ulongValue ? ulongValue : 0);
+                writer.WriteCompressedUInt64(obj is ulong ulongValue ? ulongValue : 0);
                 return;
             }
 
@@ -561,6 +684,20 @@ namespace UltimateXR.Extensions.System.IO
                 return;
             }
 
+            if (type == typeof(Guid))
+            {
+                writer.Write(obj is Guid guid ? guid : default);
+                return;
+            }
+
+            if (type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(Tuple<,>) || type.GetGenericTypeDefinition() == typeof(ValueTuple<,>)))
+            {
+                Type typeItem1 = type.GetGenericArguments()[0];
+                Type typeItem2 = type.GetGenericArguments()[1];
+                GetGenericWriteTupleMethod().MakeGenericMethod(typeItem1, typeItem2).Invoke(writer, new object[] { writer, obj });
+                return;
+            }
+
             if (type.IsArray)
             {
                 Type elementType = type.GetElementType();
@@ -598,6 +735,34 @@ namespace UltimateXR.Extensions.System.IO
                 Type keyType   = type.GetGenericArguments()[0];
                 Type valueType = type.GetGenericArguments()[1];
                 GetDictionaryWriteMethod().MakeGenericMethod(keyType, valueType).Invoke(writer, new object[] { writer, obj });
+                return;
+            }
+
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(HashSet<>))
+            {
+                Type elementType = type.GetGenericArguments()[0];
+
+                if (elementType != typeof(object))
+                {
+                    GetGenericWriteHashSetMethod().MakeGenericMethod(elementType).Invoke(writer, new object[] { writer, obj });
+                }
+                else
+                {
+                    writer.Write(obj as HashSet<object>);
+                }
+
+                return;
+            }
+
+            if (type == typeof(DateTime))
+            {
+                writer.Write(obj is DateTime dateTime ? dateTime : default);
+                return;
+            }
+
+            if (type == typeof(TimeSpan))
+            {
+                writer.Write(obj is TimeSpan timeSpan ? timeSpan : default);
                 return;
             }
 
@@ -702,6 +867,39 @@ namespace UltimateXR.Extensions.System.IO
         }
 
         /// <summary>
+        ///     Tries to find the <see cref="MethodInfo" /> to use the Write method for tuples.
+        /// </summary>
+        /// <returns>MethodInfo</returns>
+        /// <exception cref="NotSupportedException">
+        ///     A method obtained through reflection that was required for serialization could
+        ///     not be found
+        /// </exception>
+        private static MethodInfo GetGenericWriteTupleMethod()
+        {
+            if (s_genericWriteTupleMethod != null)
+            {
+                return s_genericWriteTupleMethod;
+            }
+
+            // Try to find and cache Write<T1, T2> method for tuples.
+
+            s_genericWriteTupleMethod = typeof(BinaryWriterExt).GetMethods().Where(m => m.Name == nameof(Write) &&
+                                                                                        m.IsGenericMethod &&
+                                                                                        m.GetGenericArguments().Count() == 2 &&
+                                                                                        m.GetParameters().Count() == 2 &&
+                                                                                        m.GetParameters()[1].ParameterType.IsGenericType &&
+                                                                                        (m.GetParameters()[1].ParameterType.GetGenericTypeDefinition() == typeof(Tuple<,>) ||
+                                                                                         m.GetParameters()[1].ParameterType.GetGenericTypeDefinition() == typeof(ValueTuple<,>))).FirstOrDefault();
+
+            if (s_genericWriteTupleMethod == null)
+            {
+                throw new NotSupportedException($"Cannot serialize because {nameof(Write)} method for generic tuples was not found");
+            }
+
+            return s_genericWriteTupleMethod;
+        }
+
+        /// <summary>
         ///     Tries to find the <see cref="MethodInfo" /> to use the Write method for arrays.
         /// </summary>
         /// <returns>MethodInfo</returns>
@@ -747,7 +945,7 @@ namespace UltimateXR.Extensions.System.IO
                 return s_genericWriteListMethod;
             }
 
-            // Try to find and cache Write<T> method for arrays of T.
+            // Try to find and cache Write<T> method for lists of T.
 
             s_genericWriteListMethod = typeof(BinaryWriterExt).GetMethods().Where(m => m.Name == nameof(Write) &&
                                                                                        m.IsGenericMethod &&
@@ -762,6 +960,38 @@ namespace UltimateXR.Extensions.System.IO
             }
 
             return s_genericWriteListMethod;
+        }
+
+        /// <summary>
+        ///     Tries to find the <see cref="MethodInfo" /> to use the Write method for hash sets.
+        /// </summary>
+        /// <returns>MethodInfo</returns>
+        /// <exception cref="NotSupportedException">
+        ///     A method obtained through reflection that was required for serialization could
+        ///     not be found
+        /// </exception>
+        private static MethodInfo GetGenericWriteHashSetMethod()
+        {
+            if (s_genericWriteHashSetMethod != null)
+            {
+                return s_genericWriteHashSetMethod;
+            }
+
+            // Try to find and cache Write<T> method for hash sets of T.
+
+            s_genericWriteHashSetMethod = typeof(BinaryWriterExt).GetMethods().Where(m => m.Name == nameof(Write) &&
+                                                                                          m.IsGenericMethod &&
+                                                                                          m.GetGenericArguments().Count() == 1 &&
+                                                                                          m.GetParameters().Count() == 2 &&
+                                                                                          m.GetParameters()[1].ParameterType.IsGenericType &&
+                                                                                          m.GetParameters()[1].ParameterType.GetGenericTypeDefinition() == typeof(HashSet<>)).FirstOrDefault();
+
+            if (s_genericWriteHashSetMethod == null)
+            {
+                throw new NotSupportedException($"Cannot serialize because {nameof(Write)} method for generic hash sets was not found");
+            }
+
+            return s_genericWriteHashSetMethod;
         }
 
         /// <summary>
@@ -800,8 +1030,10 @@ namespace UltimateXR.Extensions.System.IO
 
         #region Private Types & Data
 
+        private static MethodInfo s_genericWriteTupleMethod;
         private static MethodInfo s_genericWriteArrayMethod;
         private static MethodInfo s_genericWriteListMethod;
+        private static MethodInfo s_genericWriteHashSetMethod;
         private static MethodInfo s_dictionaryWriteMethod;
         private static MethodInfo s_genericWriteMethod;
 

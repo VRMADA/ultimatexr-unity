@@ -55,7 +55,7 @@ namespace UltimateXR.Core.StateSync
         public override string ToString()
         {
             string newValue = Value == null ? "null" : Value.ToString();
-            return $"Property change {PropertyName} = {newValue}";
+            return $"Property change {PropertyName ?? "Unknown"} = {newValue ?? "null/unknown"}";
         }
 
         #endregion

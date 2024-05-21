@@ -23,13 +23,14 @@ namespace UltimateXR.Core.Instantiation
         public GameObject Instance { get; }
 
         /// <summary>
-        ///     Gets the prefab of the instantiation/destroy operation.
+        ///     Gets the prefab of the instantiation/destroy operation. Null when using
+        ///     <see cref="UxrInstanceManager.InstantiateEmptyGameObject" />.
         /// </summary>
         public GameObject Prefab { get; }
 
         /// <summary>
         ///     Gets the prefab Id of the instantiation/destroy operation. The prefab Id is the Id assigned by Unity to the prefab
-        ///     asset.
+        ///     asset. Null when using <see cref="UxrInstanceManager.InstantiateEmptyGameObject" /> for instantiation.
         /// </summary>
         public string PrefabId { get; }
 

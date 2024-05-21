@@ -32,6 +32,7 @@ namespace UltimateXR.Networking.Integrations.Voice.Dissonance
         {
             get
             {
+                yield return UxrConstants.SdkFishNet;
                 yield return UxrConstants.SdkMirror;
                 yield return UxrConstants.SdkPhotonFusion;
                 yield return UxrConstants.SdkUnityNetCode;
@@ -54,7 +55,11 @@ namespace UltimateXR.Networking.Integrations.Voice.Dissonance
             string     setupPrefabGuid = null;
             GameObject setupInstance   = null;
 
-            if (string.Equals(networkingSdk, UxrConstants.SdkMirror))
+            if (string.Equals(networkingSdk, UxrConstants.SdkFishNet))
+            {
+                Debug.LogWarning($"{UxrConstants.NetworkingModule} FishNet Dissonance integration package doesn't come with a prefab and components should be added manually. We're working on a pull request to add integration seamlessly.");
+            }
+            else if (string.Equals(networkingSdk, UxrConstants.SdkMirror))
             {
                 setupPrefabGuid = "1264c01c7f8182e47ac9f784af03d895";
             }

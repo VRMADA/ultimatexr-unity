@@ -92,7 +92,7 @@ namespace UltimateXR.Core.StateSync
 
                         bool anyIsNull = methodInvokedEventArgs.Parameters.Any(p => p == null);
 
-                        if (_targetComponent.GetType().GetMethods().Length == 1)
+                        if (_targetComponent.GetType().GetMethods(MethodFlags).Count(m => m.Name.Equals(methodInvokedEventArgs.MethodName)) == 1)
                         {
                             // There are no overloads
                             _targetComponent.GetType().GetMethod(methodInvokedEventArgs.MethodName, MethodFlags).Invoke(_targetComponent, methodInvokedEventArgs.Parameters);
@@ -130,7 +130,7 @@ namespace UltimateXR.Core.StateSync
                 {
                     if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
                     {
-                        Debug.LogError($"{UxrConstants.CoreModule} Error trying to sync method. It could be that {nameof(EndSyncMethod)} was used with the wrong parameters or it has an overload that could not be resolved. {e}. Component: {_targetComponent.GetPathUnderScene()}. Exception: {exception}");
+                        Debug.LogError($"{UxrConstants.CoreModule} Error trying to sync method. It could be that an exception inside the method was thrown, that {nameof(EndSyncMethod)} was used with the wrong parameters or it has an overload that could not be resolved. {e}. Component: {_targetComponent.GetPathUnderScene()}. Exception: {exception}");
                     }
                 }
             }
@@ -162,11 +162,11 @@ namespace UltimateXR.Core.StateSync
         ///         See <see cref="UxrComponent.BeginSync" />.
         ///     </para>
         /// </summary>
-        /// <param name="targetEnvironments">Target environment(s) where the state sync should be used/saved. It's All by default.</param>
-        public void BeginSync(UxrStateSyncEnvironments targetEnvironments = UxrStateSyncEnvironments.All)
+        /// <param name="options">Options. It's saved/used in all environments by default.</param>
+        public void BeginSync(UxrStateSyncOptions options = UxrStateSyncOptions.Default)
         {
             SyncCallDepth++;
-            _targetEnvStack.Push(targetEnvironments);
+            _optionStack.Push(options);
 
             if (SyncCallDepth > StateSyncCallDepthErrorThreshold)
             {
@@ -190,7 +190,7 @@ namespace UltimateXR.Core.StateSync
             if (SyncCallDepth > 0)
             {
                 SyncCallDepth--;
-                _targetEnvStack.Pop();
+                _optionStack.Pop();
             }
             else
             {
@@ -252,7 +252,7 @@ namespace UltimateXR.Core.StateSync
         {
             if (SyncCallDepth > 0)
             {
-                e.TargetEnvironments = _targetEnvStack.Pop();
+                e.Options = _optionStack.Pop();
                 raiseChangedEvent?.Invoke(e);
                 SyncCallDepth--;
             }
@@ -266,19 +266,28 @@ namespace UltimateXR.Core.StateSync
         }
 
         /// <summary>
-        ///     Notifies that OnEnable() has been called on a component with the <see cref="IUxrStateSync" /> interface.
+        ///     Registers the component if it hasn't been registered already.
         /// </summary>
-        public void NotifyOnEnable()
+        public void RegisterIfNecessary()
         {
-            UxrManager.Instance.NotifyStateSyncOnEnable<T>(_targetComponent);
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+            
+            if (!_registered)
+            {
+                UxrManager.Instance.RegisterStateSyncComponent<T>(_targetComponent);
+                _registered = true;
+            }
         }
 
         /// <summary>
-        ///     Notifies that OnDisable() has been called on a component with the <see cref="IUxrStateSync" /> interface.
+        ///     Unregisters the component.
         /// </summary>
-        public void NotifyOnDisable()
+        public void Unregister()
         {
-            UxrManager.Instance.NotifyStateSyncOnDisable<T>(_targetComponent);
+            UxrManager.Instance.UnregisterStateSyncComponent<T>(_targetComponent);
         }
 
         #endregion
@@ -286,12 +295,13 @@ namespace UltimateXR.Core.StateSync
         #region Private Types & Data
 
         private const int          StateSyncCallDepthErrorThreshold = 100;
-        private const BindingFlags EventFlags                       = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+        private const BindingFlags EventFlags                       = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
         private const BindingFlags MethodFlags                      = EventFlags | BindingFlags.InvokeMethod | BindingFlags.FlattenHierarchy;
         private const BindingFlags PropertyFlags                    = EventFlags | BindingFlags.SetProperty;
 
-        private readonly T                               _targetComponent;
-        private readonly Stack<UxrStateSyncEnvironments> _targetEnvStack = new Stack<UxrStateSyncEnvironments>();
+        private readonly T                          _targetComponent;
+        private readonly Stack<UxrStateSyncOptions> _optionStack = new Stack<UxrStateSyncOptions>();
+        private          bool                       _registered;
 
         #endregion
     }

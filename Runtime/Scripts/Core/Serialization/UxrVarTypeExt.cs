@@ -32,7 +32,7 @@ namespace UltimateXR.Core.Serialization
             }
 
             Type type = obj.GetType();
-            
+
             // C# types
 
             if (obj is bool)
@@ -110,8 +110,13 @@ namespace UltimateXR.Core.Serialization
                 return UxrVarType.Guid;
             }
 
+            if (type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(Tuple<,>) || type.GetGenericTypeDefinition() == typeof(ValueTuple<,>)))
+            {
+                return UxrVarType.Tuple;
+            }
+
             // C# collections
-            
+
             if (type.IsArray)
             {
                 return type.GetElementType() == typeof(object) ? UxrVarType.ObjectArray : UxrVarType.Array;
@@ -126,7 +131,24 @@ namespace UltimateXR.Core.Serialization
             {
                 return UxrVarType.Dictionary;
             }
-            
+
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(HashSet<>))
+            {
+                return type.GetElementType() == typeof(object) ? UxrVarType.ObjectHashSet : UxrVarType.HashSet;
+            }
+
+            // Other C# types
+
+            if (obj is DateTime)
+            {
+                return UxrVarType.DateTime;
+            }
+
+            if (obj is TimeSpan)
+            {
+                return UxrVarType.TimeSpan;
+            }
+
             // Unity types
 
             if (obj is Vector2)
@@ -163,7 +185,7 @@ namespace UltimateXR.Core.Serialization
             {
                 return UxrVarType.Matrix4x4;
             }
-            
+
             // UXR types
 
             if (obj is IUxrUniqueId)

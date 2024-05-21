@@ -29,12 +29,14 @@ namespace UltimateXR.Extensions.Unity
         ///     Gets the Component of a given type in the GameObject or any of its parents. It also works on prefabs, where regular
         ///     <see cref="Component.GetComponentInParent" /> will not work:
         ///     https://issuetracker.unity3d.com/issues/getcomponentinparent-is-returning-null-when-the-gameobject-is-a-prefab
+        ///     It also works on objects recently instantiated or on disabled objects.
         /// </summary>
         /// <typeparam name="T">Component type to get</typeparam>
         /// <returns>Component in same GameObject or any of its parents. Null if it wasn't found</returns>
         public static T SafeGetComponentInParent<T>(this GameObject self)
         {
-            return self.GetComponentInParent<T>() ?? self.GetComponentsInParent<T>(true).FirstOrDefault();
+            T parent = self.GetComponentInParent<T>();
+            return parent ?? self.GetComponentsInParent<T>(true).FirstOrDefault();
         }
 
         /// <summary>

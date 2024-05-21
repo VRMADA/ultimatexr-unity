@@ -5,7 +5,6 @@
 // --------------------------------------------------------------------------------------------------------------------
 using System;
 using UltimateXR.Core.Serialization;
-using UltimateXR.Core.StateSync;
 using UnityEngine;
 
 namespace UltimateXR.Manipulation

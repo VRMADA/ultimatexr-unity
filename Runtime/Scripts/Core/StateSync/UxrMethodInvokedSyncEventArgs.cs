@@ -3,8 +3,11 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System;
 using System.Linq;
 using UltimateXR.Core.Serialization;
+using UltimateXR.Core.Settings;
+using UnityEngine;
 
 namespace UltimateXR.Core.StateSync
 {
@@ -55,12 +58,17 @@ namespace UltimateXR.Core.StateSync
         /// <inheritdoc />
         public override string ToString()
         {
-            if (Parameters.Length == 0)
+            if (MethodName == null && Parameters == null)
+            {
+                return "Unknown method call";
+            }
+            
+            if (Parameters == null || Parameters.Length == 0)
             {
                 return $"Method call {MethodName}()";
             }
 
-            return $"Method call {MethodName}({string.Join(", ", Parameters.Select(p => p == null ? "null" : p.ToString()))})";
+            return $"Method call {MethodName ?? "unknown"}({string.Join(", ", Parameters.Select(p => p == null ? "null" : p.ToString()))})";
         }
 
         #endregion
@@ -70,8 +78,23 @@ namespace UltimateXR.Core.StateSync
         /// <inheritdoc />
         protected override void SerializeEventInternal(IUxrSerializer serializer)
         {
-            serializer.Serialize(ref _methodName);
-            serializer.Serialize(ref _parameters);
+            bool isMethodKnown = false;
+            
+            try
+            {
+                serializer.Serialize(ref _methodName);
+                isMethodKnown = true;
+                serializer.Serialize(ref _parameters);
+            }
+            catch (Exception)
+            {
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors && serializer.IsReading && isMethodKnown)
+                {
+                    Debug.LogError($"{UxrConstants.CoreModule} Error deserializing invoked method {_methodName}(). Exception below.");
+                }
+                
+                throw;
+            }
         }
 
         #endregion

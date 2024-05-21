@@ -35,14 +35,16 @@ namespace UltimateXR.Extensions.Unity.Audio
         /// <param name="pitch">
         ///     Amount of change in pitch due to slowdown/speed up of the Audio Clip. Value 1 is normal playback speed.
         /// </param>
+        /// <param name="offsetSeconds">Start offset in seconds</param>
         /// <returns>The just created temporal <see cref="AudioSource" />.</returns>
         /// <seealso cref="AudioSourceExt.PlayClip" />
         public static AudioSource PlayClip(AudioClip self,
-                                           float     volume = 1.0f,
-                                           float     delay  = 0.0f,
-                                           float     pitch  = 1.0f)
+                                           float     volume        = 1.0f,
+                                           float     delay         = 0.0f,
+                                           float     pitch         = 1.0f,
+                                           float     offsetSeconds = 0.0f)
         {
-            return AudioSourceExt.PlayClip(self, volume, delay, pitch);
+            return AudioSourceExt.PlayClip(self, volume, delay, pitch, offsetSeconds);
         }
 
         /// <summary>
@@ -61,16 +63,18 @@ namespace UltimateXR.Extensions.Unity.Audio
         ///     speed.
         /// </param>
         /// <param name="spatialBlend">Sets how much the 3D engine has an effect on the audio source [0.0, 1.0].</param>
+        /// <param name="offsetSeconds">Start offset in seconds</param>
         /// <returns>The just created temporal <see cref="AudioSource" />.</returns>
         /// <seealso cref="AudioSourceExt.PlayClipAtPoint" />
         public static AudioSource PlayClipAtPoint(AudioClip self,
                                                   Vector3   point,
-                                                  float     volume       = 1.0f,
-                                                  float     delay        = 0.0f,
-                                                  float     pitch        = 1.0f,
-                                                  float     spatialBlend = AudioSourceExt.SpatialBlend3D)
+                                                  float     volume        = 1.0f,
+                                                  float     delay         = 0.0f,
+                                                  float     pitch         = 1.0f,
+                                                  float     spatialBlend  = AudioSourceExt.SpatialBlend3D,
+                                                  float     offsetSeconds = 0.0f)
         {
-            return AudioSourceExt.PlayClipAtPoint(self, point, volume, delay, pitch, spatialBlend);
+            return AudioSourceExt.PlayClipAtPoint(self, point, volume, delay, pitch, spatialBlend, offsetSeconds);
         }
 
         /// <summary>
@@ -87,16 +91,18 @@ namespace UltimateXR.Extensions.Unity.Audio
         ///     Amount of change in pitch due to slowdown/speed up of the Audio Clip. Value 1 is normal playback
         ///     speed.
         /// </param>
+        /// <param name="offsetSeconds">Start offset in seconds</param>
         /// <param name="ct"><see cref="CancellationToken" /> to stop playing.</param>
         /// <returns>An awaitable <see cref="Task" />.</returns>
         /// <seealso cref="AudioSourceExt.PlayClipAsync" />
         public static Task PlayAsync(this AudioClip    self,
-                                     float             volume = 1.0f,
-                                     float             delay  = 0.0f,
-                                     float             pitch  = 1.0f,
-                                     CancellationToken ct     = default)
+                                     float             volume        = 1.0f,
+                                     float             delay         = 0.0f,
+                                     float             pitch         = 1.0f,
+                                     float             offsetSeconds = 0.0f,
+                                     CancellationToken ct            = default)
         {
-            return AudioSourceExt.PlayClipAsync(self, volume, delay, pitch, ct);
+            return AudioSourceExt.PlayClipAsync(self, volume, delay, pitch, offsetSeconds, ct);
         }
 
 
@@ -116,18 +122,20 @@ namespace UltimateXR.Extensions.Unity.Audio
         ///     speed.
         /// </param>
         /// <param name="spatialBlend">Sets how much the 3D engine has an effect on the audio source [0.0, 1.0].</param>
+        /// <param name="offsetSeconds">Start offset in seconds</param>
         /// <param name="ct"><see cref="CancellationToken" /> to stop playing.</param>
         /// <returns>An awaitable <see cref="Task" />.</returns>
         /// <seealso cref="AudioSourceExt.PlayClipAtPointAsync" />
         public static Task PlayAtPointAsync(this AudioClip    self,
                                             Vector3           point,
-                                            float             volume       = 1.0f,
-                                            float             delay        = 0.0f,
-                                            float             pitch        = 1.0f,
-                                            float             spatialBlend = AudioSourceExt.SpatialBlend3D,
-                                            CancellationToken ct           = default)
+                                            float             volume        = 1.0f,
+                                            float             delay         = 0.0f,
+                                            float             pitch         = 1.0f,
+                                            float             spatialBlend  = AudioSourceExt.SpatialBlend3D,
+                                            float             offsetSeconds = 0.0f,
+                                            CancellationToken ct            = default)
         {
-            return AudioSourceExt.PlayClipAtPointAsync(self, point, volume, delay, pitch, spatialBlend, ct);
+            return AudioSourceExt.PlayClipAtPointAsync(self, point, volume, delay, pitch, spatialBlend, offsetSeconds, ct);
         }
 
         /// <summary>

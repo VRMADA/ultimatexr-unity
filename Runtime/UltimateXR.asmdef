@@ -12,7 +12,7 @@
         "Wave.Essence.CompositorLayer",
         "Unity.XR.PicoXR",
         "Unity.XR.Oculus",
-		"MagicLeap.SDK",
+        "MagicLeap.SDK",
         "Unity.Netcode.Components",
         "Unity.Netcode.Runtime",
         "Unity.Networking.Transport",
@@ -22,7 +22,8 @@
         "Mirror",
         "Mirror.Components",
         "Mirror.Transports",
-        "DissonanceVoip"
+        "DissonanceVoip",
+        "FishNet.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

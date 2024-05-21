@@ -20,7 +20,7 @@ namespace UltimateXR.Manipulation
         /// </summary>
         /// <remarks>
         ///     Implements <see cref="IUxrSerializable" /> to help <see cref="UxrGrabManager" />'s implementation of the
-        ///     <see cref="IUxrStateSave" /> interface (<see cref="UxrGrabManager.SerializeStateInternal" />).
+        ///     <see cref="IUxrStateSave" /> interface (<see cref="UxrGrabManager.SerializeState" />).
         /// </remarks>
         private sealed class RuntimeGrabInfo : IUxrSerializable
         {

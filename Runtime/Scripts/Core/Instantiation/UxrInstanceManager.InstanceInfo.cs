@@ -22,9 +22,15 @@ namespace UltimateXR.Core.Instantiation
             #region Public Types & Data
 
             /// <summary>
-            ///     Gets the Id of the prefab that was instantiated.
+            ///     Gets the Id of the prefab that was instantiated. Null if it's an empty GameObject.
             /// </summary>
             public string PrefabId => _prefabId;
+
+            /// <summary>
+            ///     Gets the name of the empty instance, if the instance was created using
+            ///     <see cref="UxrInstanceManager.InstantiateEmptyGameObject" />.
+            /// </summary>
+            public string Name => _name;
 
             /// <summary>
             ///     Gets the parent if the object was parented to any.
@@ -41,6 +47,11 @@ namespace UltimateXR.Core.Instantiation
             /// </summary>
             public Quaternion Rotation => _rotation;
 
+            /// <summary>
+            ///     Gets the local scale.
+            /// </summary>
+            public Vector3 Scale => _scale;
+
             #endregion
 
             #region Constructors & Finalizer
@@ -49,13 +60,18 @@ namespace UltimateXR.Core.Instantiation
             ///     Constructor.
             /// </summary>
             /// <param name="instance">The instance</param>
-            /// <param name="prefabId">The id of the prefab that was instantiated</param>
+            /// <param name="prefabId">
+            ///     The id of the prefab that was instantiated or null if the instance was created using
+            ///     <see cref="UxrInstanceManager.InstantiateEmptyGameObject" />.
+            /// </param>
             public InstanceInfo(IUxrUniqueId instance, string prefabId)
             {
                 _prefabId = prefabId;
+                _name     = string.IsNullOrEmpty(prefabId) ? instance.GameObject.name : null;
                 _parent   = instance.Transform.parent != null ? instance.Transform.parent.GetComponent<IUxrUniqueId>() : null;
                 _position = _parent != null ? instance.Transform.localPosition : instance.Transform.position;
                 _rotation = _parent != null ? instance.Transform.localRotation : instance.Transform.rotation;
+                _scale    = instance.Transform.localScale;
             }
 
             /// <summary>
@@ -76,9 +92,11 @@ namespace UltimateXR.Core.Instantiation
             public void Serialize(IUxrSerializer serializer, int serializationVersion)
             {
                 serializer.Serialize(ref _prefabId);
+                serializer.Serialize(ref _name);
                 serializer.SerializeUniqueComponent(ref _parent);
                 serializer.Serialize(ref _position);
                 serializer.Serialize(ref _rotation);
+                serializer.Serialize(ref _scale);
             }
 
             #endregion
@@ -109,6 +127,8 @@ namespace UltimateXR.Core.Instantiation
                     _position = transform.position;
                     _rotation = transform.rotation;
                 }
+
+                _scale = transform.localScale;
             }
 
             /// <summary>
@@ -142,6 +162,8 @@ namespace UltimateXR.Core.Instantiation
 
                     transform.SetPositionAndRotation(Position, Rotation);
                 }
+
+                transform.localScale = Scale;
             }
 
             #endregion
@@ -149,9 +171,11 @@ namespace UltimateXR.Core.Instantiation
             #region Private Types & Data
 
             private string       _prefabId;
+            private string       _name;
             private IUxrUniqueId _parent;
             private Vector3      _position;
             private Quaternion   _rotation;
+            private Vector3      _scale;
 
             #endregion
         }

@@ -89,10 +89,16 @@ namespace UltimateXR.Avatar
         #region Public Types & Data
 
         /// <summary>
-        ///     Event called right after after the local avatar called its Start(). This is useful when the avatar is instantiated
-        ///     in a deferred way, such as a networking environment, and the avatar isn't ready during Awake()/OnEnable()/Start().
+        ///     Event called right after after the local avatar called its Start().
         /// </summary>
         public static event EventHandler<UxrAvatarStartedEventArgs> LocalAvatarStarted;
+
+        /// <summary>
+        ///     Event called right after after the local avatar changed. called its Start(). This is useful when the avatar is
+        ///     instantiated
+        ///     in a deferred way, such as a networking environment, and the avatar isn't ready during Awake()/OnEnable()/Start().
+        /// </summary>
+        public static event EventHandler<UxrAvatarEventArgs> LocalAvatarChanged;
 
         /// <summary>
         ///     Event called right before an <see cref="UxrAvatar" /> is about to be moved.
@@ -126,6 +132,10 @@ namespace UltimateXR.Avatar
 
         /// <summary>
         ///     Gets the local avatar or null if there is none.
+        ///     The local avatar is the avatar controller by the user. Non-local avatars are other avatars in a multiplayer
+        ///     session or any avatar in a replay. The local avatar is updated through user input, while non-local avatars are
+        ///     updated externally. In multiplayer sessions, for example, non-local avatars are updated using network transform
+        ///     syncing.
         /// </summary>
         public static UxrAvatar LocalAvatar => AllComponents.FirstOrDefault(c => c.AvatarMode == UxrAvatarMode.Local);
 
@@ -138,6 +148,28 @@ namespace UltimateXR.Avatar
             {
                 UxrAvatar localAvatar = LocalAvatar;
                 return localAvatar != null ? localAvatar.CameraComponent : null;
+            }
+        }
+
+        /// <summary>
+        ///     Gets the local avatar camera, if it exists, or the first camera component found in the enabled avatars.
+        ///     This can be used in avatars that are updated externally using <see cref="UxrAvatarMode.UpdateExternally" />
+        ///     but still are rendering using the camera.
+        ///     If no avatar with a camara was found, it returns Camera.main.
+        /// </summary>
+        public static Camera LocalOrFirstEnabledCamera
+        {
+            get
+            {
+                foreach (UxrAvatar avatar in EnabledComponents)
+                {
+                    if (avatar.CameraComponent != null && avatar.CameraComponent.enabled)
+                    {
+                        return avatar.CameraComponent;
+                    }
+                }
+
+                return Camera.main;
             }
         }
 
@@ -189,7 +221,7 @@ namespace UltimateXR.Avatar
                     // This makes sure that when synchronizing multiplayer/replays we use the correct input model 
                     return _externalControllerInput ?? gameObject.GetOrAddComponent<UxrDummyControllerInput>();
                 }
-                
+
                 // First look for a controller that is not dummy nor gamepad:
                 UxrControllerInput controllerInput = UxrControllerInput.GetComponents(this).FirstOrDefault(i => i.GetType() != typeof(UxrDummyControllerInput) && i.GetType() != typeof(UxrGamepadInput));
 
@@ -414,6 +446,45 @@ namespace UltimateXR.Avatar
         public string DefaultHandPoseName => DefaultHandPose != null ? DefaultHandPose.name : null;
 
         /// <summary>
+        ///     Gets or sets whether the avatar camera is driven by the VR headset. It can be useful when implementing non-VR
+        ///     modes.
+        /// </summary>
+        public bool CameraTrackingEnabled
+        {
+            get => _cameraTrackingEnabled;
+            set
+            {
+                _cameraTrackingEnabled = value;
+
+#if ULTIMATEXR_UNITY_XR_MANAGEMENT
+
+                if (CameraController != null)
+                {
+                    Camera[] avatarCameras = CameraController.GetComponentsInChildren<Camera>();
+
+                    foreach (Camera camera in avatarCameras)
+                    {
+#if ULTIMATEXR_USE_UNITYINPUTSYSTEM_SDK
+                        TrackedPoseDriver inputSystemPoseDriver = camera.GetComponent<TrackedPoseDriver>();
+
+                        if (inputSystemPoseDriver != null)
+                        {
+                            inputSystemPoseDriver.enabled = value;
+                        }
+#endif
+                        UnityEngine.SpatialTracking.TrackedPoseDriver trackedPoseDriver = camera.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
+
+                        if (trackedPoseDriver != null)
+                        {
+                            trackedPoseDriver.enabled = value;
+                        }
+                    }
+                }
+#endif
+            }
+        }
+
+        /// <summary>
         ///     Gets the <see cref="Transform" /> of the camera controller (the parent transform of the avatar's camera).
         /// </summary>
         public Transform CameraController { get; private set; }
@@ -421,7 +492,7 @@ namespace UltimateXR.Avatar
         /// <summary>
         ///     Gets the avatar controller, responsible for updating the avatar.
         /// </summary>
-        public UxrAvatarController AvatarController { get; private set; }
+        public UxrAvatarController AvatarController => GetCachedComponent<UxrAvatarController>();
 
         /// <summary>
         ///     Gets or sets the avatar operating mode.
@@ -431,6 +502,8 @@ namespace UltimateXR.Avatar
             get => _avatarMode;
             set
             {
+                bool localAvatarChanged = (ReferenceEquals(this, s_localAvatar) && value != UxrAvatarMode.Local) || (!ReferenceEquals(this, s_localAvatar) && value == UxrAvatarMode.Local);
+
                 _avatarMode = value;
 
                 // We do this instead of SetActive(false) on the CameraController because the camera
@@ -449,9 +522,9 @@ namespace UltimateXR.Avatar
                         camera.enabled = isLocalAvatar;
 
 #if ULTIMATEXR_UNITY_XR_MANAGEMENT
-                        if (camera.TryGetComponent(out TrackedPoseDriver trackedPoseDriver))
+                        if (camera.TryGetComponent(out UnityEngine.SpatialTracking.TrackedPoseDriver trackedPoseDriver))
                         {
-                            trackedPoseDriver.enabled = isLocalAvatar;
+                            trackedPoseDriver.enabled = isLocalAvatar && CameraTrackingEnabled;
                         }
 #endif
                         if (camera.TryGetComponent(out AudioListener audioListener))
@@ -464,9 +537,12 @@ namespace UltimateXR.Avatar
                 if (value == UxrAvatarMode.Local && _started && !_localStartedInvoked)
                 {
                     // Avatar had a delayed switch to local, probably due to a spawn in multiplayer
+                    OnLocalAvatarStarted(new UxrAvatarStartedEventArgs(this));
+                }
 
-                    LocalAvatarStarted?.Invoke(this, new UxrAvatarStartedEventArgs(this));
-                    _localStartedInvoked = true;
+                if (localAvatarChanged || !s_localAvatarReferenceInitialized)
+                {
+                    OnLocalAvatarChanged(new UxrAvatarEventArgs(value == UxrAvatarMode.Local ? this : null));
                 }
             }
         }
@@ -479,55 +555,12 @@ namespace UltimateXR.Avatar
             get => _renderMode;
             set
             {
-                _renderMode = value;
-
-                // Enable or disable avatar renderers
-
-                _avatarRenderers?.ForEach(r => r.enabled = value.HasFlag(UxrAvatarRenderModes.Avatar));
-
-                // Enable/disable controller 3d models (and controller hands) depending on if their input component is active
-
-                IEnumerable<UxrControllerInput> controllerInputs = UxrControllerInput.GetComponents(this, true);
-
-                foreach (UxrControllerInput controllerInput in controllerInputs)
+                if (_renderMode != value || !_started)
                 {
-                    // Here we do some additional checks in case two components reference the same 3D model(s):
+                    // Get the enabled controllers and call the synchronized method, so that when it is played back in
+                    // multiplayer or replays it is done using the original UxrControllerInputs. 
 
-                    bool leftControllerEnabled  = controllerInputs.Any(c => c.LeftController3DModel == controllerInput.LeftController3DModel && c.enabled);
-                    bool rightControllerEnabled = controllerInputs.Any(c => c.RightController3DModel == controllerInput.RightController3DModel && c.enabled);
-                    bool showAvatar             = value.HasFlag(UxrAvatarRenderModes.Avatar);
-                    bool showControllerLeft     = value.HasFlag(UxrAvatarRenderModes.LeftController);
-                    bool showControllerRight    = value.HasFlag(UxrAvatarRenderModes.RightController);
-
-                    if (controllerInput.SetupType == UxrControllerSetupType.Single)
-                    {
-                        // In single setups there is only one device for both hands.
-
-                        if (controllerInput.LeftController3DModel)
-                        {
-                            controllerInput.LeftController3DModel.IsControllerVisible = (leftControllerEnabled && showControllerLeft) || (rightControllerEnabled && showControllerRight);
-                            controllerInput.LeftController3DModel.IsHandVisible       = _showControllerHands;
-                        }
-
-                        controllerInput.EnableObjectListSingle((leftControllerEnabled || rightControllerEnabled) && showAvatar);
-                    }
-                    else if (controllerInput.SetupType == UxrControllerSetupType.Dual)
-                    {
-                        if (controllerInput.LeftController3DModel)
-                        {
-                            controllerInput.LeftController3DModel.IsControllerVisible = leftControllerEnabled && showControllerLeft;
-                            controllerInput.LeftController3DModel.IsHandVisible       = _showControllerHands;
-                        }
-
-                        if (controllerInput.RightController3DModel)
-                        {
-                            controllerInput.RightController3DModel.IsControllerVisible = rightControllerEnabled && showControllerRight;
-                            controllerInput.RightController3DModel.IsHandVisible       = _showControllerHands;
-                        }
-
-                        controllerInput.EnableObjectListLeft(leftControllerEnabled && showAvatar);
-                        controllerInput.EnableObjectListRight(rightControllerEnabled && showAvatar);
-                    }
+                    SetAvatarRenderMode(value, UxrControllerInput.GetComponents(this).ToList());
                 }
             }
         }
@@ -540,19 +573,26 @@ namespace UltimateXR.Avatar
             get => _showControllerHands;
             set
             {
-                _showControllerHands = value;
-
-                foreach (UxrControllerInput controllerInput in UxrControllerInput.GetComponents(this))
+                if (_showControllerHands != value || !_started)
                 {
-                    if (controllerInput.LeftController3DModel)
+                    BeginSync();
+
+                    _showControllerHands = value;
+
+                    foreach (UxrControllerInput controllerInput in UxrControllerInput.GetComponents(this))
                     {
-                        controllerInput.LeftController3DModel.IsHandVisible = _showControllerHands;
+                        if (controllerInput.LeftController3DModel)
+                        {
+                            controllerInput.LeftController3DModel.IsHandVisible = _showControllerHands;
+                        }
+
+                        if (controllerInput.RightController3DModel)
+                        {
+                            controllerInput.RightController3DModel.IsHandVisible = _showControllerHands;
+                        }
                     }
 
-                    if (controllerInput.RightController3DModel)
-                    {
-                        controllerInput.RightController3DModel.IsHandVisible = _showControllerHands;
-                    }
+                    EndSyncProperty(value);
                 }
             }
         }
@@ -1214,8 +1254,7 @@ namespace UltimateXR.Avatar
             // Make sure the UxrManager singleton is available at this point.
             UxrManager.Instance.Poke();
 
-            AvatarController = GetComponent<UxrAvatarController>();
-            _camera          = GetComponentInChildren<Camera>();
+            _camera = GetComponentInChildren<Camera>();
 
             // Find Camera controller
             if (_camera != null)
@@ -1333,17 +1372,24 @@ namespace UltimateXR.Avatar
                     bool hasInputSystemPoseDriver = false;
 
 #if ULTIMATEXR_USE_UNITYINPUTSYSTEM_SDK
-                    hasInputSystemPoseDriver = camera.GetComponent<UnityEngine.InputSystem.XR.TrackedPoseDriver>() != null;
+                    TrackedPoseDriver inputSystemPoseDriver = camera.GetComponent<TrackedPoseDriver>();
+                    hasInputSystemPoseDriver = inputSystemPoseDriver != null;
+
+                    if (inputSystemPoseDriver != null)
+                    {
+                        inputSystemPoseDriver.enabled = CameraTrackingEnabled;
+                    }
 #endif
-                    TrackedPoseDriver trackedPoseDriver = camera.GetComponent<TrackedPoseDriver>();
+                    UnityEngine.SpatialTracking.TrackedPoseDriver trackedPoseDriver = camera.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
 
                     if (trackedPoseDriver == null && !hasInputSystemPoseDriver)
                     {
-                        trackedPoseDriver = camera.gameObject.AddComponent<TrackedPoseDriver>();
+                        trackedPoseDriver = camera.gameObject.AddComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
 
-                        trackedPoseDriver.SetPoseSource(TrackedPoseDriver.DeviceType.GenericXRDevice, TrackedPoseDriver.TrackedPose.Center);
-                        trackedPoseDriver.trackingType = TrackedPoseDriver.TrackingType.RotationAndPosition;
-                        trackedPoseDriver.updateType   = TrackedPoseDriver.UpdateType.UpdateAndBeforeRender;
+                        trackedPoseDriver.SetPoseSource(UnityEngine.SpatialTracking.TrackedPoseDriver.DeviceType.GenericXRDevice, UnityEngine.SpatialTracking.TrackedPoseDriver.TrackedPose.Center);
+                        trackedPoseDriver.trackingType = UnityEngine.SpatialTracking.TrackedPoseDriver.TrackingType.RotationAndPosition;
+                        trackedPoseDriver.updateType   = UnityEngine.SpatialTracking.TrackedPoseDriver.UpdateType.UpdateAndBeforeRender;
+                        trackedPoseDriver.enabled      = CameraTrackingEnabled;
                     }
                 }
             }
@@ -1355,8 +1401,12 @@ namespace UltimateXR.Avatar
 
             if (AvatarMode == UxrAvatarMode.Local)
             {
-                LocalAvatarStarted?.Invoke(this, new UxrAvatarStartedEventArgs(this));
-                _localStartedInvoked = true;
+                OnLocalAvatarStarted(new UxrAvatarStartedEventArgs(this));
+
+                if (!s_localAvatarReferenceInitialized)
+                {
+                    OnLocalAvatarChanged(new UxrAvatarEventArgs(this));
+                }
             }
 
             _started = true;
@@ -1425,6 +1475,32 @@ namespace UltimateXR.Avatar
         protected virtual void OnHandPoseChanged(UxrAvatarHandPoseChangeEventArgs e)
         {
             HandPoseChanged?.Invoke(this, e);
+        }
+
+        /// <summary>
+        ///     Event trigger for <see cref="LocalAvatarStarted" />.
+        /// </summary>
+        /// <param name="e">Event parameters</param>
+        private void OnLocalAvatarStarted(UxrAvatarStartedEventArgs e)
+        {
+            LocalAvatarStarted?.Invoke(this, e);
+            _localStartedInvoked = true;
+        }
+
+
+        /// <summary>
+        ///     Event trigger for <see cref="LocalAvatarChanged" />.
+        /// </summary>
+        /// <param name="e">Event parameters</param>
+        private void OnLocalAvatarChanged(UxrAvatarEventArgs e)
+        {
+            if (!s_localAvatarReferenceInitialized)
+            {
+                s_localAvatarReferenceInitialized = true;
+            }
+
+            s_localAvatar = e.Avatar;
+            LocalAvatarChanged?.Invoke(this, e);
         }
 
         /// <summary>
@@ -1532,9 +1608,78 @@ namespace UltimateXR.Avatar
             }
         }
 
+        /// <summary>
+        ///     Synced method that helps implementing <see cref="RenderMode" /> in a way so that it is synchronized in multiplayer
+        ///     and replays.
+        /// </summary>
+        /// <param name="avatarRenderModes">The new render mode</param>
+        /// <param name="enabledControllerInputs">The enabled controller inputs at the moment of calling</param>
+        private void SetAvatarRenderMode(UxrAvatarRenderModes avatarRenderModes, List<UxrControllerInput> enabledControllerInputs)
+        {
+            BeginSync();
+
+            _renderMode = avatarRenderModes;
+
+            // Enable or disable avatar renderers
+
+            _avatarRenderers?.ForEach(r => r.enabled = avatarRenderModes.HasFlag(UxrAvatarRenderModes.Avatar));
+
+            // Enable/disable controller 3d models (and controller hands) depending on if their input component is active
+
+            IEnumerable<UxrControllerInput> controllerInputs = UxrControllerInput.GetComponents(this, true);
+
+            foreach (UxrControllerInput controllerInput in controllerInputs)
+            {
+                bool isEnabled = enabledControllerInputs.Contains(controllerInput);
+
+                // Here we do some additional checks in case two components reference the same 3D model(s):
+
+                bool leftControllerEnabled  = controllerInputs.Any(c => c.LeftController3DModel == controllerInput.LeftController3DModel && isEnabled);
+                bool rightControllerEnabled = controllerInputs.Any(c => c.RightController3DModel == controllerInput.RightController3DModel && isEnabled);
+                bool showAvatar             = avatarRenderModes.HasFlag(UxrAvatarRenderModes.Avatar);
+                bool showControllerLeft     = avatarRenderModes.HasFlag(UxrAvatarRenderModes.LeftController);
+                bool showControllerRight    = avatarRenderModes.HasFlag(UxrAvatarRenderModes.RightController);
+
+                if (controllerInput.SetupType == UxrControllerSetupType.Single)
+                {
+                    // In single setups there is only one device for both hands.
+
+                    if (controllerInput.LeftController3DModel)
+                    {
+                        controllerInput.LeftController3DModel.IsControllerVisible = (leftControllerEnabled && showControllerLeft) || (rightControllerEnabled && showControllerRight);
+                        controllerInput.LeftController3DModel.IsHandVisible       = _showControllerHands;
+                    }
+
+                    controllerInput.EnableObjectListSingle((leftControllerEnabled || rightControllerEnabled) && showAvatar);
+                }
+                else if (controllerInput.SetupType == UxrControllerSetupType.Dual)
+                {
+                    if (controllerInput.LeftController3DModel)
+                    {
+                        controllerInput.LeftController3DModel.IsControllerVisible = leftControllerEnabled && showControllerLeft;
+                        controllerInput.LeftController3DModel.IsHandVisible       = _showControllerHands;
+                    }
+
+                    if (controllerInput.RightController3DModel)
+                    {
+                        controllerInput.RightController3DModel.IsControllerVisible = rightControllerEnabled && showControllerRight;
+                        controllerInput.RightController3DModel.IsHandVisible       = _showControllerHands;
+                    }
+
+                    controllerInput.EnableObjectListLeft(leftControllerEnabled && showAvatar);
+                    controllerInput.EnableObjectListRight(rightControllerEnabled && showAvatar);
+                }
+            }
+
+            EndSyncMethod(new object[] { avatarRenderModes, enabledControllerInputs });
+        }
+
         #endregion
 
         #region Private Types & Data
+
+        private static UxrAvatar s_localAvatar;
+        private static bool      s_localAvatarReferenceInitialized;
 
         private readonly HandState _leftHandState  = new HandState();
         private readonly HandState _rightHandState = new HandState();
@@ -1545,6 +1690,7 @@ namespace UltimateXR.Avatar
         private float                                  _startCameraHeight;
         private float                                  _startCameraControllerHeight;
         private Camera                                 _camera;
+        private bool                                   _cameraTrackingEnabled     = true;
         private Dictionary<Transform, Quaternion>      _initialBoneLocalRotations = new Dictionary<Transform, Quaternion>();
         private Dictionary<Transform, Vector3>         _initialBoneLocalPositions = new Dictionary<Transform, Vector3>();
         private Dictionary<string, UxrRuntimeHandPose> _cachedRuntimeHandPoses;

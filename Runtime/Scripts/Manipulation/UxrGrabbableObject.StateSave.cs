@@ -1,4 +1,6 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+﻿
+
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="UxrGrabbableObject.StateSave.cs" company="VRMADA">
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
@@ -10,51 +12,22 @@ namespace UltimateXR.Manipulation
 {
     public partial class UxrGrabbableObject
     {
-        #region Public Overrides UxrComponent
-
-        /// <inheritdoc />
-        public override UxrTransformSpace TransformStateSaveSpace => GetGrabbableParent(this) != null ? UxrTransformSpace.Local : GetLocalTransformIfParentedOr(UxrTransformSpace.World);
-
-        /// <summary>
-        ///     <para>
-        ///         Gets whether the transform data needs to be serialized when loading/saving the grabbable state. This will
-        ///         automatically save the Transform using the space defined by <see cref="TransformStateSaveSpace" />.
-        ///     </para>
-        ///     <para>
-        ///         Grabbable transforms are serialized, mainly to store the trajectories when they are driven by physics when
-        ///         thrown or dropped. Serialization can change over time, and will be disabled in these cases:
-        ///         <list type="bullet">
-        ///             <item>
-        ///                 Objects that are being grabbed don't need to serialize transform data because they are already driven
-        ///                 by the avatar grabber.
-        ///             </item>
-        ///             <item>
-        ///                 Objects that have a parent grabbable don't need to serialize transform data because they are already
-        ///                 driven by the parent when not being grabbed.
-        ///             </item>
-        ///         </list>
-        ///     </para>
-        /// </summary>
-        /// <param name="level">The amount of data to serialize</param>
-        /// <returns>Whether to serialize the transform</returns>
-        /// <remarks>
-        ///     Even if transform data needs to be serialized, the serialization system will not save redundant information. This
-        ///     means that grabbable objects that don't move will not generate new data.
-        /// </remarks>
-        public override bool RequiresTransformSerialization(UxrStateSaveLevel level)
-        {
-            // If level >= UxrStateSaveLevel.ChangesSinceBeginning we want to save a snapshot of the transform
-            return level >= UxrStateSaveLevel.ChangesSinceBeginning || !UxrGrabManager.Instance.IsBeingGrabbed(this);
-        }
-
-        #endregion
-
         #region Protected Overrides UxrComponent
 
         /// <inheritdoc />
-        protected override void SerializeStateInternal(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
+        protected override UxrTransformSpace TransformStateSaveSpace => GetLocalTransformIfParentedOr(UxrTransformSpace.Local);
+
+        /// <inheritdoc />
+        protected override bool RequiresTransformSerialization(UxrStateSaveLevel level)
         {
-            base.SerializeStateInternal(isReading, stateSerializationVersion, level, options);
+            // Save always
+            return level >= UxrStateSaveLevel.ChangesSincePreviousSave;
+        }
+
+        /// <inheritdoc />
+        protected override void SerializeState(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
+        {
+            base.SerializeState(isReading, stateSerializationVersion, level, options);
 
             if (level <= UxrStateSaveLevel.ChangesSincePreviousSave)
             {

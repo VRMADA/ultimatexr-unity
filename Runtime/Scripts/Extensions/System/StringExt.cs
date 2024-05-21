@@ -87,7 +87,7 @@ namespace UltimateXR.Extensions.System
         }
 
         /// <summary>
-        ///     Gets a Guid result of hashing the string using SHA-256 and using the first 16 bytes.
+        ///     Gets a Guid result of hashing the string using SHA-256 and keeping the first 16 bytes.
         /// </summary>
         /// <param name="self">String to get the Guid hash value of</param>
         /// <returns>Guid hash value of the string</returns>

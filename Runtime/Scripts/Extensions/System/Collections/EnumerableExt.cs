@@ -291,7 +291,13 @@ namespace UltimateXR.Extensions.System.Collections
                 }
             }
 
-            // For non-dictionary collections, compare elements
+            // If the collections are HashSets, compare elements using SetEquals
+            if (enumerableA is HashSet<object> hashSetA && enumerableB is HashSet<object> hashSetB)
+            {
+                return hashSetA.SetEquals(hashSetB);
+            }
+
+            // For non-dictionary, non-HashSet collections, compare elements
             IEnumerator enumeratorA = enumerableA.GetEnumerator();
             IEnumerator enumeratorB = enumerableB.GetEnumerator();
 

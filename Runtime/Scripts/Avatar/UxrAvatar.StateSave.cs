@@ -3,43 +3,46 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System.Linq;
+using UltimateXR.Animation.Interpolation;
 using UltimateXR.Core;
 using UltimateXR.Core.StateSave;
+using UltimateXR.Devices;
 
 namespace UltimateXR.Avatar
 {
     public partial class UxrAvatar
     {
-        #region Public Overrides UxrComponent
+        #region Protected Overrides UxrComponent
 
         /// <inheritdoc />
-        public override UxrTransformSpace TransformStateSaveSpace => GetLocalTransformIfParentedOr(UxrTransformSpace.World);
+        protected override UxrTransformSpace TransformStateSaveSpace => GetLocalTransformIfParentedOr(UxrTransformSpace.World);
 
         /// <inheritdoc />
-        public override bool RequiresTransformSerialization(UxrStateSaveLevel level)
+        protected override bool RequiresTransformSerialization(UxrStateSaveLevel level)
         {
             return true;
         }
 
-        #endregion
-
-        #region Protected Overrides UxrComponent
-
         /// <inheritdoc />
-        protected override void SerializeStateInternal(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
+        protected override void SerializeState(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
         {
-            base.SerializeStateInternal(isReading, stateSerializationVersion, level, options);
+            base.SerializeState(isReading, stateSerializationVersion, level, options);
 
             // TODO: Figure out how to avoid cheating by saving UxrCameraWallFade state too.
 
-            SerializeStateTransform(level, options, "cam.tf",   UxrTransformSpace.Avatar, CameraComponent.transform);
-            SerializeStateTransform(level, options, "left.tf",  UxrTransformSpace.Avatar, LeftHandBone);
-            SerializeStateTransform(level, options, "right.tf", UxrTransformSpace.Avatar, RightHandBone);
+            SerializeStateTransform(level, options, CamTransformName,       UxrTransformSpace.Avatar, CameraComponent.transform);
+            SerializeStateTransform(level, options, LeftHandTransformName,  UxrTransformSpace.Avatar, LeftHandBone);
+            SerializeStateTransform(level, options, RightHandTransformName, UxrTransformSpace.Avatar, RightHandBone);
 
             // Controller and hand poses are already handled through events, we don't serialize them in incremental changes
 
             if (level > UxrStateSaveLevel.ChangesSincePreviousSave)
             {
+                // Avatar render mode
+
+                SerializeStateValue(level, options, nameof(_renderMode), ref _renderMode);
+
                 // We serialize the controller input 
 
                 SerializeStateValue(level, options, null, ref _externalControllerInput);
@@ -59,6 +62,10 @@ namespace UltimateXR.Avatar
 
                 if (isReading)
                 {
+                    // Render mode
+
+                    SetAvatarRenderMode(_renderMode, UxrControllerInput.GetComponents(this).ToList());
+
                     // When deserializing, we need to manually set the hand pose state from the serialized data.
 
                     if (leftPoseName != null)
@@ -73,6 +80,66 @@ namespace UltimateXR.Avatar
                 }
             }
         }
+
+        /// <inheritdoc />
+        protected override UxrVarInterpolator GetInterpolator(string varName)
+        {
+            if (IsTransformPositionVarName(varName, CamTransformName))
+            {
+                return _camPosInterpolator;
+            }
+            if (IsTransformRotationVarName(varName, CamTransformName))
+            {
+                return _camRotInterpolator;
+            }
+            if (IsTransformPositionVarName(varName, LeftHandTransformName))
+            {
+                return _leftHandPosInterpolator;
+            }
+            if (IsTransformRotationVarName(varName, LeftHandTransformName))
+            {
+                return _leftHandRotInterpolator;
+            }
+            if (IsTransformPositionVarName(varName, RightHandTransformName))
+            {
+                return _rightHandPosInterpolator;
+            }
+            if (IsTransformRotationVarName(varName, RightHandTransformName))
+            {
+                return _rightHandRotInterpolator;
+            }
+
+            // Null means using the default interpolator for the type
+            return null;
+        }
+
+        /// <inheritdoc />
+        protected override void InterpolateState(in UxrStateInterpolationVars vars, float t)
+        {
+            base.InterpolateState(in vars, t);
+
+            InterpolateStateTransform(vars, t, CamTransformName,       CameraComponent.transform, UxrTransformSpace.Avatar);
+            InterpolateStateTransform(vars, t, LeftHandTransformName,  LeftHandBone,              UxrTransformSpace.Avatar);
+            InterpolateStateTransform(vars, t, RightHandTransformName, RightHandBone,             UxrTransformSpace.Avatar);
+        }
+
+        #endregion
+
+        #region Private Types & Data
+
+        private const string CamTransformName       = "cam.tf";
+        private const string LeftHandTransformName  = "left.tf";
+        private const string RightHandTransformName = "right.tf";
+
+        private const float SmoothPosInterpolation = 0.3f;
+        private const float SmoothRotInterpolation = 0.3f;
+
+        private readonly UxrVector3Interpolator    _camPosInterpolator       = new UxrVector3Interpolator(SmoothPosInterpolation);
+        private readonly UxrQuaternionInterpolator _camRotInterpolator       = new UxrQuaternionInterpolator(SmoothRotInterpolation);
+        private readonly UxrVector3Interpolator    _leftHandPosInterpolator  = new UxrVector3Interpolator(SmoothPosInterpolation);
+        private readonly UxrQuaternionInterpolator _leftHandRotInterpolator  = new UxrQuaternionInterpolator(SmoothRotInterpolation);
+        private readonly UxrVector3Interpolator    _rightHandPosInterpolator = new UxrVector3Interpolator(SmoothPosInterpolation);
+        private readonly UxrQuaternionInterpolator _rightHandRotInterpolator = new UxrQuaternionInterpolator(SmoothRotInterpolation);
 
         #endregion
     }

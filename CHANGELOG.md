@@ -15,12 +15,17 @@ TODO: Write update guide:
   -Component synchronization in UxrManager now uses IUxrStateSync instead of
    UxrComponent.
   -UxrComponent.TryGetComponentById now is UxrUniqueIdImplementer.TryGetComponentById().
+  -UxrManager.ExecuteStateChange is now called ExecuteStateSyncEvent.
+  -Avatar prefab that is set up using UxrNetworkManager inspector, now is changed
+   to "Update Externally" mode so that it is instantiated using external mode by default.
+   Then it will switch to local if the avatar spawned is the local avatar.
 
 ### Added
 
 - Add native multiplayer support and connectors for various network SDKs
   (Photon Fusion, Unity NetCode, Mirror) and voice communication SDKs
   (Photon Voice, Dissonance). More connectors will be added soon.
+- Add UxrNetworkManager and UxrInstanceManager to provice sync capabilities.
 - Update SDK Manager window with new tabs for SDK types, including new multiplayer.
 - Add new GlobalSettings accessible using the Tools->UltimateXR Unity menu.
 - Add new unique ID functionality to UXR components. All components that inherit
@@ -43,14 +48,17 @@ TODO: Write update guide:
 - Add serialization/deserialization methods to all UxrSyncEventArgs.
 - Create UxrVarType to enumerate all supported var types that can be synchronized.
 - Add ToString() to all UxrSyncEventArgs to help data logging.
-- Add new property TargetEnvironments to UxrSyncEventArgs to tell whether
-  the event should be synchronized in different environments such as networks
-  or replays.
+- Add new property Options to UxrSyncEventArgs to tell whether the event should
+  be synchronized in different environments such as networks or replays.
 - Add new BinaryWriter and BinaryReader extensions with functionality to
-  serialize/deserialize Unity and UltimateXR data.
+  serialize/deserialize Unity and UltimateXR data, as well as well-known
+  C# types.
 - Add new UxrBinarySerializer with binary serialization and deserialization support.
-- Add new UxrDummy component to identify objects that don't have any UxrComponent
-  added, so that they have a unique ID.
+- Add new UxrSyncObject component to identify objects that don't have any
+  UxrComponent added, so that they have a unique ID. Also to sync the Transform
+  of a GameObject if it's required and no other component does it already.
+- Add new interpolators to Math namespace to interpolate different types of
+  variables using optional smooth and step options.
 - Add support to solve manipulations on objects using an unlimited amount of
   grabs to support multi-user shared interaction.
 - Add support to grab grabbable parent objects through grabbable children.

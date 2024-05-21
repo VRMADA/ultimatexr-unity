@@ -6,9 +6,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Runtime.Serialization;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UltimateXR.Animation.Interpolation;
@@ -34,13 +37,15 @@ using UltimateXR.UI.UnityInputModule;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using Debug = UnityEngine.Debug;
 
 namespace UltimateXR.Core
 {
     /// <summary>
     ///     <para>
     ///         Main manager in the UltimateXR framework. As a <see cref="UxrSingleton{T}">UxrSingleton</see> it can be
-    ///         accessed at any point in the application using <see cref="UxrSingleton{T}.Instance">UxrManager.Instance</see>.
+    ///         accessed from any point in the application using <see cref="UxrSingleton{T}.Instance">UxrManager.Instance</see>
+    ///         .
     ///         It can be pre-instantiated in the scene in order to change default parameters through the inspector but it is
     ///         not required. When accessing the global <see cref="UxrSingleton{T}.Instance">UxrManager.Instance</see>, if no
     ///         <see cref="UxrManager" /> is currently available, one will be instantiated in the scene as the global
@@ -175,6 +180,11 @@ namespace UltimateXR.Core
         /// </summary>
         public bool IsTeleportingLocalAvatar => _teleportCoroutine != null;
 
+        /// <summary>
+        ///     Gets whether the manager is currently inside a StateSync call executed using <see cref="ExecuteStateSyncEvent" />.
+        /// </summary>
+        public bool IsInsideStateSync { get; private set; }
+
         // Properties
 
         /// <summary>
@@ -248,8 +258,10 @@ namespace UltimateXR.Core
         }
 
         /// <summary>
-        ///     Saves the state of all components. This can be used to synchronize a network session when joining or support
-        ///     save-to-file functionality.
+        ///     Saves the state of all components. This can be used in multiplayer, save-to-file or replay functionality.
+        ///     Components are saved using <see cref="IUxrStateSave.SerializationOrder" /> to control the order in which the
+        ///     components will be serialized. The serialization order will determine the deserialization order used by
+        ///     <see cref="LoadStateChanges" />.
         /// </summary>
         /// <param name="roots">A list of GameObjects whose hierarchy to serialize or null to serialize the whole scene</param>
         /// <param name="ignoreRoots">A list of GameObjects whose hierarchy to ignore, or null to not ignore anything</param>
@@ -258,81 +270,153 @@ namespace UltimateXR.Core
         /// <returns>A data stream that can be saved and loaded back using <see cref="LoadStateChanges" /></returns>
         public byte[] SaveStateChanges(List<GameObject> roots, List<GameObject> ignoreRoots, UxrStateSaveLevel level, UxrSerializationFormat format)
         {
-            int                count        = 0;
-            using MemoryStream stream       = new MemoryStream();
-            Stream             targetStream = stream;
+            int count           = 0;
+            int totalComponents = 0;
 
-            stream.WriteByte((byte)format);
-            stream.Flush();
+            byte[] bytes        = null;
+            int    originalSize = 0;
 
-            using (GZipStream zipStream = new GZipStream(targetStream, CompressionMode.Compress))
+            Stopwatch sw = Stopwatch.StartNew();
+
+            using (MemoryStream stream = new MemoryStream())
             {
-                if (format == UxrSerializationFormat.BinaryGzip)
-                {
-                    targetStream = zipStream;
-                }
+                // Write the first 4 bytes: format, level and serialization verison.
+                
+                stream.WriteByte((byte)format);
+                stream.WriteByte((byte)level);
+                new BinaryWriter(stream).Write((ushort)UxrConstants.Serialization.CurrentBinaryVersion);
+                stream.Flush();
+                
+                // Write the rest
 
-                using (BinaryWriter writer = new BinaryWriter(targetStream))
+                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    UxrBinarySerializer serializer = new UxrBinarySerializer(writer);
+                    using UxrBinarySerializer serializer          = new UxrBinarySerializer(writer);
+                    using MemoryStream        componentStream     = new MemoryStream();
+                    using BinaryWriter        componentWriter     = new BinaryWriter(componentStream);
+                    using UxrBinarySerializer componentSerializer = new UxrBinarySerializer(componentWriter);
 
-                    foreach (IUxrUniqueId unique in roots == null ? UxrUniqueIdImplementer.AllComponents : roots.SelectMany(go => go.GetComponentsInChildren<IUxrUniqueId>()))
+                    IEnumerable<IUxrStateSave> components;
+
+                    if (roots == null)
                     {
-                        if (unique is IUxrStateSave stateSave)
+                        components = level == UxrStateSaveLevel.Complete ? UxrStateSaveImplementer.AllSerializableComponents : UxrStateSaveImplementer.SaveRequiredComponents;
+                    }
+                    else
+                    {
+                        if (level == UxrStateSaveLevel.Complete)
                         {
-                            bool serialize = ignoreRoots == null || !ignoreRoots.Any(go => unique.Transform.HasParent(go.transform));
+                            components = roots.SelectMany(go => go.GetComponentsInChildren<IUxrStateSave>(true));
+                        }
+                        else
+                        {
+                            components = roots.SelectMany(go => go.GetComponentsInChildren<IUxrStateSave>(true).Where(c => c.Component.isActiveAndEnabled));
+                        }
+                    }
 
-                            if (!serialize)
+                    foreach (IUxrStateSave stateSave in components.OrderBy(c => c.SerializationOrder))
+                    {
+                        bool serialize = ignoreRoots == null || !ignoreRoots.Any(go => stateSave.Transform.HasParent(go.transform));
+
+                        if (!serialize)
+                        {
+                            continue;
+                        }
+
+                        try
+                        {
+                            // First serialize using DontSerialize option, so that we can check whether any data needs to be saved or we can skip it entirely
+                            if (stateSave.SerializeState(serializer, stateSave.StateSerializationVersion, level, UxrStateSaveOptions.DontCacheChanges | UxrStateSaveOptions.DontSerialize))
                             {
-                                continue;
+                                // Now serialize it to the secondary componentStream so that we can know the size beforehand.
+                                // Knowing the size beforehand allows to write the size before the component so that, when deserializing, if the component
+                                // fails, it can still skip the component and continue with the rest of the data.
+                                componentStream.Position = 0;
+                                componentStream.SetLength(0);
+                                componentWriter.WriteUniqueComponent(stateSave);
+                                componentWriter.WriteCompressedInt32(stateSave.StateSerializationVersion);
+                                stateSave.SerializeState(componentSerializer, stateSave.StateSerializationVersion, level);
+                                componentWriter.Flush();
+                                byte[] componentBytes = componentStream.ToArray();
+
+                                // Now write it in the main stream, with the size at the beginning
+
+                                long before = writer.BaseStream.Position;
+                                int  length = componentBytes.Length;
+
+                                serializer.Serialize(ref length);
+                                writer.Write(componentBytes, 0, length);
+
+                                long after = writer.BaseStream.Position;
+
+                                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Debug)
+                                {
+                                    Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): {count + 1}: Serialized {stateSave.Component.name} (type {stateSave.GetType().Name}) to {after - before} bytes. Id is {stateSave.UniqueId}.");
+                                }
+
+                                count++;
                             }
 
-                            try
+                            totalComponents++;
+                        }
+                        catch (SerializationException e)
+                        {
+                            if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
                             {
-                                if (stateSave.SerializeState(serializer, stateSave.StateSerializationVersion, level, UxrStateSaveOptions.DontCacheChanges | UxrStateSaveOptions.DontSerialize))
-                                {
-                                    long before = format == UxrSerializationFormat.BinaryUncompressed ? writer.BaseStream.Position : 0;
-
-                                    writer.WriteUniqueComponent(unique);
-                                    writer.Write(stateSave.StateSerializationVersion);
-                                    stateSave.SerializeState(serializer, stateSave.StateSerializationVersion, level);
-
-                                    long after = format == UxrSerializationFormat.BinaryUncompressed ? writer.BaseStream.Position : 0;
-
-                                    if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Debug)
-                                    {
-                                        if (format == UxrSerializationFormat.BinaryUncompressed)
-                                        {
-                                            Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Serialized {unique.Component.name} ({unique.GetType().Name}) to {after - before} bytes. Id is {unique.UniqueId}.");
-                                        }
-                                        else
-                                        {
-                                            Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Serialized {unique.Component.name} ({unique.GetType().Name}). Id is {unique.UniqueId}.");
-                                        }
-                                    }
-
-                                    count++;
-                                }
+                                Debug.LogError($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Error serializing component {stateSave.Component.name} (type {stateSave.GetType().Name}). Most probably this type requires to implement the {nameof(ICloneable)} interface for state saving to work: {e}");
                             }
-                            catch (Exception e)
+                        }
+                        catch (Exception e)
+                        {
+                            if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
                             {
-                                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
-                                {
-                                    Debug.LogError($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Error serializing component {unique.Component.name} ({unique.GetType().Name}): {e}");
-                                }
+                                Debug.LogError($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Error serializing component {stateSave.Component.name} (type {stateSave.GetType().Name}): {e}");
                             }
                         }
                     }
                 }
+
+                stream.Flush();
+                bytes        = stream.ToArray();
+                originalSize = bytes.Length;
             }
 
-            stream.Flush();
-            byte[] bytes = stream.ToArray();
+            // Compress if requested
+
+            if (format == UxrSerializationFormat.BinaryGzip)
+            {
+                using MemoryStream compressedStream = new MemoryStream();
+
+                // Write the first four bytes uncompressed
+                compressedStream.Write(bytes, 0, 4);
+
+                // Compress the remaining bytes and write them to the compressed stream, starting from index 4
+                using (GZipStream zipStream = new GZipStream(compressedStream, CompressionMode.Compress, true))
+                {
+                    zipStream.Write(bytes, 4, bytes.Length - 4);
+                    zipStream.Flush();
+                }
+
+                // Get the compressed bytes from the compressed stream
+                bytes = compressedStream.ToArray();
+            }
+
+            // Log if required
 
             if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Verbose)
             {
-                string rootName = roots != null ? $"{roots.Count} root object(s)" : "scene";
-                Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Serialized {count} component(s) from {rootName} to {bytes.Length} bytes.");
+                string rootName        = roots != null ? $"{roots.Count} root object(s)" : "scene";
+                string compressionInfo = string.Empty;
+
+                if (originalSize != bytes.Length)
+                {
+                    compressionInfo = $" Compressed from {originalSize} bytes ({(float)originalSize / bytes.Length:0.00} compression ratio).";
+                }
+                sw.Stop();
+                TimeSpan elapsed      = sw.Elapsed;
+                double   milliseconds = (double)elapsed.Ticks / TimeSpan.TicksPerMillisecond;
+
+                Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(SaveStateChanges)}(): Serialized {count}/{totalComponents} component(s) from {rootName} to {bytes.Length} bytes in {milliseconds:F3}ms. Format: {format}, level: {level}.{compressionInfo}");
             }
 
             return bytes;
@@ -354,14 +438,23 @@ namespace UltimateXR.Core
                 return;
             }
 
+            Stopwatch sw = Stopwatch.StartNew();
+
             // We will use a CancelSync() at the end. This avoids propagation of any synchronization message while loading.
             BeginSync();
 
-            int             count         = 0;
-            List<UxrAvatar> loadedAvatars = new List<UxrAvatar>();
+            int             count              = 0;
+            long            uncompressedLength = -1;
+            List<UxrAvatar> loadedAvatars      = new List<UxrAvatar>();
+            
+            // Read the first 4 bytes: format, level and serialization version
 
-            using MemoryStream     stream = new MemoryStream(serializedState);
-            UxrSerializationFormat format = (UxrSerializationFormat)stream.ReadByte();
+            using MemoryStream     stream               = new MemoryStream(serializedState);
+            UxrSerializationFormat format               = (UxrSerializationFormat)stream.ReadByte();
+            UxrStateSaveLevel      level                = (UxrStateSaveLevel)stream.ReadByte();
+            int                    serializationVersion = new BinaryReader(stream).ReadUInt16();
+            
+            // Read the rest
 
             switch (format)
             {
@@ -371,70 +464,80 @@ namespace UltimateXR.Core
 
                 case UxrSerializationFormat.BinaryGzip:
                 {
-                    using MemoryStream compressedStream   = new MemoryStream(serializedState, 1, serializedState.Length - 1);
+                    using MemoryStream compressedStream   = new MemoryStream(serializedState, 4, serializedState.Length - 4);
                     using GZipStream   gzipStream         = new GZipStream(compressedStream, CompressionMode.Decompress);
                     using MemoryStream uncompressedStream = new MemoryStream();
                     gzipStream.CopyTo(uncompressedStream);
+                    uncompressedLength          = uncompressedStream.Length;
                     uncompressedStream.Position = 0;
                     DeserializeUncompressed(uncompressedStream);
                     break;
                 }
 
                 default:
-                    
+
                     if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
                     {
                         Debug.LogError($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Serialized data format is unknown ({format}).");
                     }
 
+                    CancelSync();
                     return;
             }
 
             void DeserializeUncompressed(Stream inputStream)
             {
                 using BinaryReader  reader     = new BinaryReader(inputStream);
-                UxrBinarySerializer serializer = new UxrBinarySerializer(reader, 0);
+                UxrBinarySerializer serializer = new UxrBinarySerializer(reader, serializationVersion);
 
-                while (reader.BaseStream.Position < reader.BaseStream.Length)
+                try
                 {
-                    IUxrUniqueId unique = null;
-
-                    try
+                    while (reader.BaseStream.Position < reader.BaseStream.Length)
                     {
-                        serializer.SerializeUniqueComponent(ref unique);
+                        int          componentSize = -1;
+                        IUxrUniqueId unique        = null;
 
-                        if (unique is IUxrStateSave stateSave)
+                        serializer.Serialize(ref componentSize);
+                        long posBeforeComponent = reader.BaseStream.Position;
+
+                        try
                         {
-                            int stateSerializationVersion = stateSave.StateSerializationVersion;
-                            serializer.Serialize(ref stateSerializationVersion);
-                            stateSave.SerializeState(serializer, stateSerializationVersion, UxrStateSaveLevel.ChangesSinceBeginning);
+                            serializer.SerializeUniqueComponent(ref unique);
 
-                            if (unique is UxrAvatar avatar)
+                            if (unique is IUxrStateSave stateSave)
                             {
-                                loadedAvatars.Add(avatar);
-                            }
+                                int stateSerializationVersion = reader.ReadCompressedInt32(serializationVersion);
+                                stateSave.SerializeState(serializer, stateSerializationVersion, level);
 
-                            if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Debug)
-                            {
-                                Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Deserialized {unique.Component.name} ({unique.GetType().Name}). Id is {unique.UniqueId}.");
-                            }
+                                if (unique is UxrAvatar avatar)
+                                {
+                                    loadedAvatars.Add(avatar);
+                                }
 
-                            count++;
+                                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Debug)
+                                {
+                                    Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): {count + 1}: Deserialized {unique.Component.name} (type {unique.GetType().Name}). Id is {unique.UniqueId}.");
+                                }
+
+                                count++;
+                            }
                         }
+                        catch (Exception e)
+                        {
+                            if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Warnings)
+                            {
+                                Debug.LogWarning($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Cannot deserialize a component. Skipping: {e}");
+                            }
+                        }
+
+                        reader.BaseStream.Seek(posBeforeComponent + componentSize, SeekOrigin.Begin);
                     }
-                    catch (Exception e)
+                }
+                catch (Exception e)
+                {
+                    if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
                     {
-                        if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
-                        {
-                            if (unique != null)
-                            {
-                                Debug.LogError($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Ignoring component (ID: {unique.UniqueId}) due to an exception: {e}");
-                            }
-                            else
-                            {
-                                Debug.LogError($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Tried deserializing a component but it returned null: {e}");
-                            }
-                        }
+                        Debug.LogError($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Error deserializing a component length. Cannot continue with the remaining components: {e}");
                     }
                 }
             }
@@ -451,7 +554,18 @@ namespace UltimateXR.Core
 
             if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Verbose)
             {
-                Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Deserialized {count} components from {serializedState.Length} bytes.");
+                string compressionInfo = string.Empty;
+
+                if (uncompressedLength != -1)
+                {
+                    compressionInfo = $" Compressed from {uncompressedLength} bytes ({(float)uncompressedLength / serializedState.Length:0.00} compression ratio).";
+                }
+
+                sw.Stop();
+                TimeSpan elapsed      = sw.Elapsed;
+                double   milliseconds = (double)elapsed.Ticks / TimeSpan.TicksPerMillisecond;
+
+                Debug.Log($"{UxrConstants.CoreModule}: {nameof(UxrManager)}.{nameof(LoadStateChanges)}(): Deserialized {count} components from {serializedState.Length} bytes in {milliseconds:F3}ms. Format: {format}, level: {level}.{compressionInfo}");
             }
         }
 
@@ -460,13 +574,12 @@ namespace UltimateXR.Core
         ///     processed by the same component.
         /// </summary>
         /// <param name="serializedEvent">Event serialized using <see cref="UxrSyncEventArgs.SerializeEventBinary" /></param>
-        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
         /// <returns>
         ///     The result, containing the target of the event and the event data. If there were errors deserializing the
         ///     data or trying to execute the event, <see cref="UxrStateSyncResult.IsError" /> will return true and
         ///     <see cref="UxrStateSyncResult.ErrorMessage" /> will get the error message.
         /// </returns>
-        public UxrStateSyncResult ExecuteStateSyncEvent(byte[] serializedEvent, int serializationVersion)
+        public UxrStateSyncResult ExecuteStateSyncEvent(byte[] serializedEvent)
         {
             IUxrStateSync    stateSync    = null;
             UxrSyncEventArgs eventArgs    = null;
@@ -474,10 +587,10 @@ namespace UltimateXR.Core
 
             try
             {
-                if (UxrSyncEventArgs.DeserializeEventBinary(serializedEvent, serializationVersion, out stateSync, out eventArgs, out errorMessage))
+                if (UxrSyncEventArgs.DeserializeEventBinary(serializedEvent, out stateSync, out eventArgs, out errorMessage))
                 {
                     errorMessage      = null;
-                    _isExecutingEvent = true;
+                    IsInsideStateSync = true;
                     stateSync.SyncState(eventArgs);
                 }
             }
@@ -487,10 +600,10 @@ namespace UltimateXR.Core
             }
             finally
             {
-                _isExecutingEvent = false;
+                IsInsideStateSync = false;
             }
 
-            UxrStateSyncResult result = new UxrStateSyncResult(stateSync, eventArgs, errorMessage); 
+            UxrStateSyncResult result = new UxrStateSyncResult(stateSync, eventArgs, errorMessage);
 
             if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Verbose)
             {
@@ -547,7 +660,7 @@ namespace UltimateXR.Core
         public void MoveAvatarTo(UxrAvatar avatar, Vector3 newFloorPosition, Vector3 newForward, bool propagateEvents = true)
         {
             // This method will be synchronized through network
-            BeginSync();
+            BeginSync(UxrStateSyncOptions.Network);
 
             Transform avatarTransform = avatar.transform;
 
@@ -560,9 +673,11 @@ namespace UltimateXR.Core
 
             OnAvatarMoving(avatar, new UxrAvatarMoveEventArgs(oldPosition, oldRotation, newPosition, newRotation), propagateEvents);
             avatarTransform.SetPositionAndRotation(newPosition, newRotation);
-            OnAvatarMoved(avatar, new UxrAvatarMoveEventArgs(oldPosition, oldRotation, newPosition, newRotation), propagateEvents);
-
+            
+            // We place the EndSyncMethod() before the OnAvatarMoved() so that any synchronized events depending on AvatarMoved don't get nested and are processed instead. 
             EndSyncMethod(new object[] { avatar, newFloorPosition, newForward, propagateEvents });
+            
+            OnAvatarMoved(avatar, new UxrAvatarMoveEventArgs(oldPosition, oldRotation, newPosition, newRotation), propagateEvents);
         }
 
         /// <summary>
@@ -1016,21 +1131,21 @@ namespace UltimateXR.Core
         #region Internal Methods
 
         /// <summary>
-        ///     Notifies that the OnEnable() Unity event of a component with the IUxrStateSync interface was called.
+        ///     Registers a new component with the <see cref="IUxrStateSync" /> interface.
         /// </summary>
         /// <param name="component">Custom component</param>
-        internal void NotifyStateSyncOnEnable<T>(Component component) where T : IUxrStateSync
+        internal void RegisterStateSyncComponent<T>(Component component) where T : IUxrStateSync
         {
-            StateSync_Enabled(component as IUxrStateSync);
+            StateSync_Registered(component as IUxrStateSync);
         }
 
         /// <summary>
-        ///     Notifies that the OnDisable() Unity event of a component with the IUxrStateSync interface was called.
+        ///     Removes a component with the <see cref="IUxrStateSync" /> interface, because it was destroyed.
         /// </summary>
         /// <param name="component">Custom component</param>
-        internal void NotifyStateSyncOnDisable<T>(Component component) where T : IUxrStateSync
+        internal void UnregisterStateSyncComponent<T>(Component component) where T : IUxrStateSync
         {
-            StateSync_Disabled(component as IUxrStateSync);
+            StateSync_Unregistered(component as IUxrStateSync);
         }
 
         #endregion
@@ -1113,6 +1228,8 @@ namespace UltimateXR.Core
             {
                 PostUpdate();
             }
+
+            UxrStateSaveImplementer.NotifyEndOfFrame();
         }
 
         #endregion
@@ -1489,7 +1606,7 @@ namespace UltimateXR.Core
         {
             // Don't generate ComponentChanged events inside ExecuteStateSyncEvent() to avoid infinite message loop 
 
-            if (!_isExecutingEvent && sender is IUxrStateSync component)
+            if (!IsInsideStateSync && sender is IUxrStateSync component)
             {
                 OnComponentStateChanged(component, eventArgs);
             }
@@ -1551,7 +1668,7 @@ namespace UltimateXR.Core
         ///     <see cref="UxrComponent.StateChanged" /> event to keep track of any state changes in components in UltimateXR.
         /// </summary>
         /// <param name="component">Component that was enabled</param>
-        private void StateSync_Enabled(IUxrStateSync component)
+        private void StateSync_Registered(IUxrStateSync component)
         {
             component.StateChanged += StateSync_StateChanged;
         }
@@ -1561,7 +1678,7 @@ namespace UltimateXR.Core
         ///     the <see cref="UxrComponent.StateChanged" /> event.
         /// </summary>
         /// <param name="component">Component that was disabled</param>
-        private void StateSync_Disabled(IUxrStateSync component)
+        private void StateSync_Unregistered(IUxrStateSync component)
         {
             component.StateChanged -= StateSync_StateChanged;
         }
@@ -1577,7 +1694,7 @@ namespace UltimateXR.Core
         /// <param name="eventArgs">Event parameters</param>
         private void OnComponentStateChanged(IUxrStateSync component, UxrSyncEventArgs eventArgs)
         {
-            if (UxrStateSyncImplementer.SyncCallDepth == 1 || !UseTopLevelStateChangesOnly)
+            if (UxrStateSyncImplementer.SyncCallDepth == 1 || !UseTopLevelStateChangesOnly || eventArgs.Options.HasFlag(UxrStateSyncOptions.IgnoreNestingCheck))
             {
                 ComponentStateChanged?.Invoke(component, eventArgs);
             }
@@ -1814,9 +1931,9 @@ namespace UltimateXR.Core
 
                     // Ensure registering initially disabled components so that their UniqueId is known and can exchange sync messages too
 
-                    if (!behaviours[behaviourIndex].enabled && behaviours[behaviourIndex] is IUxrUniqueId unique)
+                    if (behaviours[behaviourIndex] != null && !behaviours[behaviourIndex].enabled && behaviours[behaviourIndex] is IUxrUniqueId unique)
                     {
-                        unique.RegisterUniqueIdIfNecessary();
+                        unique.RegisterIfNecessary();
                     }
                 }
             }
@@ -1932,7 +2049,6 @@ namespace UltimateXR.Core
         private Coroutine                   _precacheCoroutine;
         private Dictionary<int, GameObject> _dynamicInstances;
         private Coroutine                   _teleportCoroutine;
-        private bool                        _isExecutingEvent;
 
         #endregion
     }

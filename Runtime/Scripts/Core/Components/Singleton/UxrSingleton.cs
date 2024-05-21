@@ -152,6 +152,8 @@ namespace UltimateXR.Core.Components.Singleton
                         Debug.LogError($"{UxrConstants.CoreModule} {typeof(T).Name}: Unable to instantiate prefab. Instance is null. Path is {ResourcesPrefabPath}", prefab);
                     }
                 }
+
+                instance.name = prefab.name;
             }
 
             // Third: Try to instantiate it by creating a GameObject and adding the component

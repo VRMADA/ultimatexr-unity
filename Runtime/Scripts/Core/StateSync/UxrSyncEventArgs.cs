@@ -23,9 +23,9 @@ namespace UltimateXR.Core.StateSync
         #region Public Types & Data
 
         /// <summary>
-        ///     Gets which environments the sync event should be used in. See <see cref="UxrStateSyncEnvironments" /> flags.
+        ///     Gets or sets the options. See <see cref="UxrStateSyncOptions" /> flags.
         /// </summary>
-        public UxrStateSyncEnvironments TargetEnvironments { get; set; } = UxrStateSyncEnvironments.All;
+        public UxrStateSyncOptions Options { get; set; } = UxrStateSyncOptions.Default;
 
         #endregion
 
@@ -47,12 +47,11 @@ namespace UltimateXR.Core.StateSync
         ///     event parameters.
         /// </summary>
         /// <param name="serializedEvent">The byte array with the serialized data</param>
-        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
         /// <param name="stateSync">Event target that should execute the event</param>
         /// <param name="eventArgs">Event parameters</param>
         /// <param name="errorMessage">Will return null if there were no errors or an error message when the method returns false</param>
         /// <returns>Whether the event was deserialized correctly</returns>
-        public static bool DeserializeEventBinary(byte[] serializedEvent, int serializationVersion, out IUxrStateSync stateSync, out UxrSyncEventArgs eventArgs, out string errorMessage)
+        public static bool DeserializeEventBinary(byte[] serializedEvent, out IUxrStateSync stateSync, out UxrSyncEventArgs eventArgs, out string errorMessage)
         {
             stateSync = null;
             eventArgs = null;
@@ -71,29 +70,75 @@ namespace UltimateXR.Core.StateSync
                 {
                     // Instantiate event object and deserialize it.
 
+                    int       serializationVersion   = 0;
+                    Exception componentReadException = null;
+                    string    eventTypeName          = null;
+                    string    eventTypeAssemblyName  = null;
+                    Type      syncEventType          = null;
+
                     try
                     {
-                        Type syncEventType = reader.ReadType(serializationVersion, out string typeName, out string assemblyName);
-                        stateSync = reader.ReadAnyVar(serializationVersion) as IUxrStateSync;
-                        object eventObject = FormatterServices.GetUninitializedObject(syncEventType); // Creates instance without calling constructor
-
-                        eventArgs = eventObject as UxrSyncEventArgs;
-
-                        if (eventArgs == null)
-                        {
-                            throw new Exception($"Unknown event class ({TypeExt.GetTypeString(typeName, assemblyName)})");
-                        }
-
-                        if (stateSync == null)
-                        {
-                            throw new Exception($"Target component ({TypeExt.GetTypeString(typeName, assemblyName)}) doesn't implement interface {nameof(IUxrStateSync)}");
-                        }
-
-                        eventArgs.SerializeEventInternal(new UxrBinarySerializer(reader, serializationVersion));
+                        serializationVersion = reader.ReadUInt16();
+                        syncEventType        = reader.ReadType(serializationVersion, out eventTypeName, out eventTypeAssemblyName);
+                        stateSync            = reader.ReadAnyVar(serializationVersion) as IUxrStateSync;
                     }
                     catch (Exception e)
                     {
-                        errorMessage = $"{logPrefix}: Error creating/deserializing event. Exception message: {e}";
+                        if (syncEventType == null)
+                        {
+                            errorMessage = $"{logPrefix}: Error creating/deserializing event. Cannot read event type. Exception message: {e}";
+                            return false;
+                        }
+
+                        componentReadException = e;
+                    }
+                    
+                    object eventObject              = FormatterServices.GetUninitializedObject(syncEventType); // Creates instance without calling constructor
+                    bool   eventDeserializeStarted  = false;
+                    bool   eventDeserializeFinished = false;
+
+                    try
+                    {
+                        eventArgs = eventObject as UxrSyncEventArgs;
+                        
+                        if (eventArgs == null)
+                        {
+                            throw new Exception($"Unknown event class ({TypeExt.GetTypeString(eventTypeName, eventTypeAssemblyName)})");
+                        }
+
+                        if (componentReadException == null && stateSync == null)
+                        {
+                            throw new Exception($"Target component ({TypeExt.GetTypeString(eventTypeName, eventTypeAssemblyName)}) doesn't implement interface {nameof(IUxrStateSync)}");
+                        }
+
+                        eventDeserializeStarted = true;
+
+                        eventArgs.SerializeEventInternal(new UxrBinarySerializer(reader, serializationVersion));
+
+                        eventDeserializeFinished = true;
+
+                        if (componentReadException != null)
+                        {
+                            throw new Exception($"{logPrefix}: Target component wasn't found for event. Event is {eventArgs}. Exception message: {componentReadException}.");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        if (!eventDeserializeStarted || eventDeserializeFinished)
+                        {
+                            errorMessage = e.Message;
+                        }
+                        else
+                        {
+                            if (componentReadException != null)
+                            {
+                                errorMessage = $"{logPrefix}: Error creating/deserializing event for unknown target component. Event (may show missing data) is {eventArgs}. Exception message: {e}";                                
+                            }
+                            else
+                            {
+                                errorMessage = $"{logPrefix}: Error creating/deserializing event for {stateSync}. Event (may show missing data) is {eventArgs}. Exception message: {e}";
+                            }
+                        }
 
                         if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
                         {
@@ -113,8 +158,7 @@ namespace UltimateXR.Core.StateSync
         ///     Serializes the event to a byte array so that it can be sent through the network or saved to disk.
         /// </summary>
         /// <param name="sourceComponent">
-        ///     Component that generated the event. It should be either an <see cref="UxrComponent" /> or
-        ///     a component that implements the <see cref="IUxrSerializable" /> interface
+        ///     Component that generated the event.
         /// </param>
         /// <returns>Byte array representing the event</returns>
         public byte[] SerializeEventBinary(IUxrStateSync sourceComponent)
@@ -123,9 +167,12 @@ namespace UltimateXR.Core.StateSync
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
+                    // Serialize the binary serialization version
+                    writer.Write((ushort)UxrConstants.Serialization.CurrentBinaryVersion);
+                    
                     // Serialize event type to be able to instantiate event object using reflection
                     writer.Write(GetType());
-
+                    
                     // Serialize the component that generated the event 
                     writer.WriteAnyVar(sourceComponent);
 

@@ -11,6 +11,7 @@ using UltimateXR.Core.Components.Singleton;
 using UltimateXR.Core.Settings;
 using UltimateXR.Core.StateSync;
 using UltimateXR.Core.Unique;
+using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Networking;
 using UnityEngine;
@@ -43,12 +44,12 @@ namespace UltimateXR.Core.Instantiation
         #region Public Types & Data
 
         /// <summary>
-        ///     Called when a prefab is about to be instantiated.
+        ///     Called when a prefab/empty GameObject is about to be instantiated.
         /// </summary>
         public event EventHandler<UxrInstanceEventArgs> Instantiating;
 
         /// <summary>
-        ///     Called right after a prefab was instantiated.
+        ///     Called right after a prefab/empty GameObject was instantiated.
         /// </summary>
         public event EventHandler<UxrInstanceEventArgs> Instantiated;
 
@@ -79,6 +80,27 @@ namespace UltimateXR.Core.Instantiation
         #region Public Methods
 
         /// <summary>
+        ///     Returns the prefab corresponding to a given unity prefab id. Unity prefab IDs can be accessed using the
+        ///     <see cref="IUxrUniqueId" /> interface of all components that implement it, such as <see cref="UxrComponent" />.
+        /// </summary>
+        /// <param name="unityPrefabId">The unity prefab id</param>
+        /// <returns>
+        ///     Prefab or null if the id is invalid or isn't registered in the <see cref="UxrInstanceManager" /> inspector
+        ///     panel
+        /// </returns>
+        public GameObject GetPrefab(string unityPrefabId)
+        {
+            InitializeIfNecessary();
+
+            if (_prefabsById != null && _prefabsById.TryGetValue(unityPrefabId, out GameObject prefab))
+            {
+                return prefab;
+            }
+
+            return null;
+        }
+
+        /// <summary>
         ///     Instantiates a prefab registered in the <see cref="UxrInstanceManager" />, ensuring synchronization across
         ///     environments:
         ///     <list type="bullet">
@@ -101,7 +123,7 @@ namespace UltimateXR.Core.Instantiation
         /// <param name="position">World position</param>
         /// <param name="rotation">World rotation</param>
         /// <returns>New instance</returns>
-        public GameObject InstantiateGameObject(GameObject prefab, Transform parent, Vector3 position, Quaternion rotation)
+        public GameObject InstantiatePrefab(GameObject prefab, Transform parent, Vector3 position, Quaternion rotation)
         {
             InitializeIfNecessary();
 
@@ -109,7 +131,7 @@ namespace UltimateXR.Core.Instantiation
             {
                 if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
                 {
-                    Debug.LogError($"{UxrConstants.CoreModule} {nameof(UxrInstanceManager)}.{nameof(InstantiateGameObject)}(): Prefab is null");
+                    Debug.LogError($"{UxrConstants.CoreModule} {nameof(UxrInstanceManager)}.{nameof(InstantiatePrefab)}(): Prefab is null");
                 }
 
                 return null;
@@ -121,7 +143,7 @@ namespace UltimateXR.Core.Instantiation
             {
                 if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
                 {
-                    Debug.LogError($"{UxrConstants.CoreModule} {nameof(UxrInstanceManager)}.{nameof(InstantiateGameObject)}(): Instantiating prefab {prefab.name} to a parent with no components with a unique ID. Consider adding a {nameof(UxrSyncObject)} component to the parent to be able to track it.");
+                    Debug.LogError($"{UxrConstants.CoreModule} {nameof(UxrInstanceManager)}.{nameof(InstantiatePrefab)}(): Instantiating prefab {prefab.name} to a parent with no components with a unique ID. Consider adding a {nameof(UxrSyncObject)} component to the parent to be able to track it.");
                 }
             }
 
@@ -131,18 +153,48 @@ namespace UltimateXR.Core.Instantiation
             {
                 if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
                 {
-                    Debug.LogError($"{UxrConstants.CoreModule} {nameof(UxrInstanceManager)}.{nameof(InstantiateGameObject)}(): Prefab {prefab.name} has no components with a unique ID. Consider adding a {nameof(UxrSyncObject)} component to be able to track it.");
+                    Debug.LogError($"{UxrConstants.CoreModule} {nameof(UxrInstanceManager)}.{nameof(InstantiatePrefab)}(): Prefab {prefab.name} has no components with a unique ID. Consider adding a {nameof(UxrSyncObject)} component to be able to track it.");
                 }
 
                 return null;
             }
 
-            return InstantiateGameObjectInternal(component.UnityPrefabId, parentUnique, position, rotation);
+            return InstantiatePrefabInternal(component.UnityPrefabId, parentUnique, position, rotation, UxrStateSyncImplementer.SyncCallDepth);
         }
 
         /// <summary>
-        ///     Destroys a GameObject instantiated using <see cref="InstantiateGameObject" />, ensuring that the operation is
-        ///     synced in all environments.
+        ///     Creates an empty GameObject, ensuring that the operation is synced in all environments.
+        /// </summary>
+        /// <param name="objectName">The name given to the GameObject</param>
+        /// <param name="parent">
+        ///     Parent object to attach to or null for no parenting. The parent should have at least one component implementing
+        ///     <see cref="IUxrUniqueId" /> for proper synchronization. If no specific <see cref="IUxrUniqueId" /> is needed, a
+        ///     <see cref="UxrSyncObject" /> component can be used.
+        /// </param>
+        /// <param name="position">World position</param>
+        /// <param name="rotation">World rotation</param>
+        /// <returns>New instance</returns>
+        public GameObject InstantiateEmptyGameObject(string objectName, Transform parent, Vector3 position, Quaternion rotation)
+        {
+            InitializeIfNecessary();
+
+            IUxrUniqueId parentUnique = parent != null ? parent.GetComponent<IUxrUniqueId>() : null;
+
+            if (parent != null && parentUnique == null)
+            {
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+                {
+                    Debug.LogError($"{UxrConstants.CoreModule} {nameof(UxrInstanceManager)}.{nameof(InstantiateEmptyGameObject)}(): Instantiating empty GameObject to a parent with no components with a unique ID. Consider adding a {nameof(UxrSyncObject)} component to the parent to be able to track it.");
+                }
+            }
+
+            return InstantiateEmptyGameObjectInternal(objectName, parentUnique, position, rotation);
+        }
+
+        /// <summary>
+        ///     Destroys a GameObject instantiated using <see cref="InstantiatePrefab" /> or
+        ///     <see cref="InstantiateEmptyGameObject" />,
+        ///     ensuring that the operation is synced in all environments.
         /// </summary>
         /// <param name="target">
         ///     The GameObject to destroy.
@@ -548,6 +600,19 @@ namespace UltimateXR.Core.Instantiation
 
         #endregion
 
+        #region Internal Methods
+
+        /// <summary>
+        ///     Clears the nested instance queue. TODO: Remove once the replay manager is published and use replay manager events
+        ///     instead.
+        /// </summary>
+        internal void ClearNestedInstanceQueue()
+        {
+            _nestedInstances.Clear();
+        }
+
+        #endregion
+
         #region Unity
 
         /// <summary>
@@ -573,15 +638,26 @@ namespace UltimateXR.Core.Instantiation
                 return;
             }
 
+            if (_automaticPrefabs == null)
+            {
+                if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+                {
+                    Debug.LogError($"{UxrConstants.CoreModule} {nameof(UxrInstanceManager)} needs to be pre-instantiated in your startup scene to create the prefab list.");
+                }
+            }
+
             _prefabsById = new Dictionary<string, GameObject>();
 
             if (_registerAutomatically)
             {
                 // Use automatically created list
 
-                foreach (GameObject prefab in _automaticPrefabs)
+                if (_automaticPrefabs != null)
                 {
-                    TryRegisterPrefab(prefab);
+                    foreach (GameObject prefab in _automaticPrefabs)
+                    {
+                        TryRegisterPrefab(prefab);
+                    }
                 }
             }
             else
@@ -648,17 +724,39 @@ namespace UltimateXR.Core.Instantiation
         /// <summary>
         ///     Method responsible for the instantiation.
         /// </summary>
-        /// <param name="prefab">Id of the prefab to instantiate</param>
+        /// <param name="prefabId">Id of the prefab to instantiate</param>
         /// <param name="parent">Parent or null for no parenting</param>
         /// <param name="position">World position</param>
         /// <param name="rotation">World rotation</param>
+        /// <param name="syncNestingDepth">
+        ///     The StateSync nesting depth when calling, which will be used to know when to return an
+        ///     existing instance or create a new one
+        /// </param>
         /// <param name="uniqueId">New unique ID or null to generate one</param>
         /// <returns>Instantiated object</returns>
-        private GameObject InstantiateGameObjectInternal(string prefabId, IUxrUniqueId parent, Vector3 position, Quaternion rotation, Guid uniqueId = default)
+        private GameObject InstantiatePrefabInternal(string prefabId, IUxrUniqueId parent, Vector3 position, Quaternion rotation, int syncNestingDepth = 0, Guid uniqueId = default)
         {
+            if (syncNestingDepth > 0 && UxrManager.Instance.IsInsideStateSync && uniqueId == default)
+            {
+                // We are inside UxrManager.ExecutaStateSyncEvent(). Instantiation is synchronized using UxrStateSyncOptions.IgnoreNestingCheck for the random Guid algorithm to work correctly.
+                // The Instantiate calls will be synchronized no matter the nesting depth, but the replication calls need to use the instance guids generated by the original source.
+
+                if (_nestedInstances.Count == 0)
+                {
+                    if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+                    {
+                        Debug.LogError($"{UxrConstants.CoreModule} {nameof(UxrInstanceManager)}.{nameof(InstantiatePrefabInternal)}: Nested instances is empty.");
+                    }
+
+                    return null;
+                }
+
+                return _nestedInstances.Dequeue();
+            }
+
             if (_prefabsById.TryGetValue(prefabId, out GameObject prefab))
             {
-                BeginSync();
+                BeginSync(UxrStateSyncOptions.Default | UxrStateSyncOptions.IgnoreNestingCheck);
 
                 Instantiating?.Invoke(this, new UxrInstanceEventArgs(null, prefab, prefabId));
 
@@ -688,25 +786,98 @@ namespace UltimateXR.Core.Instantiation
                     return null;
                 }
 
-                component.CombineUniqueId(uniqueId, true);
+                component.CombineUniqueId(uniqueId);
 
                 _currentInstancedPrefabs.TryAdd(uniqueId, new InstanceInfo(component, prefabId));
-                _currentInstances.TryAdd(uniqueId, component.GameObject);
+                _currentInstances.TryAdd(uniqueId, newInstance);
+
+                if (syncNestingDepth > 0)
+                {
+                    // When it's a nested sync call, enqueue the instance because it's going to be used later on.
+                    _nestedInstances.Enqueue(newInstance);
+                }
 
                 Instantiated?.Invoke(this, new UxrInstanceEventArgs(newInstance, prefab, prefabId));
 
-                EndSyncMethod(new object[] { prefabId, parent, position, rotation, uniqueId });
+                EndSyncMethod(new object[] { prefabId, parent, position, rotation, syncNestingDepth, uniqueId });
 
                 return newInstance;
+            }
+
+            if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+            {
+                Debug.LogError($"{UxrConstants.CoreModule} {nameof(UxrInstanceManager)}.{nameof(InstantiatePrefabInternal)}(): Prefab with id {prefabId} is not registered in the {nameof(UxrInstanceManager)}. Register it in the inspector panel first.");
             }
 
             return null;
         }
 
         /// <summary>
+        ///     Internal method that instantiates an empty GameObject.
+        /// </summary>
+        /// <param name="objectName">New GameObject name</param>
+        /// <param name="parent">Parent or null for no parenting</param>
+        /// <param name="position">World position</param>
+        /// <param name="rotation">World rotation</param>
+        /// <param name="syncNestingDepth">
+        ///     The StateSync nesting depth when calling, which will be used to know when to return an
+        ///     existing instance or create a new one
+        /// </param>
+        /// <param name="uniqueId">New unique ID or null to generate one</param>
+        /// <returns>Instantiated object</returns>
+        private GameObject InstantiateEmptyGameObjectInternal(string objectName, IUxrUniqueId parent, Vector3 position, Quaternion rotation, int syncNestingDepth = 0, Guid uniqueId = default)
+        {
+            if (syncNestingDepth > 0 && UxrManager.Instance.IsInsideStateSync && uniqueId == default)
+            {
+                // We are inside a BeginSync/EndSync block. Instantiation is synchronized using UxrStateSyncOptions.IgnoreNestingCheck for the random Guid algorithm to work correctly.
+                // The Instantiate calls will be synchronized no matter the nesting depth, but the replication calls need to use the instance guids generated by the original source.
+
+                if (_nestedInstances.Count == 0)
+                {
+                    if (UxrGlobalSettings.Instance.LogLevelCore >= UxrLogLevel.Errors)
+                    {
+                        Debug.LogError($"{UxrConstants.CoreModule} {nameof(UxrInstanceManager)}.{nameof(InstantiateEmptyGameObjectInternal)}: Nested instances is empty.");
+                    }
+
+                    return null;
+                }
+
+                return _nestedInstances.Dequeue();
+            }
+
+            BeginSync(UxrStateSyncOptions.Default | UxrStateSyncOptions.IgnoreNestingCheck);
+
+            Instantiating?.Invoke(this, new UxrInstanceEventArgs(null, null, null));
+
+            Transform  parentTransform = parent?.Transform;
+            GameObject newInstance     = new GameObject(objectName ?? "Empty GameObject");
+            newInstance.transform.SetParent(parentTransform);
+            newInstance.transform.SetPositionAndRotation(position, rotation);
+
+            // We use a trick where we sync the call with the generated Unique ID as parameter. 
+
+            if (uniqueId == default)
+            {
+                uniqueId = Guid.NewGuid();
+            }
+
+            IUxrUniqueId component = newInstance.AddComponent<UxrSyncObject>();
+            component.ChangeUniqueId(uniqueId);
+
+            _currentInstancedPrefabs.TryAdd(uniqueId, new InstanceInfo(component, null));
+            _currentInstances.TryAdd(uniqueId, component.GameObject);
+
+            Instantiated?.Invoke(this, new UxrInstanceEventArgs(newInstance, null, null));
+
+            EndSyncMethod(new object[] { objectName, parent, position, rotation, syncNestingDepth, uniqueId });
+
+            return newInstance;
+        }
+
+        /// <summary>
         ///     Destroys a GameObject, identified by a component on the object with the <see cref="IUxrUniqueId" /> interface.
         /// </summary>
-        /// <param name="target">
+        /// <param name="component">
         ///     A component with the <see cref="IUxrUniqueId" /> interface on the root of the GameObject.
         /// </param>
         private void DestroyGameObjectInternal(IUxrUniqueId component)
@@ -721,6 +892,11 @@ namespace UltimateXR.Core.Instantiation
 
                 _currentInstancedPrefabs.Remove(component.CombineIdSource);
                 _currentInstances.Remove(component.CombineIdSource);
+
+                // Avoid unique ID collisions by unregistering ahead of time since component destruction might get delayed.  
+                IUxrUniqueId[] components = component.GameObject.GetComponentsInChildren<IUxrUniqueId>(true);
+                components.ForEach(c => c.Unregister());
+
                 Destroy(component.GameObject);
 
                 Destroyed?.Invoke(this, new UxrInstanceEventArgs(null, prefab, component.UnityPrefabId));
@@ -738,7 +914,7 @@ namespace UltimateXR.Core.Instantiation
         private void NotifyNetworkSpawnInternal(string prefabId, Guid combineGuid, Guid instanceGuid)
         {
             // Do not sync in multiplayer since the prefab was spawned using networking already.
-            BeginSync(UxrStateSyncEnvironments.All ^ UxrStateSyncEnvironments.Network);
+            BeginSync(UxrStateSyncOptions.Default ^ UxrStateSyncOptions.Network);
 
             IUxrUniqueId component = null;
 
@@ -762,7 +938,7 @@ namespace UltimateXR.Core.Instantiation
                         CancelSync();
                     }
 
-                    component.CombineUniqueId(combineGuid, true);
+                    component.CombineUniqueId(combineGuid);
 
                     CheckNetworkSpawnPostprocess(newInstance);
                 }
@@ -790,7 +966,7 @@ namespace UltimateXR.Core.Instantiation
         {
             if (component != null)
             {
-                BeginSync(UxrStateSyncEnvironments.All ^ UxrStateSyncEnvironments.Network);
+                BeginSync(UxrStateSyncOptions.Default ^ UxrStateSyncOptions.Network);
 
                 if (destroy)
                 {
@@ -1003,6 +1179,8 @@ namespace UltimateXR.Core.Instantiation
 
         private Dictionary<string, GameObject> _prefabsById;
         private Dictionary<Guid, InstanceInfo> _currentInstancedPrefabs = new Dictionary<Guid, InstanceInfo>(); // (combine Guid -> prefabId). This one is serialized by the StateSave functionality. Contains which prefabs are currently instantiated.
+
+        private readonly Queue<GameObject> _nestedInstances = new Queue<GameObject>();
 
         #endregion
     }

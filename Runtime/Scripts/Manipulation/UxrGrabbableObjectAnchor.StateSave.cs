@@ -9,9 +9,9 @@ namespace UltimateXR.Manipulation
 {
     public partial class UxrGrabbableObjectAnchor
     {
-        protected override void SerializeStateInternal(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
+        protected override void SerializeState(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
         {
-            base.SerializeStateInternal(isReading, stateSerializationVersion, level, options);
+            base.SerializeState(isReading, stateSerializationVersion, level, options);
 
             // Manipulations are already handled through events, we don't serialize them in incremental changes
 

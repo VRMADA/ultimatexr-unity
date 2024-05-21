@@ -257,6 +257,11 @@ namespace UltimateXR.Manipulation
         /// <seealso cref="PlacedObjectRangeEntered" />
         public event EventHandler<UxrManipulationEventArgs> PlacedObjectRangeLeft;
 
+        /// <summary>
+        ///     Gets or sets the manipulation features that are used when the manager is updated.
+        /// </summary>
+        public UxrManipulationFeatures Features { get; set; } = UxrManipulationFeatures.All;
+
         #endregion
 
         #region Internal Methods
@@ -272,8 +277,11 @@ namespace UltimateXR.Manipulation
             // Updates the grabbable objects based on manipulation logic
             UpdateManipulation();
 
-            // Updates visual feedback states (objects that can be grabbed, anchors where a grabbed object can be placed on, etc.)
-            UpdateAffordances();
+            if (Features.HasFlag(UxrManipulationFeatures.Affordances))
+            {
+                // Updates visual feedback states (objects that can be grabbed, anchors where a grabbed object can be placed on, etc.)
+                UpdateAffordances();
+            }
 
             // Perform operations that need to be done at the end of the updating process.
             FinalizeManipulationFrame();
@@ -371,7 +379,7 @@ namespace UltimateXR.Manipulation
         {
             UxrAvatar avatar = sender as UxrAvatar;
 
-            if (avatar == null)
+            if (avatar == null || avatar.AvatarMode == UxrAvatarMode.UpdateExternally)
             {
                 return;
             }
@@ -649,6 +657,11 @@ namespace UltimateXR.Manipulation
 
             foreach (KeyValuePair<UxrGrabbableObject, RuntimeManipulationInfo> manipulationInfoPair in _currentManipulations)
             {
+                if (manipulationInfoPair.Key == null)
+                {
+                    continue;
+                }
+                
                 UxrGrabbableObject grabbableParent = manipulationInfoPair.Key.GrabbableParent;
 
                 InitializeGrabbableData(manipulationInfoPair.Key);

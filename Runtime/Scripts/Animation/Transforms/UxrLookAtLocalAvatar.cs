@@ -12,7 +12,8 @@ using UnityEngine;
 namespace UltimateXR.Animation.Transforms
 {
     /// <summary>
-    ///     Component that allows to continuously orientate an object looking at the local avatar camera
+    ///     Component that allows to continuously orientate an object looking at the local avatar camera.
+    ///     If there is no local avatar, it will use the first enabled camera.
     /// </summary>
     public class UxrLookAtLocalAvatar : UxrComponent
     {
@@ -165,7 +166,7 @@ namespace UltimateXR.Animation.Transforms
         /// </summary>
         private void UxrManager_AvatarsUpdated()
         {
-            if (UxrManager.Instance && UxrAvatar.LocalAvatarCamera && _repeat)
+            if (_repeat)
             {
                 PerformLookAt(transform, _allowRotateAroundY, _allowRotateAroundX, _invertedForwardAxis);
 
@@ -196,24 +197,28 @@ namespace UltimateXR.Animation.Transforms
         /// </param>
         private static void PerformLookAt(Transform transform, bool allowRotateAroundVerticalAxis, bool allowRotateAroundHorizontalAxis, bool invertedForwardAxis)
         {
-            if (UxrManager.Instance && UxrAvatar.LocalAvatarCamera)
+            Camera currentCamera = UxrAvatar.LocalOrFirstEnabledCamera;
+
+            if (currentCamera == null)
             {
-                Vector3 lookAt = UxrAvatar.LocalAvatar.CameraPosition - transform.position;
+                return;
+            }
+            
+            Vector3 lookAt = currentCamera.transform.position - transform.position;
 
-                if (allowRotateAroundHorizontalAxis == false)
-                {
-                    lookAt.y = 0.0f;
-                }
+            if (allowRotateAroundHorizontalAxis == false)
+            {
+                lookAt.y = 0.0f;
+            }
 
-                if (allowRotateAroundVerticalAxis == false)
-                {
-                    lookAt = Vector3.ProjectOnPlane(lookAt, transform.right);
-                }
+            if (allowRotateAroundVerticalAxis == false)
+            {
+                lookAt = Vector3.ProjectOnPlane(lookAt, transform.right);
+            }
 
-                if (lookAt != Vector3.zero)
-                {
-                    transform.rotation = Quaternion.LookRotation(invertedForwardAxis ? -lookAt : lookAt);
-                }
+            if (lookAt != Vector3.zero)
+            {
+                transform.rotation = Quaternion.LookRotation(invertedForwardAxis ? -lookAt : lookAt);
             }
         }
 

@@ -63,6 +63,32 @@ namespace UltimateXR.Networking
         public event Action<GameObject, bool> NetworkRigidbodyEnabled;
 
         /// <summary>
+        ///     Gets whether there is a network session active.
+        /// </summary>
+        public static bool IsSessionActive => IsServer || IsClient;
+
+        /// <summary>
+        ///     Gets whether the current user is owner of the session. This can be either because there is no multiplayer session
+        ///     active or because the local user is the server.
+        /// </summary>
+        public static bool NoSessionOrSessionOwner => Instance == null || Instance._networkImplementation == null || Instance._networkImplementation.IsServer;
+
+        /// <summary>
+        ///     Gets whether there is a network session active and the local user is the host (client and server at the same time).
+        /// </summary>
+        public static bool IsHost => IsServer && IsClient;
+
+        /// <summary>
+        ///     Gets whether there is a network session active and the local user is the server.
+        /// </summary>
+        public static bool IsServer => HasInstance && Instance._networkImplementation != null && Instance._networkImplementation.IsServer;
+
+        /// <summary>
+        ///     Gets whether there is a network session active and the local user is the server.
+        /// </summary>
+        public static bool IsClient => HasInstance && Instance._networkImplementation != null && Instance._networkImplementation.IsClient;
+
+        /// <summary>
         ///     Gets the network implementation.
         /// </summary>
         public UxrNetworkImplementation NetworkImplementation => _networkImplementation;

@@ -177,6 +177,12 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         public bool IsDragging { get; private set; }
 
         /// <summary>
+        ///     Gets whether the component is being destroyed. This means OnDestroy() was called the same frame
+        ///     and will effectively be destroyed at the end of it.  
+        /// </summary>
+        public bool IsBeingDestroyed { get; private set; }
+
+        /// <summary>
         ///     Gets or sets whether the object can be interacted with and will send any events.
         /// </summary>
         public bool Enabled
@@ -343,6 +349,7 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         /// </summary>
         protected virtual void OnDestroy()
         {
+            IsBeingDestroyed = true;
         }
 
         /// <summary>

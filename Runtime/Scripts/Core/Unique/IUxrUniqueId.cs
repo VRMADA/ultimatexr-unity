@@ -37,9 +37,10 @@ namespace UltimateXR.Core.Unique
         string UnityPrefabId { get; }
 
         /// <summary>
-        ///     Gets the Component.
+        ///     Gets the Component. We consider a component a type that inherits from Behaviour instead of Component, which
+        ///     simplifies some things like access to enabled or isActiveAndEnabled.
         /// </summary>
-        Component Component { get; }
+        Behaviour Component { get; }
 
         /// <summary>
         ///     Gets the GameObject.
@@ -65,9 +66,16 @@ namespace UltimateXR.Core.Unique
         ///     Registers the component, making sure that its Unique ID is available to exchange synchronization messages.
         ///     If the component was already registered, the call is ignored.
         ///     Components are registered automatically without user intervention, unless they are instantiated at runtime and
-        ///     initially disabled.
+        ///     initially disabled. Use this method to register the component ahead of time when it's initially disabled if
+        ///     necessary.
         /// </summary>
-        void RegisterUniqueIdIfNecessary();
+        void RegisterIfNecessary();
+
+        /// <summary>
+        ///     Unregisters the component, removing the Unique ID from the internal list. Components are unregistered manually,
+        ///     use this method to unregister the ID ahead of time if necessary.    
+        /// </summary>
+        void Unregister();
 
         /// <summary>
         ///     Tries to change the component's unique Id.
@@ -98,7 +106,7 @@ namespace UltimateXR.Core.Unique
         ///     Whether to also change the unique Ids of the components in the same GameObject and all children, based on the new
         ///     unique Id.
         /// </param>
-        void CombineUniqueId(Guid guid, bool recursive);
+        void CombineUniqueId(Guid guid, bool recursive = true);
 
         #endregion
     }

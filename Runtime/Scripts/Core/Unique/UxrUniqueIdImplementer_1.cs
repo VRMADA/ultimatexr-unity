@@ -31,6 +31,11 @@ namespace UltimateXR.Core.Unique
         /// </summary>
         public static IReadOnlyDictionary<Guid, T> ComponentsById => s_componentsById;
 
+        /// <summary>
+        ///     Gets whether the component was unregistered using <see cref="Unregister"/>.
+        /// </summary>
+        public bool IsUnregistered { get; private set; }
+
         #endregion
 
         #region Constructors & Finalizer
@@ -84,13 +89,19 @@ namespace UltimateXR.Core.Unique
         ///     An optional delegate that will be called right after registering a new component with its
         ///     ID. The parameter passed is the component.
         /// </param>
+        /// <param name="defaultGuid">
+        ///     The unique Id to assign if the unique ID is not initialized.
+        ///     This parameter will be ignored if the component uses <see cref="IUxrUniqueId.UniqueIdIsTypeName" />.
+        ///     If the parameter is the default value, it will generate a new Id based on the unique scene path.
+        /// </param>
         public void InitializeUniqueIdIfNecessary(T                               component,
                                                   Func<T, UxrUniqueIdImplementer> getImplementer,
                                                   Action<T, Guid>                 assignId,
-                                                  Action<T, Guid, Guid>           onChanging,
-                                                  Action<T, Guid, Guid>           onChanged,
-                                                  Action<T>                       onRegistering,
-                                                  Action<T>                       onRegistered)
+                                                  Action<T, Guid, Guid>           onChanging    = null,
+                                                  Action<T, Guid, Guid>           onChanged     = null,
+                                                  Action<T>                       onRegistering = null,
+                                                  Action<T>                       onRegistered  = null,
+                                                  Guid                            defaultGuid   = default)
         {
             UxrUniqueIdImplementer implementer = getImplementer(component);
 
@@ -99,19 +110,27 @@ namespace UltimateXR.Core.Unique
                 return;
             }
 
-            // Not yet generated and serialized? Fallback: Generate ID using unique scene path.
-            // Warning: This is not 100% safe for several reasons:
-            //   -In Unity root GameObjects don't have a sibling index at runtime
-            //   -Index in root GameObjects is not consistent across platforms
-            //   -Can create collisions when instantiating, but these are taken care of in the next step.
+            // Not yet generated and serialized?
+
             if (component.UniqueId == default)
             {
                 if (component.UniqueIdIsTypeName)
                 {
+                    // Unique ID will be based on the type name. Good for singletons. 
                     assignId(component, component.GetType().FullName.GetGuid());
+                }
+                else if (defaultGuid != default)
+                {
+                    // Assign user-defined Guid. If it causes collisions, these will be handled in RegisterUniqueId().
+                    assignId(component, defaultGuid);
                 }
                 else
                 {
+                    // Fallback: Generate ID using unique scene path.
+                    // Warning: This is not 100% safe for several reasons:
+                    //   -In Unity root GameObjects don't have a sibling index at runtime
+                    //   -Index in root GameObjects is not consistent across platforms
+                    //   -Can create collisions when instantiating, but these are taken care of in RegisterUniqueId().
                     assignId(component, component.GetUniqueScenePath().GetGuid());
                 }
             }
@@ -156,10 +175,10 @@ namespace UltimateXR.Core.Unique
         public Guid ChangeUniqueId(Guid                            newUniqueId,
                                    Func<T, UxrUniqueIdImplementer> getImplementer,
                                    Action<T, Guid>                 assignId,
-                                   Action<T, Guid, Guid>           onChanging,
-                                   Action<T, Guid, Guid>           onChanged,
-                                   Action<T>                       onRegistering,
-                                   Action<T>                       onRegistered)
+                                   Action<T, Guid, Guid>           onChanging    = null,
+                                   Action<T, Guid, Guid>           onChanged     = null,
+                                   Action<T>                       onRegistering = null,
+                                   Action<T>                       onRegistered  = null)
         {
             // If called during edit-time, simply generate unique IDs
 
@@ -172,7 +191,7 @@ namespace UltimateXR.Core.Unique
             // At runtime, generate new ID for the component.
 
             // Make sure original ID has been initialized.
-            InitializeUniqueIdIfNecessary(_targetComponent, getImplementer, assignId, onChanging, onChanged, onRegistering, onRegistered);
+            InitializeUniqueIdIfNecessary(_targetComponent, getImplementer, assignId, onChanging, onChanged, onRegistering, onRegistered, newUniqueId);
 
             // Register new ID.
             RegisterUniqueId(_targetComponent, assignId, onChanging, onChanged, onRegistering, onRegistered, newUniqueId);
@@ -232,8 +251,11 @@ namespace UltimateXR.Core.Unique
                     Guid originalUniqueId = implementer.OriginalUniqueId != default ? implementer.OriginalUniqueId : unique.UniqueId;
                     implementer.CombineIdSource = guid;
 
-                    // Ensure the same ID on all devices using the combination 
-                    RegisterUniqueId(unique, assignId, onChanging, onChanged, onRegistering, onRegistered, GuidExt.Combine(originalUniqueId, guid));
+                    // Ensure the same ID on all devices using the combination.
+                    // We also replace the OriginalUniqueId because it works better when using CombineUniqueId multiple times over a hierarchy.
+                    Guid combinedGuid = GuidExt.Combine(originalUniqueId, guid);
+                    RegisterUniqueId(unique, assignId, onChanging, onChanged, onRegistering, onRegistered, combinedGuid);
+                    implementer.OriginalUniqueId = combinedGuid;
                 }
             }
         }
@@ -325,12 +347,13 @@ namespace UltimateXR.Core.Unique
         }
 
         /// <summary>
-        ///     Notifies that Destroy() was called on the target component.
+        ///     Unregisters the target component unique ID.
         /// </summary>
-        public void NotifyOnDestroy()
+        public void Unregister()
         {
             s_componentsById.Remove(_targetComponent.UniqueId);
             UnregisterImplementer(_targetComponent, this);
+            IsUnregistered = true;
         }
 
         #endregion
@@ -402,7 +425,7 @@ namespace UltimateXR.Core.Unique
             Guid unprocessedId = requestedId == default ? GetNewUniqueId() : requestedId;
             Guid newId         = unprocessedId;
             Guid unregisterId  = default;
-
+            
             // First unregister if it was already registered
 
             if (component.UniqueId != default && ComponentsById.TryGetValue(component.UniqueId, out T existingComponent) && component == existingComponent)
@@ -435,11 +458,7 @@ namespace UltimateXR.Core.Unique
             {
                 // New unique ID not in use: Initialize or update collision dictionary for this ID
 
-                if (!s_idCollisions.ContainsKey(unprocessedId))
-                {
-                    s_idCollisions.Add(unprocessedId, 0);
-                }
-                else
+                if (!s_idCollisions.TryAdd(unprocessedId, 0))
                 {
                     s_idCollisions[unprocessedId]++;
                 }
@@ -447,7 +466,7 @@ namespace UltimateXR.Core.Unique
 
             // Call ID change events
 
-            if (unregisterId != null)
+            if (unregisterId != default)
             {
                 onChanging?.Invoke(component, unregisterId, newId);
                 s_componentsById.Remove(unregisterId);
@@ -458,23 +477,13 @@ namespace UltimateXR.Core.Unique
             onRegistering?.Invoke(component);
             assignId.Invoke(component, newId);
 
-            // This should not happen unless a new singleton of a class is instantiated. The old one would be deleted later but since
-            // they share the same ID we want to remove the old one here first too.
-
-            if (ComponentsById.ContainsKey(newId))
-            {
-                s_componentsById[newId] = component;
-            }
-            else
-            {
-                s_componentsById.Add(newId, component);
-            }
-
+            s_componentsById[newId] = component;
+            
             onRegistered?.Invoke(component);
 
             // Call ID change events
 
-            if (unregisterId != null)
+            if (unregisterId != default)
             {
                 onChanged?.Invoke(component, unregisterId, newId);
             }

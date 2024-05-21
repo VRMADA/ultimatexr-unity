@@ -11,6 +11,7 @@ using UltimateXR.Core;
 using UltimateXR.Devices;
 using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
+using UltimateXR.Locomotion;
 using UltimateXR.Manipulation;
 using UltimateXR.Manipulation.HandPoses;
 using UltimateXR.UI;
@@ -278,6 +279,9 @@ namespace UltimateXR.Avatar.Controllers
                 return true;
             }
         }
+
+        /// <inheritdoc />
+        public override bool UsesSmoothLocomotion => UxrLocomotion.GetComponents(Avatar, false).Any(l => l.IsSmoothLocomotion);
 
         /// <inheritdoc />
         public override bool CanHandInteractWithUI(UxrHandSide handSide)

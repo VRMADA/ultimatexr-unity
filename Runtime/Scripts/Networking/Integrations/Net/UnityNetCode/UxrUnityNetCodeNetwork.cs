@@ -44,6 +44,32 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
         public override string SdkName => UxrConstants.SdkUnityNetCode;
 
         /// <inheritdoc />
+        public override bool IsServer
+        {
+            get
+            {
+#if ULTIMATEXR_USE_UNITY_NETCODE
+                return NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
+#else
+                return false;
+#endif
+            }
+        }
+
+        /// <inheritdoc />
+        public override bool IsClient
+        {
+            get
+            {
+#if ULTIMATEXR_USE_UNITY_NETCODE
+                return NetworkManager.Singleton != null && NetworkManager.Singleton.IsClient;
+#else
+                return false;
+#endif
+            }
+        }
+
+        /// <inheritdoc />
         public override UxrNetworkCapabilities Capabilities => UxrNetworkCapabilities.NetworkTransform; // The following is momentarily disabled until we get a workaround for not allowing re-parenting during startup | UxrNetworkCapabilities.NetworkRigidbody;
 
         /// <inheritdoc />

@@ -471,6 +471,8 @@ namespace UltimateXR.Devices
                                                     float                 blinksPerSec    = 3.0f,
                                                     float                 durationSeconds = -1.0f)
         {
+            BeginSync();
+            
             UxrController3DModel controller3DModel = GetController3DModel(handSide);
 
             if (controller3DModel == null)
@@ -479,17 +481,23 @@ namespace UltimateXR.Devices
             }
 
             controller3DModel.GetElements(controllerElements).ForEach(go => UxrObjectBlink.StartBlinking(go, emissionColor, blinksPerSec, durationSeconds));
+            
+            EndSyncMethod(new object[] { handSide, controllerElements, emissionColor, blinksPerSec, durationSeconds });
         }
 
         /// <inheritdoc />
         public void StopControllerElementsBlinking(UxrHandSide handSide, UxrControllerElements controllerElements)
         {
+            BeginSync();
+            
             UxrController3DModel controller3DModel = GetController3DModel(handSide);
 
             if (controller3DModel)
             {
                 controller3DModel.GetElements(controllerElements).ForEach(UxrObjectBlink.StopBlinking);
             }
+
+            EndSyncMethod(new object[] { handSide, controllerElements });
         }
 
         /// <inheritdoc />

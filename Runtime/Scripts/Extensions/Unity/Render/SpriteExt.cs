@@ -21,6 +21,21 @@ namespace UltimateXR.Extensions.Unity.Render
         #region Public Methods
 
         /// <summary>
+        ///     Creates a sprite, for a given <see cref="Image" /> using a <see cref="Texture2D" />.
+        /// </summary>
+        /// <param name="targetImage">Image component the sprite will be used for</param>
+        /// <param name="texture2D">Texture</param>
+        /// <returns>Loaded sprite</returns>
+        public static Sprite FromTexture(Image targetImage, Texture2D texture2D)
+        {
+            RectTransform t    = targetImage.rectTransform;
+            Vector2       size = t.sizeDelta;
+            Rect          rect = new Rect(0.0f, 0.0f, size.x, size.y);
+
+            return Sprite.Create(texture2D, rect, t.pivot);
+        }
+
+        /// <summary>
         ///     Loads asynchronously a sprite from a given file <paramref name="uri" />. See <see cref="FileExt.Read" /> for
         ///     information on the file location.
         /// </summary>

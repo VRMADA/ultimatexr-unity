@@ -18,6 +18,12 @@ namespace UltimateXR.Networking
         #region Implicit IUxrNetworkImplementation
 
         /// <inheritdoc />
+        public abstract bool IsServer { get; }
+
+        /// <inheritdoc />
+        public abstract bool IsClient { get; }
+
+        /// <inheritdoc />
         public abstract UxrNetworkCapabilities Capabilities { get; }
 
         /// <inheritdoc />

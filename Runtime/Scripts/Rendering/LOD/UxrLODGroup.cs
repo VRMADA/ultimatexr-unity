@@ -4,10 +4,10 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using UltimateXR.Avatar;
+using UltimateXR.Core;
 using UltimateXR.Core.Components;
+using UltimateXR.Core.Settings;
 using UltimateXR.Extensions.Unity.Render;
 using UltimateXR.Locomotion;
 using UnityEngine;
@@ -15,11 +15,12 @@ using UnityEngine;
 namespace UltimateXR.Rendering.LOD
 {
     /// <summary>
-    ///     <para>
-    ///         Component that, added to a GameObject with a Unity LODGroup component, will take over the LOD switching.
-    ///     </para>
-    ///     When using a locomotion based on teleportation, it will only switch LOD levels when the teleportation happens to
-    ///     avoid popping due to head movement. When using a smooth locomotion system it will use regular LOD switching.
+    ///     Fixes LOD levels in VR, which by default do not work correctly. See
+    ///     https://forum.unity.com/threads/lodgroup-in-vr.455394/.<br />
+    ///     In addition, when using non-smooth locomotion, it can switch LOD levels only when the avatar moved.
+    ///     This avoids LOD switching caused by head movement, where the camera is. When using a smooth locomotion
+    ///     system it will use regular LOD switching.<br />
+    ///     Using LOD switching on teleports only can be disabled using the "Only Fix LOD Bias" parameter.
     /// </summary>
     [RequireComponent(typeof(LODGroup))]
     public class UxrLODGroup : UxrComponent<UxrLODGroup>
@@ -50,20 +51,7 @@ namespace UltimateXR.Rendering.LOD
 
             if (!_onlyFixLodBias)
             {
-                UxrTeleportLocomotion.GlobalEnabled += UxrLocomotion_Enabled;
-                
-                UnityEngine.LOD[] lods = UnityLODGroup.GetLODs();
-
-                foreach (UnityEngine.LOD lod in lods)
-                {
-                    foreach (Renderer r in lod.renderers)
-                    {
-                        if (r != null && !_lodRenderers.ContainsKey(r))
-                        {
-                            _lodRenderers.Add(r, r.enabled);
-                        }
-                    }
-                }
+                UxrAvatar.LocalAvatarChanged += UxrAvatar_LocalAvatarChanged;
             }
         }
 
@@ -76,7 +64,7 @@ namespace UltimateXR.Rendering.LOD
 
             if (!_onlyFixLodBias)
             {
-                UxrTeleportLocomotion.GlobalEnabled -= UxrLocomotion_Enabled;
+                UxrAvatar.LocalAvatarChanged -= UxrAvatar_LocalAvatarChanged;
             }
         }
 
@@ -91,41 +79,10 @@ namespace UltimateXR.Rendering.LOD
             if (!_onlyFixLodBias)
             {
                 UxrAvatar.GlobalAvatarMoved += UxrAvatar_GlobalAvatarMoved;
+                UpdateMode(UxrAvatar.LocalAvatar);
             }
-            
+
             StartCoroutine(FixLodBiasCoroutine());
-
-            if (UxrAvatar.LocalAvatar && !_onlyFixLodBias)
-            {
-                if (UxrAvatar.LocalAvatar.CameraComponent)
-                {
-                    UnityLODGroup.EnableLevelRenderers(UnityLODGroup.GetVisibleLevel(UxrAvatar.LocalAvatar.CameraComponent));
-                }
-
-                UxrLocomotion locomotion = UxrLocomotion.EnabledComponentsInLocalAvatar.FirstOrDefault();
-
-                if (locomotion != null)
-                {
-                    _isSmoothLocomotionEnabled = locomotion.IsSmoothLocomotion;
-                    UnityLODGroup.enabled      = locomotion.IsSmoothLocomotion;
-                }
-            }
-
-            // Re-enable renderers that were initially enabled because when disabling and enabling this component again,
-            // the renderer states get saved incorrectly.
-
-            if (_reEnableRenderers && !_onlyFixLodBias)
-            {
-                foreach (var rendererState in _lodRenderers)
-                {
-                    if (rendererState.Key != null && rendererState.Value)
-                    {
-                        rendererState.Key.enabled = true;
-                    }
-                }
-
-                _reEnableRenderers = false;
-            }
         }
 
         /// <summary>
@@ -138,8 +95,7 @@ namespace UltimateXR.Rendering.LOD
             if (!_onlyFixLodBias)
             {
                 UxrAvatar.GlobalAvatarMoved -= UxrAvatar_GlobalAvatarMoved;
-                UnityLODGroup.enabled       =  true;
-                _reEnableRenderers          =  true;
+                UnityLODGroup.ForceLOD(-1);
             }
         }
 
@@ -149,7 +105,7 @@ namespace UltimateXR.Rendering.LOD
 
         /// <summary>
         ///     Fixes the LOD bias so that the LOD switching in VR behaves like in the editor.
-        ///     From: From: https://forum.unity.com/threads/lodgroup-in-vr.455394/
+        ///     From: https://forum.unity.com/threads/lodgroup-in-vr.455394/
         /// </summary>
         /// <returns>Coroutine enumerator</returns>
         private IEnumerator FixLodBiasCoroutine()
@@ -162,16 +118,28 @@ namespace UltimateXR.Rendering.LOD
 
             while (UxrAvatar.LocalAvatarCamera == null)
             {
+                if (UxrAvatar.LocalAvatar != null && UxrAvatar.LocalStandardAvatarController == null)
+                {
+                    // Replay or other.
+                    yield break;
+                }
+
                 yield return null;
             }
 
             // Fix?
 
-            if (!s_lodGroupChanged)
+            if (!s_lodGroupFixed)
             {
+                float oldLodBias          = QualitySettings.lodBias; 
                 float editorCameraRadians = Mathf.PI / 3.0f;
-                QualitySettings.lodBias *= Mathf.Tan(UxrAvatar.LocalAvatarCamera.fieldOfView * Mathf.Deg2Rad / 2) / Mathf.Tan(editorCameraRadians / 2);
-                s_lodGroupChanged       =  true;
+                QualitySettings.lodBias  *= Mathf.Tan(UxrAvatar.LocalAvatarCamera.fieldOfView * Mathf.Deg2Rad / 2) / Mathf.Tan(editorCameraRadians / 2);
+                s_lodGroupFixed           = true;
+
+                if (UxrGlobalSettings.Instance.LogLevelRendering >= UxrLogLevel.Relevant)
+                {
+                    Debug.Log($"{UxrConstants.RenderingModule}: Fixing LOD Bias for VR cameras. Old value = {oldLodBias}, new value = {QualitySettings.lodBias}.");
+                }
             }
         }
 
@@ -180,23 +148,14 @@ namespace UltimateXR.Rendering.LOD
         #region Event Handling Methods
 
         /// <summary>
-        ///     Called whenever a <see cref="UxrLocomotion" /> component was enabled. If it is from the local avatar it will
-        ///     determine, depending on <see cref="UxrLocomotion.IsSmoothLocomotion" />, whether to use LOD switching each frame or
-        ///     only when the avatar position changed.
+        ///     Called whenever the local avatar changed. We use it to store whether the current local avatar
+        ///     uses smooth locomotion.
         /// </summary>
-        /// <param name="locomotion">Locomotion component that was enabled</param>
-        private void UxrLocomotion_Enabled(UxrLocomotion locomotion)
+        /// <param name="sender">Event sender</param>
+        /// <param name="e">Event parameters</param>
+        private void UxrAvatar_LocalAvatarChanged(object sender, UxrAvatarEventArgs e)
         {
-            if (locomotion.Avatar.AvatarMode == UxrAvatarMode.Local && !_onlyFixLodBias)
-            {
-                _isSmoothLocomotionEnabled = locomotion.IsSmoothLocomotion;
-                UnityLODGroup.enabled      = locomotion.IsSmoothLocomotion;
-
-                if (!locomotion.IsSmoothLocomotion)
-                {
-                    UnityLODGroup.EnableLevelRenderers(UnityLODGroup.GetVisibleLevel(locomotion.Avatar.CameraComponent));
-                }
-            }
+            UpdateMode(e.Avatar);
         }
 
         /// <summary>
@@ -210,7 +169,44 @@ namespace UltimateXR.Rendering.LOD
 
             if (avatar == UxrAvatar.LocalAvatar && !_isSmoothLocomotionEnabled)
             {
-                UnityLODGroup.EnableLevelRenderers(UnityLODGroup.GetVisibleLevel(avatar.CameraComponent));
+                EnableLevelRenderers(avatar.CameraComponent);
+            }
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        /// <summary>
+        ///     Manually enables the LOD levels for a given camera.
+        /// </summary>
+        /// <param name="cam"></param>
+        private void EnableLevelRenderers(Camera cam)
+        {
+            UnityLODGroup.ForceLOD(UnityLODGroup.GetVisibleLevel(cam));
+        }
+
+        /// <summary>
+        ///     Updates the continuous/discrete operation mode of the component.
+        /// </summary>
+        /// <param name="avatar">Avatar to update the current mode for</param>
+        private void UpdateMode(UxrAvatar avatar)
+        {
+            _isSmoothLocomotionEnabled = avatar != null && avatar.AvatarController != null && avatar.AvatarController.UsesSmoothLocomotion;
+
+            bool autoLod = _isSmoothLocomotionEnabled || avatar == null || avatar.CameraComponent == null;
+
+            if (!autoLod)
+            {
+                if (avatar != null && avatar.CameraComponent != null)
+                {
+                    EnableLevelRenderers(avatar.CameraComponent);
+                }
+            }
+            else
+            {
+                UnityLODGroup.EnableAllLevelRenderers();
+                UnityLODGroup.ForceLOD(-1);
             }
         }
 
@@ -218,10 +214,8 @@ namespace UltimateXR.Rendering.LOD
 
         #region Private Types & Data
 
-        private static   bool                       s_lodGroupChanged;
-        private readonly Dictionary<Renderer, bool> _lodRenderers              = new Dictionary<Renderer, bool>();
-        private          bool                       _isSmoothLocomotionEnabled = true;
-        private          bool                       _reEnableRenderers;
+        private static bool s_lodGroupFixed;
+        private        bool _isSmoothLocomotionEnabled = true;
 
         #endregion
     }

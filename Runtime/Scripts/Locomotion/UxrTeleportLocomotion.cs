@@ -264,7 +264,7 @@ namespace UltimateXR.Locomotion
             _lastSyncIsTargetEnabled     = isTargetEnabled;
             _lastSyncIsValidTeleport     = isValidTeleport;
             _lastSyncTargetArrowLocalRot = teleportArrowLocalRotation;
-
+            
             if (isArcEnabled)
             {
                 // TODO: The target enabled and valid teleport state are computed using the current

@@ -12,9 +12,9 @@ namespace UltimateXR.Mechanics.Weapons
         #region Protected Overrides UxrComponent
 
         /// <inheritdoc />
-        protected override void SerializeStateInternal(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
+        protected override void SerializeState(bool isReading, int stateSerializationVersion, UxrStateSaveLevel level, UxrStateSaveOptions options)
         {
-            base.SerializeStateInternal(isReading, stateSerializationVersion, level, options);
+            base.SerializeState(isReading, stateSerializationVersion, level, options);
 
             // Logic is already handled through events, we don't serialize these parameters in incremental changes
 

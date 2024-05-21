@@ -30,6 +30,7 @@ namespace UltimateXR.Editor.Core.Settings
             _propLogLevelLocomotion              = serializedObject.FindProperty(PropertyLogLevelLocomotion);
             _propLogLevelManipulation            = serializedObject.FindProperty(PropertyLogLevelManipulation);
             _propLogLevelNetworking              = serializedObject.FindProperty(PropertyLogLevelNetworking);
+            _propLogLevelRendering               = serializedObject.FindProperty(PropertyLogLevelRendering);
             _propLogLevelUI                      = serializedObject.FindProperty(PropertyLogLevelUI);
             _propLogLevelWeapons                 = serializedObject.FindProperty(PropertyLogLevelWeapons);
             _propNetFormatInitialState           = serializedObject.FindProperty(PropertyNetFormatInitialState);
@@ -58,6 +59,7 @@ namespace UltimateXR.Editor.Core.Settings
                 EditorGUILayout.PropertyField(_propLogLevelLocomotion,   ContentLogLevelLocomotion);
                 EditorGUILayout.PropertyField(_propLogLevelManipulation, ContentLogLevelManipulation);
                 EditorGUILayout.PropertyField(_propLogLevelNetworking,   ContentLogLevelNetworking);
+                EditorGUILayout.PropertyField(_propLogLevelRendering,    ContentLogLevelRendering);
                 EditorGUILayout.PropertyField(_propLogLevelUI,           ContentLogLevelUI);
                 EditorGUILayout.PropertyField(_propLogLevelWeapons,      ContentLogLevelWeapons);
             }
@@ -92,6 +94,7 @@ namespace UltimateXR.Editor.Core.Settings
         private GUIContent ContentLogLevelLocomotion              { get; } = new GUIContent("Locomotion",                        "Selects the console log level for locomotion events");
         private GUIContent ContentLogLevelManipulation            { get; } = new GUIContent("Manipulation",                      "Selects the console log level for manipulation events");
         private GUIContent ContentLogLevelNetworking              { get; } = new GUIContent("Networking",                        "Selects the console log level for networking events");
+        private GUIContent ContentLogLevelRendering               { get; } = new GUIContent("Rendering",                         "Selects the console log level for rendering events");
         private GUIContent ContentLogLevelUI                      { get; } = new GUIContent("UI",                                "Selects the console log level for UI events");
         private GUIContent ContentLogLevelWeapons                 { get; } = new GUIContent("Weapons",                           "Selects the console log level for weapon events");
         private GUIContent ContentNetFormatInitialState           { get; } = new GUIContent("Initial State Msg Format",          "Selects the message format to use when the host sends the initial state of the session upon joining. Compression has a little CPU overhead but will use less bandwidth.");
@@ -106,6 +109,7 @@ namespace UltimateXR.Editor.Core.Settings
         private const string PropertyLogLevelLocomotion              = "_logLevelLocomotion";
         private const string PropertyLogLevelManipulation            = "_logLevelManipulation";
         private const string PropertyLogLevelNetworking              = "_logLevelNetworking";
+        private const string PropertyLogLevelRendering               = "_logLevelRendering";
         private const string PropertyLogLevelUI                      = "_logLevelUI";
         private const string PropertyLogLevelWeapons                 = "_logLevelWeapons";
         private const string PropertyNetFormatInitialState           = "_netFormatInitialState";
@@ -120,6 +124,7 @@ namespace UltimateXR.Editor.Core.Settings
         private SerializedProperty _propLogLevelLocomotion;
         private SerializedProperty _propLogLevelManipulation;
         private SerializedProperty _propLogLevelNetworking;
+        private SerializedProperty _propLogLevelRendering;
         private SerializedProperty _propLogLevelUI;
         private SerializedProperty _propLogLevelWeapons;
         private SerializedProperty _propNetFormatInitialState;

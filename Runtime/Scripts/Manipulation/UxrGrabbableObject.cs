@@ -862,7 +862,12 @@ namespace UltimateXR.Manipulation
         public bool IsGrabbable
         {
             get => _isGrabbable;
-            set => _isGrabbable = value;
+            set
+            {
+                BeginSync();
+                _isGrabbable = value;
+                EndSyncProperty(value);
+            }
         }
 
         /// <inheritdoc />
@@ -1654,6 +1659,7 @@ namespace UltimateXR.Manipulation
             SmoothManipulationTimer              = UxrConstants.SmoothManipulationTransitionSeconds;
             SmoothManipulationLocalPositionStart = transform.localPosition;
             SmoothManipulationLocalRotationStart = transform.localRotation;
+            SmoothManipulationReference          = transform.parent;
         }
 
         /// <summary>
@@ -1661,32 +1667,48 @@ namespace UltimateXR.Manipulation
         /// </summary>
         internal void UpdateSmoothManipulationTransition(float deltaTime)
         {
-            if (SmoothManipulationTimer >= 0.0f)
+            if (SmoothManipulationTimer < 0.0f)
             {
-                SmoothManipulationTimer -= deltaTime;
+                return;
+            }
+            
+            SmoothManipulationTimer -= deltaTime;
 
-                if (SmoothManipulationTimer > 0.0f)
+            if (SmoothManipulationTimer > 0.0f)
+            {
+                float t = SmoothManipulationTimer <= 0.0f ? 1.0f : 1.0f - Mathf.Clamp01(SmoothManipulationTimer / UxrConstants.SmoothManipulationTransitionSeconds);
+
+                if (transform.parent == SmoothManipulationReference || SmoothManipulationReference == null)
                 {
-                    float t = SmoothManipulationTimer <= 0.0f ? 1.0f : 1.0f - Mathf.Clamp01(SmoothManipulationTimer / UxrConstants.SmoothManipulationTransitionSeconds);
-
                     transform.localPosition = Vector3.Lerp(SmoothManipulationLocalPositionStart, transform.localPosition, t);
                     transform.localRotation = Quaternion.Slerp(SmoothManipulationLocalRotationStart, transform.localRotation, t);
+                }
+                else
+                {
+                    Vector3    posStart = TransformExt.GetWorldPosition(SmoothManipulationReference, SmoothManipulationLocalPositionStart);
+                    Vector3    posEnd   = transform.position;
+                    Quaternion rotStart = TransformExt.GetWorldRotation(SmoothManipulationReference, SmoothManipulationLocalRotationStart);
+                    Quaternion rotEnd   = transform.rotation;
+
+                    transform.position = Vector3.Lerp(posStart, posEnd, t);
+                    transform.rotation = Quaternion.Slerp(rotStart, rotEnd, t);
                 }
             }
         }
 
         /// <summary>
-        ///     Starts a smooth constrain transition.
+        ///     Starts a smooth constraining transition.
         /// </summary>
         internal void StartSmoothConstrain()
         {
+            SmoothConstrainTimer              = UxrConstants.SmoothManipulationTransitionSeconds;
             SmoothConstrainLocalPositionStart = transform.localPosition;
             SmoothConstrainLocalRotationStart = transform.localRotation;
-            SmoothConstrainTimer              = UxrConstants.SmoothManipulationTransitionSeconds;
+            SmoothConstrainReference          = transform.parent;
         }
 
         /// <summary>
-        ///     Stops a smooth constrain transition if there is one.
+        ///     Stops a smooth constraining transition if there is one.
         /// </summary>
         internal void StopSmoothConstrain()
         {
@@ -1694,7 +1716,7 @@ namespace UltimateXR.Manipulation
         }
 
         /// <summary>
-        ///     Updates the smooth constrain transition if there is one.
+        ///     Updates the smooth constraining transition if there is one.
         /// </summary>
         internal void UpdateSmoothConstrainTransition(float deltaTime)
         {
@@ -1707,8 +1729,21 @@ namespace UltimateXR.Manipulation
 
             float t = 1.0f - Mathf.Clamp01(SmoothConstrainTimer / UxrConstants.SmoothManipulationTransitionSeconds);
 
-            transform.localPosition = Vector3.Lerp(SmoothConstrainLocalPositionStart, transform.localPosition, t);
-            transform.localRotation = Quaternion.Slerp(SmoothConstrainLocalRotationStart, transform.localRotation, t);
+            if (transform.parent == SmoothConstrainReference || SmoothConstrainReference == null)
+            {
+                transform.localPosition = Vector3.Lerp(SmoothConstrainLocalPositionStart, transform.localPosition, t);
+                transform.localRotation = Quaternion.Slerp(SmoothConstrainLocalRotationStart, transform.localRotation, t);
+            }
+            else
+            {
+                Vector3    posStart = TransformExt.GetWorldPosition(SmoothConstrainReference, SmoothConstrainLocalPositionStart);
+                Vector3    posEnd   = transform.position;
+                Quaternion rotStart = TransformExt.GetWorldRotation(SmoothConstrainReference, SmoothConstrainLocalRotationStart);
+                Quaternion rotEnd   = transform.rotation;
+
+                transform.position = Vector3.Lerp(posStart, posEnd, t);
+                transform.rotation = Quaternion.Slerp(rotStart, rotEnd, t);
+            }
         }
 
         /// <summary>
@@ -1718,9 +1753,10 @@ namespace UltimateXR.Manipulation
         {
             if (_dropSnapMode != UxrSnapToAnchorMode.DontSnap && CurrentAnchor != null)
             {
+                SmoothPlacementTimer              = UxrConstants.SmoothManipulationTransitionSeconds;
                 SmoothPlacementLocalPositionStart = transform.localPosition;
                 SmoothPlacementLocalRotationStart = transform.localRotation;
-                SmoothPlacementTimer              = UxrConstants.SmoothManipulationTransitionSeconds;
+                SmoothPlacementReference          = transform.parent;
             }
         }
 
@@ -1746,18 +1782,37 @@ namespace UltimateXR.Manipulation
 
             SmoothPlacementTimer -= deltaTime;
 
-            float t = 1.0f - Mathf.Clamp01(SmoothPlacementTimer / UxrConstants.SmoothManipulationTransitionSeconds);
+            float      t              = 1.0f - Mathf.Clamp01(SmoothPlacementTimer / UxrConstants.SmoothManipulationTransitionSeconds);
+            Vector3    targetPosition = transform.position;
+            Quaternion targetRotation = transform.rotation;
+            TransformExt.ApplyAlignment(ref targetPosition, ref targetRotation, DropAlignTransform.position, DropAlignTransform.rotation, CurrentAnchor.AlignTransform.position, CurrentAnchor.AlignTransform.rotation);
 
             if (GetSnapModeAffectsPosition(DropSnapMode) || PlacementOptions.HasFlag(UxrPlacementOptions.ForceSnapPosition))
             {
-                Vector3 targetLocalPosition = TransformExt.GetLocalPosition(DropAlignTransform, transform.position);
-                transform.localPosition = Vector3.Lerp(SmoothPlacementLocalPositionStart, targetLocalPosition, t);
+                if (transform.parent == CurrentAnchor.transform)
+                {
+                    Vector3 targetLocalPosition = TransformExt.GetLocalPosition(transform.parent, targetPosition);
+                    transform.localPosition = Vector3.Lerp(SmoothPlacementLocalPositionStart, targetLocalPosition, t);
+                }
+                else
+                {
+                    Vector3 posStart = TransformExt.GetWorldPosition(SmoothPlacementReference, SmoothPlacementLocalPositionStart);
+                    transform.position = Vector3.Lerp(posStart, targetPosition, t);
+                }
             }
 
             if (GetSnapModeAffectsRotation(DropSnapMode) || PlacementOptions.HasFlag(UxrPlacementOptions.ForceSnapRotation))
             {
-                Quaternion targetLocalRotation = TransformExt.GetLocalRotation(DropAlignTransform, transform.rotation);
-                transform.localRotation = Quaternion.Slerp(SmoothPlacementLocalRotationStart, targetLocalRotation, t);
+                if (transform.parent == CurrentAnchor.transform)
+                {
+                    Quaternion targetLocalRotation = TransformExt.GetLocalRotation(transform.parent, targetRotation);
+                    transform.localRotation = Quaternion.Slerp(SmoothPlacementLocalRotationStart, targetLocalRotation, t);
+                }
+                else
+                {
+                    Quaternion rotStart = TransformExt.GetWorldRotation(SmoothPlacementReference, SmoothPlacementLocalRotationStart);
+                    transform.rotation = Quaternion.Slerp(rotStart, targetRotation, t);
+                }
             }
 
             if (SmoothPlacementTimer <= 0.0f)
@@ -1849,6 +1904,19 @@ namespace UltimateXR.Manipulation
         }
 
         /// <summary>
+        ///     Called when the object is destroyed. Checks whether it is being grabbed to release it.
+        /// </summary>
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+
+            if (IsBeingGrabbed)
+            {
+                UxrGrabManager.Instance.ReleaseGrabs(this, true);
+            }
+        }
+
+        /// <summary>
         ///     Called when the component is disabled. Stops all transitions.
         /// </summary>
         protected override void OnDisable()
@@ -1911,7 +1979,10 @@ namespace UltimateXR.Manipulation
         /// <param name="e">Event parameters</param>
         internal void RaiseConstraintsApplying(UxrApplyConstraintsEventArgs e)
         {
-            ConstraintsApplying?.Invoke(this, e);
+            if (UxrGrabManager.Instance.Features.HasFlag(UxrManipulationFeatures.UserConstraints))
+            {
+                ConstraintsApplying?.Invoke(this, e);
+            }
         }
 
         /// <summary>
@@ -1920,7 +1991,10 @@ namespace UltimateXR.Manipulation
         /// <param name="e">Event parameters</param>
         internal void RaiseConstraintsApplied(UxrApplyConstraintsEventArgs e)
         {
-            ConstraintsApplied?.Invoke(this, e);
+            if (UxrGrabManager.Instance.Features.HasFlag(UxrManipulationFeatures.UserConstraints))
+            {
+                ConstraintsApplied?.Invoke(this, e);
+            }
         }
 
         /// <summary>
@@ -1929,7 +2003,10 @@ namespace UltimateXR.Manipulation
         /// <param name="e">Event parameters</param>
         internal void RaiseConstraintsFinished(UxrApplyConstraintsEventArgs e)
         {
-            ConstraintsFinished?.Invoke(this, e);
+            if (UxrGrabManager.Instance.Features.HasFlag(UxrManipulationFeatures.UserConstraints))
+            {
+                ConstraintsFinished?.Invoke(this, e);
+            }
         }
 
         /// <summary>
@@ -2127,7 +2204,7 @@ namespace UltimateXR.Manipulation
             bool isLocal = grabber != null && grabber.Avatar != null && grabber.Avatar.GetComponent<IUxrNetworkAvatar>() is IUxrNetworkAvatar networkAvatar && networkAvatar.IsLocal;
 
             // Only sync in network, we don't use it anywhere else.
-            BeginSync(UxrStateSyncEnvironments.Network);
+            BeginSync(UxrStateSyncOptions.Network);
 
             if (!isLocal)
             {
@@ -2180,6 +2257,11 @@ namespace UltimateXR.Manipulation
         private Quaternion SmoothManipulationLocalRotationStart { get; set; }
 
         /// <summary>
+        ///     Gets or sets the reference for <see cref="SmoothManipulationLocalPositionStart"/> and <see cref="SmoothManipulationLocalRotationStart"/>.
+        /// </summary>
+        private Transform SmoothManipulationReference { get; set; }
+
+        /// <summary>
         ///     Local position when the smooth object placement started.
         /// </summary>
         private Vector3 SmoothPlacementLocalPositionStart { get; set; }
@@ -2190,6 +2272,11 @@ namespace UltimateXR.Manipulation
         private Quaternion SmoothPlacementLocalRotationStart { get; set; }
 
         /// <summary>
+        ///     Gets or sets the reference for <see cref="SmoothPlacementLocalPositionStart"/> and <see cref="SmoothPlacementLocalRotationStart"/>.
+        /// </summary>
+        private Transform SmoothPlacementReference { get; set; }
+
+        /// <summary>
         ///     Local position at the beginning of a smooth constrain transition.
         /// </summary>
         private Vector3 SmoothConstrainLocalPositionStart { get; set; }
@@ -2198,6 +2285,11 @@ namespace UltimateXR.Manipulation
         ///     Local rotation at the beginning of a smooth constrain transition.
         /// </summary>
         private Quaternion SmoothConstrainLocalRotationStart { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the reference for <see cref="SmoothConstrainLocalPositionStart"/> and <see cref="SmoothConstrainLocalRotationStart"/>.
+        /// </summary>
+        private Transform SmoothConstrainReference { get; set; }
 
         /// <summary>
         ///     Gets or sets the decreasing timer that is initialized at
@@ -2215,6 +2307,11 @@ namespace UltimateXR.Manipulation
         ///     Gets or sets the decreasing constrain timer for smooth constraint transitions.
         /// </summary>
         private float SmoothConstrainTimer { get; set; } = -1.0f;
+
+        /// <summary>
+        ///     Gets whether the object is currently in a smooth transition.
+        /// </summary>
+        private bool IsInSmoothTransition => SmoothManipulationTimer > 0.0f || SmoothPlacementTimer > 0.0f || SmoothConstrainTimer > 0.0f;
 
         // Backing fields for public properties
 

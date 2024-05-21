@@ -6,13 +6,13 @@
 using System.Linq;
 using UltimateXR.Core.Components;
 using UltimateXR.Core.StateSave;
-using UltimateXR.Networking;
 using UnityEditor;
 using UnityEngine;
 
 namespace UltimateXR.Editor.Core.Components
 {
     [CustomEditor(typeof(UxrSyncObject))]
+    [CanEditMultipleObjects]
     public class UxrSyncObjectEditor : UnityEditor.Editor
     {
         #region Unity
@@ -22,19 +22,16 @@ namespace UltimateXR.Editor.Core.Components
         /// </summary>
         private void OnEnable()
         {
-            _propertySyncTransform  = serializedObject.FindProperty(PropertyNameSyncTransform);
-            _propertyTransformSpace = serializedObject.FindProperty(PropertyNameTransformSpace);
+            _propertySyncTransform        = serializedObject.FindProperty(PropertyNameSyncTransform);
+            _propertyTransformSpace       = serializedObject.FindProperty(PropertyNameTransformSpace);
+            _propertySyncActiveAndEnabled = serializedObject.FindProperty(PropertyNameSyncActiveAndEnabled);
+            _propertySyncWhileDisabled    = serializedObject.FindProperty(PropertyNameSyncWhileDisabled);
         }
 
         /// <inheritdoc />
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
-
-            UxrSyncObject                 syncObject            = serializedObject.targetObject as UxrSyncObject;
-            IUxrStateSave                 stateSaveTransform    = syncObject.GetComponents<IUxrStateSave>().FirstOrDefault(c => c != syncObject && c.RequiresTransformSerialization(UxrStateSaveLevel.ChangesSinceBeginning));
-            UxrNetworkComponentReferences networkComponents     = syncObject.GetComponent<UxrNetworkComponentReferences>();
-            int                           networkComponentCount = networkComponents != null ? networkComponents.AddedGameObjects.Count + networkComponents.AddedComponents.Count : 0;
 
             EditorGUILayout.PropertyField(_propertySyncTransform, ContentSyncTransform);
 
@@ -43,10 +40,26 @@ namespace UltimateXR.Editor.Core.Components
                 EditorGUILayout.PropertyField(_propertyTransformSpace, ContentTransformSpace);
             }
 
-            if (_propertySyncTransform.boolValue && stateSaveTransform != null)
+            foreach (Object selectedObject in targets)
             {
-                EditorGUILayout.HelpBox($"The transform is already synced by a {stateSaveTransform.Component.GetType().Name} component on the same GameObject. Consider disabling transform syncing.", MessageType.Error);
+                UxrSyncObject syncObject         = selectedObject as UxrSyncObject;
+                IUxrStateSave stateSaveTransform = syncObject.GetComponents<IUxrStateSave>().FirstOrDefault(c => c != syncObject && c.RequiresTransformSerialization(UxrStateSaveLevel.ChangesSinceBeginning));
+
+                if (syncObject.SyncTransform && stateSaveTransform != null)
+                {
+                    if (targets.Length > 1)
+                    {
+                        EditorGUILayout.HelpBox($"The transform in {syncObject.name} is already synced by a {stateSaveTransform.Component.GetType().Name} component on the same GameObject. Consider disabling transform syncing.", MessageType.Error);
+                    }
+                    else
+                    {
+                        EditorGUILayout.HelpBox($"The transform is already synced by a {stateSaveTransform.Component.GetType().Name} component on the same GameObject. Consider disabling transform syncing.", MessageType.Error);
+                    }
+                }
             }
+
+            EditorGUILayout.PropertyField(_propertySyncActiveAndEnabled, ContentSyncActiveAndEnabled);
+            EditorGUILayout.PropertyField(_propertySyncWhileDisabled,    ContentSyncWhileDisabled);
 
             serializedObject.ApplyModifiedProperties();
         }
@@ -55,14 +68,20 @@ namespace UltimateXR.Editor.Core.Components
 
         #region Private Types & Data
 
-        private static GUIContent ContentSyncTransform  { get; } = new GUIContent("Sync Transform", "Synchronizes the transform in multiplayer and save stats.");
-        private static GUIContent ContentTransformSpace { get; } = new GUIContent("Space",          "Space that the transform is saved in.");
+        private static GUIContent ContentSyncTransform        { get; } = new GUIContent("Sync Transform",      "Synchronizes the transform in multiplayer and save stats.");
+        private static GUIContent ContentTransformSpace       { get; } = new GUIContent("Space",               "Space that the transform is saved in.");
+        private static GUIContent ContentSyncActiveAndEnabled { get; } = new GUIContent("Sync Active/Enabled", "Synchronizes the GameObject's active state and the component's enabled state.");
+        private static GUIContent ContentSyncWhileDisabled    { get; } = new GUIContent("Sync While Disabled", "Synchronizes even while the Component/GameObject is disabled.");
 
-        private const string PropertyNameSyncTransform  = "_syncTransform";
-        private const string PropertyNameTransformSpace = "_transformSpace";
+        private const string PropertyNameSyncTransform        = "_syncTransform";
+        private const string PropertyNameTransformSpace       = "_transformSpace";
+        private const string PropertyNameSyncActiveAndEnabled = "_syncActiveAndEnabled";
+        private const string PropertyNameSyncWhileDisabled    = "_syncWhileDisabled";
 
         private SerializedProperty _propertySyncTransform;
         private SerializedProperty _propertyTransformSpace;
+        private SerializedProperty _propertySyncActiveAndEnabled;
+        private SerializedProperty _propertySyncWhileDisabled;
 
         #endregion
     }

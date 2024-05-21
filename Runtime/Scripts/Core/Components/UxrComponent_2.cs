@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Avatar;
 using UltimateXR.Core.Components.Composite;
+using UltimateXR.Extensions.Unity;
 using UnityEngine;
 
 namespace UltimateXR.Core.Components
@@ -49,7 +50,7 @@ namespace UltimateXR.Core.Components
         /// <summary>
         ///     Parent the component belongs to.
         /// </summary>
-        public TP Parent => GetComponentInParent<TP>();
+        public TP Parent => gameObject.SafeGetComponentInParent<TP>();
 
         #endregion
 

@@ -26,6 +26,11 @@ namespace UltimateXR.Extensions.Unity.Render
         /// <returns>LOD level index that should be enabled</returns>
         public static int GetVisibleLevel(this LODGroup lodGroup, Camera camera)
         {
+            if (camera == null)
+            {
+                return lodGroup.lodCount - 1;
+            }
+            
             var lods           = lodGroup.GetLODs();
             var relativeHeight = GetRelativeHeight(lodGroup, camera);
 
@@ -61,6 +66,26 @@ namespace UltimateXR.Extensions.Unity.Render
                     if (renderer != null)
                     {
                         renderer.enabled = i == level;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Manually enables the renderers from all LOD levels.
+        /// </summary>
+        /// <param name="lodGroup">Component to process</param>
+        public static void EnableAllLevelRenderers(this LODGroup lodGroup)
+        {
+            var lods = lodGroup.GetLODs();
+
+            for (int i = 0; i < lods.Length; i++)
+            {
+                foreach (Renderer renderer in lods[i].renderers)
+                {
+                    if (renderer != null)
+                    {
+                        renderer.enabled = true;
                     }
                 }
             }

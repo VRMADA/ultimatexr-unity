@@ -49,6 +49,32 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
         public override string SdkName => UxrConstants.SdkPhotonFusion;
 
         /// <inheritdoc />
+        public override bool IsServer
+        {
+            get
+            {
+#if ULTIMATEXR_USE_PHOTONFUSION_SDK
+                return _networkRunner != null && _networkRunner.IsRunning && _networkRunner.IsServer;
+#else
+                return false;
+#endif
+            }
+        }
+
+        /// <inheritdoc />
+        public override bool IsClient
+        {
+            get
+            {
+#if ULTIMATEXR_USE_PHOTONFUSION_SDK
+                return _networkRunner != null && _networkRunner.IsRunning && _networkRunner.IsClient;
+#else
+                return false;
+#endif
+            }
+        }
+
+        /// <inheritdoc />
         public override UxrNetworkCapabilities Capabilities => UxrNetworkCapabilities.NetworkTransform | UxrNetworkCapabilities.NetworkRigidbody;
 
         /// <inheritdoc />
@@ -275,6 +301,11 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
                 Debug.Log($"{UxrConstants.NetworkingModule} {nameof(UxrPhotonFusionNetwork)}.{nameof(OnPlayerJoined)} PlayerId = {player.PlayerId}");
             }
 
+            if (!_usePrototypingUI)
+            {
+                return;
+            }
+
             if (_gameMode == GameMode.Single || _gameMode == GameMode.Server || _gameMode == GameMode.Host || (_gameMode == GameMode.AutoHostOrClient && _networkRunner.IsServer))
             {
                 SpawnPlayer(runner, player);
@@ -294,6 +325,11 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
                 Debug.Log($"{UxrConstants.NetworkingModule} {nameof(UxrPhotonFusionNetwork)}.{nameof(OnPlayerLeft)} PlayerId = {player.PlayerId}");
             }
 
+            if (!_usePrototypingUI)
+            {
+                return;
+            }
+
             if (_gameMode == GameMode.Single || _gameMode == GameMode.Server || _gameMode == GameMode.Host)
             {
                 TryDespawnPlayer(runner, player);
@@ -309,6 +345,11 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
         public void OnInput(NetworkRunner runner, NetworkInput input)
         {
             if (UxrAvatar.LocalAvatar == null)
+            {
+                return;
+            }
+
+            if (!_usePrototypingUI)
             {
                 return;
             }
@@ -338,6 +379,8 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
             {
                 Debug.LogWarning($"{UxrConstants.NetworkingModule} {nameof(UxrPhotonFusionNetwork)}.{nameof(OnShutdown)} Reason: {shutdownReason}");
             }
+
+            _spawnedAvatars.Clear();
         }
 
         /// <inheritdoc />
@@ -416,7 +459,7 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
         }
 
         #endregion
-
+        
         #region Unity
 
         /// <summary>

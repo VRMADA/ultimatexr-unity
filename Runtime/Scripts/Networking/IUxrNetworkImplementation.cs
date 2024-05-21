@@ -17,6 +17,16 @@ namespace UltimateXR.Networking
         #region Public Types & Data
 
         /// <summary>
+        ///     Gets whether there is a networking session currently active and the local user is the server.
+        /// </summary>
+        bool IsServer { get; }
+
+        /// <summary>
+        ///     Gets whether there is a networking session currently active and the local user is a client.
+        /// </summary>
+        bool IsClient { get; }
+
+        /// <summary>
         ///     Gets the SDK capabilities.
         /// </summary>
         UxrNetworkCapabilities Capabilities { get; }

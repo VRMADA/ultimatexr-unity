@@ -92,7 +92,7 @@ namespace UltimateXR.UI.UnityInputModule.Controls
             {
                 return;
             }
-
+            
             _isSelected = value;
 
             foreach (GameObject goToEnable in _enableWhenSelected)

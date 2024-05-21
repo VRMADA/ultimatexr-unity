@@ -21,7 +21,7 @@ namespace UltimateXR.Manipulation
         /// </summary>
         /// <remarks>
         ///     Implements <see cref="IUxrSerializable" /> to help <see cref="UxrGrabManager" />'s implementation of the
-        ///     <see cref="IUxrStateSave" /> interface (<see cref="UxrGrabManager.SerializeStateInternal" />).
+        ///     <see cref="IUxrStateSave" /> interface (<see cref="UxrGrabManager.SerializeState" />).
         /// </remarks>
         [Serializable]
         private sealed class RuntimeManipulationInfo : IUxrSerializable
@@ -227,12 +227,15 @@ namespace UltimateXR.Manipulation
 
                 // Smooth transitions
 
-                grabbableObject.StartSmoothManipulationTransition();
-                grabber.StartSmoothManipulationTransition();
-
-                if (grabbableObject.GrabbableParent != null && grabbableObject.UsesGrabbableParentDependency && grabbableObject.ControlParentDirection)
+                if (Instance.Features.HasFlag(UxrManipulationFeatures.SmoothTransitions))
                 {
-                    grabbableObject.GrabbableParent.StartSmoothManipulationTransition();
+                    grabbableObject.StartSmoothManipulationTransition();
+                    grabber.StartSmoothManipulationTransition();
+
+                    if (grabbableObject.GrabbableParent != null && grabbableObject.UsesGrabbableParentDependency && grabbableObject.ControlParentDirection)
+                    {
+                        grabbableObject.GrabbableParent.StartSmoothManipulationTransition();
+                    }
                 }
 
                 return grabInfo;
@@ -256,12 +259,15 @@ namespace UltimateXR.Manipulation
 
                 // Smooth transitions
 
-                grabbableObject.StartSmoothManipulationTransition();
-                grabber.StartSmoothManipulationTransition();
-
-                if (grabbableObject.GrabbableParent != null && grabbableObject.UsesGrabbableParentDependency && grabbableObject.ControlParentDirection)
+                if (Instance.Features.HasFlag(UxrManipulationFeatures.SmoothTransitions))
                 {
-                    grabbableObject.GrabbableParent.StartSmoothManipulationTransition();
+                    grabbableObject.StartSmoothManipulationTransition();
+                    grabber.StartSmoothManipulationTransition();
+
+                    if (grabbableObject.GrabbableParent != null && grabbableObject.UsesGrabbableParentDependency && grabbableObject.ControlParentDirection)
+                    {
+                        grabbableObject.GrabbableParent.StartSmoothManipulationTransition();
+                    }
                 }
             }
 

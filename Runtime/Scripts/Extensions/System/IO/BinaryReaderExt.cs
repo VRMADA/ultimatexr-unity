@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Serialization;
 using UltimateXR.Core.Math;
 using UltimateXR.Core.Serialization;
 using UltimateXR.Core.Unique;
@@ -30,13 +31,25 @@ namespace UltimateXR.Extensions.System.IO
         /// <exception cref="FormatException">The compressed data is corrupt</exception>
         public static int ReadCompressedInt32(this BinaryReader reader, int serializationVersion)
         {
-            int num1 = 0;
-            int num2 = 0;
+            return (int)ReadCompressedUInt32(reader, serializationVersion);
+        }
+
+        /// <summary>
+        ///     Reads a 32-bit unsigned integer in compressed format, using only the amount of bytes that are necessary.
+        /// </summary>
+        /// <param name="reader">Reader</param>
+        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
+        /// <returns>A 32-bit unsigned integer</returns>
+        /// <exception cref="FormatException">The compressed data is corrupt</exception>
+        public static uint ReadCompressedUInt32(this BinaryReader reader, int serializationVersion)
+        {
+            uint num1 = 0;
+            int  num2 = 0;
 
             while (num2 != 35)
             {
                 byte num3 = reader.ReadByte();
-                num1 |= (num3 & sbyte.MaxValue) << num2;
+                num1 |= (uint)(num3 & sbyte.MaxValue) << num2;
                 num2 += 7;
 
                 if ((num3 & 128) == 0)
@@ -45,7 +58,46 @@ namespace UltimateXR.Extensions.System.IO
                 }
             }
 
-            throw new FormatException("ReadCompressedInt32() found bad format");
+            throw new FormatException("ReadCompressedInt32()/ReadCompressedUInt32() found bad format");
+        }
+
+        /// <summary>
+        ///     Reads a 64-bit integer in compressed format, using only the amount of bytes that are necessary.
+        /// </summary>
+        /// <param name="reader">Reader</param>
+        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
+        /// <returns>A 64-bit integer</returns>
+        /// <exception cref="FormatException">The compressed data is corrupt</exception>
+        public static long ReadCompressedInt64(this BinaryReader reader, int serializationVersion)
+        {
+            return (long)ReadCompressedUInt64(reader, serializationVersion);
+        }
+
+        /// <summary>
+        ///     Reads a 64-bit unsigned integer in compressed format, using only the amount of bytes that are necessary.
+        /// </summary>
+        /// <param name="reader">Reader</param>
+        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
+        /// <returns>A 64-bit unsigned integer</returns>
+        /// <exception cref="FormatException">The compressed data is corrupt</exception>
+        public static ulong ReadCompressedUInt64(this BinaryReader reader, int serializationVersion)
+        {
+            ulong num1 = 0;
+            int   num2 = 0;
+
+            while (num2 != 63)
+            {
+                byte num3 = reader.ReadByte();
+                num1 |= (ulong)(num3 & sbyte.MaxValue) << num2;
+                num2 += 7;
+
+                if ((num3 & 128) == 0)
+                {
+                    return num1;
+                }
+            }
+
+            throw new FormatException("ReadCompressedInt64()/ReadCompressedUInt64() found bad format");
         }
 
         /// <summary>
@@ -115,7 +167,7 @@ namespace UltimateXR.Extensions.System.IO
         }
 
         /// <summary>
-        ///     Reads a type, which has been serialized as a 16 byte array.
+        ///     Reads a Guid, which has been serialized as a 16 byte array.
         /// </summary>
         /// <param name="reader">Reader</param>
         /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
@@ -123,6 +175,17 @@ namespace UltimateXR.Extensions.System.IO
         public static Guid ReadGuid(this BinaryReader reader, int serializationVersion)
         {
             return new Guid(reader.ReadBytes(16));
+        }
+
+        /// <summary>
+        ///     Reads a tuple.
+        /// </summary>
+        /// <param name="reader">Reader</param>
+        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
+        /// <returns>The tuple</returns>
+        public static (T1, T2) ReadTuple<T1, T2>(this BinaryReader reader, int serializationVersion)
+        {
+            return ((T1, T2))(reader.Read<T1>(serializationVersion), reader.Read<T2>(serializationVersion));
         }
 
         /// <summary>
@@ -184,11 +247,28 @@ namespace UltimateXR.Extensions.System.IO
                 return null;
             }
 
-            object[] array = new object[reader.ReadCompressedInt32(serializationVersion)];
+            object[]  array          = new object[reader.ReadCompressedInt32(serializationVersion)];
+            Exception firstException = null;
 
             for (int i = 0; i < array.Length; ++i)
             {
-                array[i] = reader.ReadAnyVar(serializationVersion);
+                try
+                {
+                    array[i] = reader.ReadAnyVar(serializationVersion);
+                }
+                catch (Exception e)
+                {
+                    if (firstException == null)
+                    {
+                        firstException = e;
+                    }
+                }
+            }
+
+            if (firstException != null)
+            {
+                // This helps debugging UxrMethodInvokedSyncEventArgs. We keep deserializing event parameters even if there are errors.
+                throw firstException;
             }
 
             return array;
@@ -303,6 +383,103 @@ namespace UltimateXR.Extensions.System.IO
             }
 
             return dictionary;
+        }
+
+        /// <summary>
+        ///     Reads a HashSet.
+        /// </summary>
+        /// <param name="reader">Reader</param>
+        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
+        /// <typeparam name="T">The type of elements in the HashSet</typeparam>
+        /// <returns>The hash set</returns>
+        /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
+        /// <exception cref="FormatException">The compressed data is corrupt</exception>
+        /// <exception cref="UxrComponentNotFoundException">An <see cref="IUxrUniqueId" /> was not found when deserializing</exception>
+        /// <exception cref="UxrSerializableClassNotFoundException">
+        ///     A class that implements the <see cref="IUxrSerializable" />
+        ///     interface was not found when deserializing
+        /// </exception>
+        public static HashSet<T> ReadHashSet<T>(this BinaryReader reader, int serializationVersion)
+        {
+            // Serialized as: null-check (bool), count (int32), elements
+
+            bool nullCheck = reader.ReadBoolean();
+
+            if (!nullCheck)
+            {
+                return null;
+            }
+
+            HashSet<T> hashSet = new HashSet<T>();
+
+            int count = reader.ReadCompressedInt32(serializationVersion);
+
+            for (int i = 0; i < count; ++i)
+            {
+                hashSet.Add((T)reader.Read<T>(serializationVersion));
+            }
+
+            return hashSet;
+        }
+
+        /// <summary>
+        ///     Reads a hash set of objects where each element can be of a different type.
+        /// </summary>
+        /// <param name="reader">Reader</param>
+        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
+        /// <returns>The hash set</returns>
+        /// <exception cref="ArgumentOutOfRangeException">A type is not supported</exception>
+        /// <exception cref="FormatException">The compressed data is corrupt</exception>
+        /// <exception cref="UxrComponentNotFoundException">An <see cref="IUxrUniqueId" /> was not found when deserializing</exception>
+        /// <exception cref="UxrSerializableClassNotFoundException">
+        ///     A class that implements the <see cref="IUxrSerializable" />
+        ///     interface was not found when deserializing
+        /// </exception>
+        public static HashSet<object> ReadObjectHashSet(this BinaryReader reader, int serializationVersion)
+        {
+            // Serialized as: null-check (bool), count (int32), elements
+
+            bool nullCheck = reader.ReadBoolean();
+
+            if (!nullCheck)
+            {
+                return null;
+            }
+
+            HashSet<object> hashSet = new HashSet<object>();
+
+            int count = reader.ReadCompressedInt32(serializationVersion);
+
+            for (int i = 0; i < count; ++i)
+            {
+                hashSet.Add(reader.ReadAnyVar(serializationVersion));
+            }
+
+            return hashSet;
+        }
+
+        /// <summary>
+        ///     Reads a <see cref="DateTime" />.
+        /// </summary>
+        /// <param name="reader">Reader</param>
+        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
+        /// <returns>DateTime</returns>
+        public static DateTime ReadDateTime(this BinaryReader reader, int serializationVersion)
+        {
+            // Read ticks (64 bits)
+            return new DateTime(reader.ReadCompressedInt64(serializationVersion));
+        }
+
+        /// <summary>
+        ///     Reads a <see cref="TimeSpan" />.
+        /// </summary>
+        /// <param name="reader">Reader</param>
+        /// <param name="serializationVersion">The serialization version, to provide backwards compatibility</param>
+        /// <returns>TimeSpan</returns>
+        public static TimeSpan ReadTimeSpan(this BinaryReader reader, int serializationVersion)
+        {
+            // Read ticks (64 bits)
+            return new TimeSpan(reader.ReadCompressedInt64(serializationVersion));
         }
 
         /// <summary>
@@ -475,11 +652,11 @@ namespace UltimateXR.Extensions.System.IO
 
             int    version   = reader.ReadCompressedInt32(serializationVersion);
             Type   type      = reader.ReadType(serializationVersion, out string typeName, out string assemblyName);
-            object newObject = type != null ? Activator.CreateInstance(type, true) : null;
+            object newObject = type != null ? FormatterServices.GetUninitializedObject(type) : null;
 
             if (newObject == null)
             {
-                throw new UxrSerializableClassNotFoundException(typeName, assemblyName, $"CreateInstance({TypeExt.GetTypeString(typeName, assemblyName)}) returned null");
+                throw new UxrSerializableClassNotFoundException(typeName, assemblyName, $"GetUninitializedObject({TypeExt.GetTypeString(typeName, assemblyName)}) returned null");
             }
 
             if (newObject is IUxrSerializable serializable)
@@ -504,10 +681,19 @@ namespace UltimateXR.Extensions.System.IO
         ///     A class that implements the <see cref="IUxrSerializable" />
         ///     interface was not found when deserializing
         /// </exception>
-        public static T ReadUxrSerializable<T>(this BinaryReader reader, int serializationVersion) where T : class, IUxrSerializable
+        /// <exception cref="InvalidCastException">
+        ///     Failed to cast the value to <see cref="IUxrSerializable"/>.
+        /// </exception>
+        public static T ReadUxrSerializable<T>(this BinaryReader reader, int serializationVersion) where T : IUxrSerializable
         {
             IUxrSerializable serializable = ReadUxrSerializable(reader, serializationVersion);
-            return serializable as T;
+
+            if (serializable is T typedSerializable)
+            {
+                return typedSerializable;
+            }
+
+            throw new InvalidCastException($"Failed to cast {typeof(T).Name} to {nameof(IUxrSerializable)}");
         }
 
         /// <summary>
@@ -542,6 +728,9 @@ namespace UltimateXR.Extensions.System.IO
         ///     A class that implements the <see cref="IUxrSerializable" />
         ///     interface was not found when deserializing
         /// </exception>
+        /// <exception cref="InvalidCastException">
+        ///     Failed to cast the value to <see cref="IUxrSerializable"/>.
+        /// </exception>
         public static object ReadAnyVar(this BinaryReader reader, int serializationVersion)
         {
             return reader.ReadAnyVar(serializationVersion, out UxrVarType _);
@@ -565,6 +754,9 @@ namespace UltimateXR.Extensions.System.IO
         /// <exception cref="UxrSerializableClassNotFoundException">
         ///     A class that implements the <see cref="IUxrSerializable" />
         ///     interface was not found when deserializing
+        /// </exception>
+        /// <exception cref="InvalidCastException">
+        ///     Failed to cast the value to <see cref="IUxrSerializable"/>.
         /// </exception>
         public static object ReadAnyVar(this BinaryReader reader, int serializationVersion, out UxrVarType varType)
         {
@@ -597,22 +789,22 @@ namespace UltimateXR.Extensions.System.IO
 
             if (varType is UxrVarType.Int)
             {
-                return reader.ReadInt32();
+                return reader.ReadCompressedInt32(serializationVersion);
             }
 
             if (varType is UxrVarType.UnsignedInt)
             {
-                return reader.ReadUInt32();
+                return reader.ReadCompressedUInt32(serializationVersion);
             }
 
             if (varType is UxrVarType.Long)
             {
-                return reader.ReadInt64();
+                return reader.ReadCompressedInt64(serializationVersion);
             }
 
             if (varType is UxrVarType.UnsignedLong)
             {
-                return reader.ReadUInt64();
+                return reader.ReadCompressedUInt64(serializationVersion);
             }
 
             if (varType is UxrVarType.Float)
@@ -651,6 +843,13 @@ namespace UltimateXR.Extensions.System.IO
                 return reader.ReadGuid(serializationVersion);
             }
 
+            if (varType is UxrVarType.Tuple)
+            {
+                Type typeItem1 = reader.ReadType(serializationVersion);
+                Type typeItem2 = reader.ReadType(serializationVersion);
+                return typeof(BinaryReaderExt).GetMethod(nameof(ReadTuple)).MakeGenericMethod(typeItem1, typeItem2).Invoke(reader, new object[] { reader, serializationVersion });
+            }
+
             if (varType is UxrVarType.Array)
             {
                 Type elementType = reader.ReadType(serializationVersion);
@@ -678,6 +877,27 @@ namespace UltimateXR.Extensions.System.IO
                 Type keyType     = reader.ReadType(serializationVersion);
                 Type elementType = reader.ReadType(serializationVersion);
                 return typeof(BinaryReaderExt).GetMethod(nameof(ReadDictionary)).MakeGenericMethod(keyType, elementType).Invoke(reader, new object[] { reader, serializationVersion });
+            }
+
+            if (varType is UxrVarType.HashSet)
+            {
+                Type elementType = reader.ReadType(serializationVersion);
+                return typeof(BinaryReaderExt).GetMethod(nameof(ReadHashSet)).MakeGenericMethod(elementType).Invoke(reader, new object[] { reader, serializationVersion });
+            }
+
+            if (varType is UxrVarType.ObjectHashSet)
+            {
+                return reader.ReadObjectHashSet(serializationVersion);
+            }
+
+            if (varType is UxrVarType.DateTime)
+            {
+                return reader.ReadDateTime(serializationVersion);
+            }
+
+            if (varType is UxrVarType.TimeSpan)
+            {
+                return reader.ReadTimeSpan(serializationVersion);
             }
 
             if (varType is UxrVarType.Vector2)
@@ -750,6 +970,9 @@ namespace UltimateXR.Extensions.System.IO
         ///     A class that implements the <see cref="IUxrSerializable" />
         ///     interface was not found when deserializing
         /// </exception>
+        /// <exception cref="InvalidCastException">
+        ///     Failed to cast the value to <see cref="IUxrSerializable"/>.
+        /// </exception>
         private static object Read<T>(this BinaryReader reader, int serializationVersion)
         {
             Type type = typeof(T);
@@ -776,22 +999,22 @@ namespace UltimateXR.Extensions.System.IO
 
             if (type == typeof(int))
             {
-                return reader.ReadInt32();
+                return reader.ReadCompressedInt32(serializationVersion);
             }
 
             if (type == typeof(uint))
             {
-                return reader.ReadUInt32();
+                return reader.ReadCompressedUInt32(serializationVersion);
             }
 
             if (type == typeof(long))
             {
-                return reader.ReadInt64();
+                return reader.ReadCompressedInt64(serializationVersion);
             }
 
             if (type == typeof(ulong))
             {
-                return reader.ReadUInt64();
+                return reader.ReadCompressedUInt64(serializationVersion);
             }
 
             if (type == typeof(float))
@@ -829,6 +1052,14 @@ namespace UltimateXR.Extensions.System.IO
                 return reader.ReadGuid(serializationVersion);
             }
 
+            if (type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(Tuple<,>) || type.GetGenericTypeDefinition() == typeof(ValueTuple<,>)))
+            {
+                Type typeItem1 = type.GetGenericArguments()[0];
+                Type typeItem2 = type.GetGenericArguments()[1];
+
+                return typeof(BinaryReaderExt).GetMethod(nameof(ReadTuple)).MakeGenericMethod(typeItem1, typeItem2).Invoke(reader, new object[] { reader, serializationVersion });
+            }
+            
             if (type.IsArray)
             {
                 if (type.GetElementType() == typeof(object))
@@ -855,6 +1086,17 @@ namespace UltimateXR.Extensions.System.IO
                 Type valueType = type.GetGenericArguments()[1];
 
                 return typeof(BinaryReaderExt).GetMethod(nameof(ReadDictionary)).MakeGenericMethod(keyType, valueType).Invoke(reader, new object[] { reader, serializationVersion });
+            }
+
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(HashSet<>))
+            {
+                Type elementType = type.GetElementType();
+
+                if (elementType == typeof(object))
+                {
+                    return reader.ReadObjectHashSet(serializationVersion);
+                }
+                typeof(BinaryReaderExt).GetMethod(nameof(ReadHashSet)).MakeGenericMethod(elementType).Invoke(reader, new object[] { reader, serializationVersion });
             }
 
             if (type == typeof(Vector2))

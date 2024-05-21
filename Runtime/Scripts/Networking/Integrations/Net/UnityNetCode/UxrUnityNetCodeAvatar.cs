@@ -105,7 +105,7 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
                 return;
             }
 
-            if (eventArgs.TargetEnvironments.HasFlag(UxrStateSyncEnvironments.Network))
+            if (eventArgs.Options.HasFlag(UxrStateSyncOptions.Network))
             {
                 byte[] serializedEvent = eventArgs.SerializeEventBinary(component);
 
@@ -330,7 +330,7 @@ namespace UltimateXR.Networking.Integrations.Net.UnityNetCode
                 Debug.Log($"{UxrConstants.NetworkingModule} Receiving {serializedEventData.Length} bytes of data. Base64: {Convert.ToBase64String(serializedEventData)}");
             }
 
-            UxrStateSyncResult result = UxrManager.Instance.ExecuteStateSyncEvent(serializedEventData, UxrConstants.Serialization.CurrentBinaryVersion);
+            UxrStateSyncResult result = UxrManager.Instance.ExecuteStateSyncEvent(serializedEventData);
         }
 
         #endregion

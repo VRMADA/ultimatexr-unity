@@ -40,6 +40,12 @@ namespace UltimateXR.Avatar.Controllers
         public abstract bool Initialized { get; }
 
         /// <summary>
+        ///     Gets whether the avatar is using smooth locomotion. Smooth locomotion updates the position every
+        ///     frame, whereas non-smooth locomotion will move the avatar from one place to another in "jumps".
+        /// </summary>
+        public abstract bool UsesSmoothLocomotion { get; }
+
+        /// <summary>
         ///     Gets or sets whether hand tracking is used when available.
         /// </summary>
         public bool AllowHandTracking

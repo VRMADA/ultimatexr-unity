@@ -31,7 +31,7 @@ namespace UltimateXR.Manipulation
         /// </summary>
         /// <remarks>
         ///     Implements <see cref="IUxrSerializable" /> to help <see cref="UxrGrabManager" />'s implementation of the
-        ///     <see cref="IUxrStateSave" /> interface (<see cref="UxrGrabManager.SerializeStateInternal" />).
+        ///     <see cref="IUxrStateSave" /> interface (<see cref="UxrGrabManager.SerializeState" />).
         ///     For now this information is not serialized, because most of it can be inferred at runtime on the client side, but
         ///     it might get used in the future.
         /// </remarks>

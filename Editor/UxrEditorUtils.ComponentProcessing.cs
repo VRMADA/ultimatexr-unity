@@ -131,16 +131,19 @@ namespace UltimateXR.Editor
                         {
                             // Initialize
 
-                            if (!string.IsNullOrEmpty(assetPath) && !prefabComponents.ContainsKey(assetPath))
+                            if (!string.IsNullOrEmpty(assetPath))
                             {
-                                prefabComponents.Add(assetPath, new List<Component>());
-                            }
+                                if (!prefabComponents.ContainsKey(assetPath))
+                                {
+                                    prefabComponents.Add(assetPath, new List<Component>());
+                                }
 
-                            // Add if it was not added already through another instance chain
+                                // Add if it was not added already through another instance chain
 
-                            if (!prefabComponents[assetPath].Contains(componentInChain))
-                            {
-                                prefabComponents[assetPath].Add(componentInChain);
+                                if (!prefabComponents[assetPath].Contains(componentInChain))
+                                {
+                                    prefabComponents[assetPath].Add(componentInChain);
+                                }
                             }
                         }
                     }
@@ -206,6 +209,11 @@ namespace UltimateXR.Editor
                 for (var i = 0; i < components.Length; i++)
                 {
                     T c = components[i];
+
+                    if (c == null)
+                    {
+                        continue;
+                    }
 
                     if (progressUpdater != null)
                     {

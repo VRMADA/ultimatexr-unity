@@ -3,6 +3,7 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using UltimateXR.Core.Instantiation;
 using UnityEngine;
 
 namespace UltimateXR.Core
@@ -80,12 +81,11 @@ namespace UltimateXR.Core
         {
             if (transform.parent != Parent)
             {
-                transform.SetParent(Parent);
+                UxrInstanceManager.Instance.SetParent(transform, Parent, false);
             }
-            
-            transform.localPosition = LocalPosition;
-            transform.localRotation = LocalRotation;
-            transform.localScale    = LocalScale;
+
+            UxrInstanceManager.Instance.SetLocalPositionAndRotation(transform, LocalPosition, LocalRotation);
+            UxrInstanceManager.Instance.SetScale(transform, LocalScale);
         }
 
         /// <summary>
@@ -96,12 +96,11 @@ namespace UltimateXR.Core
         {
             if (transform.parent != Parent)
             {
-                transform.SetParent(Parent);
+                UxrInstanceManager.Instance.SetParent(transform, Parent, false);
             }
 
-            transform.position   = Position;
-            transform.rotation   = Rotation;
-            transform.localScale = LocalScale;
+            UxrInstanceManager.Instance.SetPositionAndRotation(transform, Position, Rotation);
+            UxrInstanceManager.Instance.SetScale(transform, LocalScale);
         }
 
         #endregion
