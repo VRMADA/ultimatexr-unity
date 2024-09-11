@@ -374,6 +374,9 @@ namespace UltimateXR.Editor.Networking
                     }
                 }
 
+                // Refresh registered avatar prefab list if necessary
+                SetupPostProcess(_networkImplementation);
+
                 // Show registered avatar prefabs
 
                 if (PropRegisteredAvatars.arraySize == 0)

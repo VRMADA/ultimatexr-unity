@@ -30,7 +30,7 @@ namespace UltimateXR.Extensions.Unity.Render
         {
             RectTransform t    = targetImage.rectTransform;
             Vector2       size = t.sizeDelta;
-            Rect          rect = new Rect(0.0f, 0.0f, size.x, size.y);
+            Rect          rect = new Rect(0.0f, 0.0f, texture2D.width, texture2D.height);
 
             return Sprite.Create(texture2D, rect, t.pivot);
         }

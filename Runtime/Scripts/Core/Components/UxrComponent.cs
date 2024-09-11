@@ -323,12 +323,20 @@ namespace UltimateXR.Core.Components
                                                 c => c.OnRegistered(),
                                                 recursive);
 
-            UxrComponent[] childComponents = GetComponentsInChildren<UxrComponent>(true);
-
-            foreach (UxrComponent c in childComponents)
+            if (recursive)
             {
-                c.StateSaveImplementer.RegisterIfNecessary();
-                c.StateSyncImplementer.RegisterIfNecessary();
+                UxrComponent[] childComponents = GetComponentsInChildren<UxrComponent>(true);
+
+                foreach (UxrComponent c in childComponents)
+                {
+                    c.StateSaveImplementer.RegisterIfNecessary();
+                    c.StateSyncImplementer.RegisterIfNecessary();
+                }
+            }
+            else
+            {
+                StateSaveImplementer.RegisterIfNecessary();
+                StateSyncImplementer.RegisterIfNecessary();
             }
         }
 

@@ -11,6 +11,7 @@ using UltimateXR.Core.Components.Singleton;
 using UltimateXR.Core.Settings;
 using UltimateXR.Core.StateSync;
 using UltimateXR.Core.Unique;
+using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity;
 using UltimateXR.Networking;
@@ -252,6 +253,11 @@ namespace UltimateXR.Core.Instantiation
                 }
 
                 return;
+            }
+
+            if (component.CombineIdSource == Guid.Empty)
+            {
+                Debug.LogError($"{UxrConstants.CoreModule} {nameof(UxrInstanceManager)}.{nameof(NotifyNetworkSpawn)}(): Network instance {instance.name} needs to have unique IDs to ensure correct synchronization. Consider using {nameof(GameObjectExt)}.{nameof(CombineUniqueId)}() on the instantiated prefab to ensure unique ids. As guid parameter you may use the id assigned by the networking SDK to the spawned object together with the string.GetGuid() extension defined in {nameof(StringExt)}.");
             }
 
             NotifyNetworkSpawnInternal(component.UnityPrefabId, component.CombineIdSource, component.UniqueId);

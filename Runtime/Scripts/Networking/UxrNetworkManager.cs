@@ -84,9 +84,19 @@ namespace UltimateXR.Networking
         public static bool IsServer => HasInstance && Instance._networkImplementation != null && Instance._networkImplementation.IsServer;
 
         /// <summary>
-        ///     Gets whether there is a network session active and the local user is the server.
+        ///     Gets whether there is a network session active and the local user is a dedicated server, a server without being a client, and thus has no local avatar.
+        /// </summary>
+        public static bool IsServerOnly => IsServer && !IsClient;
+
+        /// <summary>
+        ///     Gets whether there is a network session active and the local user is a client.
         /// </summary>
         public static bool IsClient => HasInstance && Instance._networkImplementation != null && Instance._networkImplementation.IsClient;
+
+        /// <summary>
+        ///     Gets whether there is a network session active and the local user is a client connected to a server which is not local, so it's not the host.
+        /// </summary>
+        public static bool IsClientOnly => !IsServer && IsClient;
 
         /// <summary>
         ///     Gets the network implementation.

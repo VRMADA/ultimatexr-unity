@@ -762,6 +762,11 @@ namespace UltimateXR.Manipulation
             set => _dropSnapMode = value;
         }
 
+        /// <summary>
+        ///     Gets whether the object is currently in a smooth transition.
+        /// </summary>
+        public bool IsInSmoothTransition => SmoothManipulationTimer > 0.0f || SmoothPlacementTimer > 0.0f || SmoothConstrainTimer > 0.0f;
+
         #endregion
 
         #region Internal Types & Data
@@ -864,6 +869,11 @@ namespace UltimateXR.Manipulation
             get => _isGrabbable;
             set
             {
+                if (value == _isGrabbable)
+                {
+                    return;
+                }
+                
                 BeginSync();
                 _isGrabbable = value;
                 EndSyncProperty(value);
@@ -2307,11 +2317,6 @@ namespace UltimateXR.Manipulation
         ///     Gets or sets the decreasing constrain timer for smooth constraint transitions.
         /// </summary>
         private float SmoothConstrainTimer { get; set; } = -1.0f;
-
-        /// <summary>
-        ///     Gets whether the object is currently in a smooth transition.
-        /// </summary>
-        private bool IsInSmoothTransition => SmoothManipulationTimer > 0.0f || SmoothPlacementTimer > 0.0f || SmoothConstrainTimer > 0.0f;
 
         // Backing fields for public properties
 

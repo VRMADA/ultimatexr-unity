@@ -3,10 +3,13 @@
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UltimateXR.Avatar;
+using UltimateXR.Core.Unique;
 using UltimateXR.Extensions.System;
+using UltimateXR.Extensions.System.Collections;
 using UltimateXR.Extensions.Unity.Math;
 using UltimateXR.Manipulation;
 using UltimateXR.UI.UnityInputModule;
@@ -77,6 +80,19 @@ namespace UltimateXR.Extensions.Unity
         }
 
         /// <summary>
+        ///     Combines all <see cref="IUxrUniqueId" /> components in the GameObject tree using a given id.
+        ///     This ensures that unique ids in the hierarchy do not collide when instantiating the same prefab more than once.
+        ///     Combination using the same id on different devices or sessions will always generate the same unique result.
+        /// </summary>
+        /// <param name="self">The GameObject whose components to combine</param>
+        /// <param name="guid">A guid that will be used to combine all existing unique ids to produce the new unique ids</param>
+        public static void CombineUniqueIds(this GameObject self, Guid guid)
+        {
+            IUxrUniqueId[] uniqueComponents = self.GetComponentsInChildren<IUxrUniqueId>(true);
+            uniqueComponents.ForEach(c => c.CombineUniqueId(guid, false));
+        }
+
+        /// <summary>
         ///     Checks if the given GameObject is the root GameObject inside a prefab.
         /// </summary>
         /// <param name="self">GameObject to check</param>
@@ -117,15 +133,17 @@ namespace UltimateXR.Extensions.Unity
 
         /// <summary>
         ///     Gets the GUID of the prefab the GameObject is in, if it is in a prefab, or the GUID of the prefab the GameObject
-        ///     was instantiated from, if it was instantiated from a prefab. If it is not 
+        ///     was instantiated from, if it was instantiated from a prefab. If it is not
         /// </summary>
         /// <param name="self">The GameObject to retrieve the information of</param>
         /// <param name="prefabGuid">If the call was successful, returns the GUID or string.Empty</param>
         /// <param name="assetPath">If the call was successful, returns the asset path or string.Empty</param>
         /// <returns>Whether the call was successful</returns>
-        /// <remarks>The reason the call can be unsuccessful is because Unity for some reason will report
-        /// a null/empty asset path even though PrefabUtility.IsPartOfPrefabAsset() returns true.
-        /// This behaviour happens when in prefab isolation/context mode in the editor</remarks>
+        /// <remarks>
+        ///     The reason the call can be unsuccessful is because Unity for some reason will report
+        ///     a null/empty asset path even though PrefabUtility.IsPartOfPrefabAsset() returns true.
+        ///     This behaviour happens when in prefab isolation/context mode in the editor
+        /// </remarks>
         public static bool GetPrefabGuid(this GameObject self, out string prefabGuid, out string assetPath)
         {
             prefabGuid = string.Empty;

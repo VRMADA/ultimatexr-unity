@@ -116,11 +116,11 @@ namespace UltimateXR.Extensions.Unity
         /// <summary>
         ///     Assigns a transform the same position and rotation from another.
         /// </summary>
-        /// <param name="self">Transform to change</param>
-        /// <param name="target">Target to set the position and rotation of</param>
-        public static void SetPositionAndRotation(this Transform self, Transform target)
+        /// <param name="target">Transform to change</param>
+        /// <param name="source">Source to get the position and rotation from</param>
+        public static void SetPositionAndRotation(this Transform target, Transform source)
         {
-            self.SetPositionAndRotation(target.position, target.rotation);
+            target.SetPositionAndRotation(source.position, source.rotation);
         }
 
 #if !(UNITY_2021_3_11 || UNITY_2022_2 || UNITY_2023_1)
@@ -128,13 +128,13 @@ namespace UltimateXR.Extensions.Unity
         /// <summary>
         ///     Sets the local position and local rotation in one go.
         /// </summary>
-        /// <param name="self">Transform to change</param>
+        /// <param name="target">Transform to change</param>
         /// <param name="localPosition">New local position</param>
         /// <param name="localRotation">New local rotation</param>
-        public static void SetLocalPositionAndRotation(this Transform self, Vector3 localPosition, Quaternion localRotation)
+        public static void SetLocalPositionAndRotation(this Transform target, Vector3 localPosition, Quaternion localRotation)
         {
-            self.localPosition = localPosition;
-            self.localRotation = localRotation;
+            target.localPosition = localPosition;
+            target.localRotation = localRotation;
         }
 
 #endif
@@ -142,105 +142,105 @@ namespace UltimateXR.Extensions.Unity
         /// <summary>
         ///     Sets the localPosition.x value of a given <see cref="Transform" />.
         /// </summary>
-        /// <param name="self">Transform to set the localPosition.x of</param>
+        /// <param name="target">Transform to set the localPosition.x of</param>
         /// <param name="x">New x value</param>
-        public static void SetLocalPositionX(this Transform self, float x)
+        public static void SetLocalPositionX(this Transform target, float x)
         {
-            Vector3 localPosition = self.localPosition;
-            localPosition.x    = x;
-            self.localPosition = localPosition;
+            Vector3 localPosition = target.localPosition;
+            localPosition.x      = x;
+            target.localPosition = localPosition;
         }
 
         /// <summary>
         ///     Sets the localPosition.y value of a given <see cref="Transform" />.
         /// </summary>
-        /// <param name="self">Transform to set the localPosition.y of</param>
+        /// <param name="target">Transform to set the localPosition.y of</param>
         /// <param name="y">New y value</param>
-        public static void SetLocalPositionY(this Transform self, float y)
+        public static void SetLocalPositionY(this Transform target, float y)
         {
-            Vector3 localPosition = self.localPosition;
-            localPosition.y    = y;
-            self.localPosition = localPosition;
+            Vector3 localPosition = target.localPosition;
+            localPosition.y      = y;
+            target.localPosition = localPosition;
         }
 
         /// <summary>
         ///     Sets the localPosition.z value of a given <see cref="Transform" />.
         /// </summary>
-        /// <param name="self">Transform to set the localPosition.z of</param>
+        /// <param name="target">Transform to set the localPosition.z of</param>
         /// <param name="x">New z value</param>
-        public static void SetLocalPositionZ(this Transform self, float z)
+        public static void SetLocalPositionZ(this Transform target, float z)
         {
-            Vector3 localPosition = self.localPosition;
-            localPosition.z    = z;
-            self.localPosition = localPosition;
+            Vector3 localPosition = target.localPosition;
+            localPosition.z      = z;
+            target.localPosition = localPosition;
         }
 
         /// <summary>
         ///     Adds x, y and z values to the localPosition of a given <see cref="Transform" />.
         /// </summary>
-        /// <param name="self">Transform whose localPosition to add the values to</param>
+        /// <param name="target">Transform whose localPosition to add the values to</param>
         /// <param name="x">Value to add to localPosition.x</param>
         /// <param name="y">Value to add to localPosition.y</param>
         /// <param name="z">Value to add to localPosition.z</param>
-        public static void IncreaseLocalPosition(this Transform self, float x, float y, float z)
+        public static void IncreaseLocalPosition(this Transform target, float x, float y, float z)
         {
-            Vector3 localPosition = self.localPosition;
-            localPosition.x    += x;
-            localPosition.y    += y;
-            localPosition.z    += z;
-            self.localPosition =  localPosition;
+            Vector3 localPosition = target.localPosition;
+            localPosition.x      += x;
+            localPosition.y      += y;
+            localPosition.z      += z;
+            target.localPosition =  localPosition;
         }
 
         /// <summary>
         ///     Sets the position.x value of a <see cref="Transform" />.
         /// </summary>
-        /// <param name="self">Transform whose position.x value to set</param>
+        /// <param name="target">Transform whose position.x value to set</param>
         /// <param name="x">New x value</param>
-        public static void SetPositionX(this Transform self, float x)
+        public static void SetPositionX(this Transform target, float x)
         {
-            Vector3 position = self.position;
-            position.x    = x;
-            self.position = position;
+            Vector3 position = target.position;
+            position.x      = x;
+            target.position = position;
         }
 
         /// <summary>
         ///     Sets the position.y value of a <see cref="Transform" />.
         /// </summary>
-        /// <param name="self">Transform whose position.y value to set</param>
+        /// <param name="target">Transform whose position.y value to set</param>
         /// <param name="x">New y value</param>
-        public static void SetPositionY(this Transform self, float y)
+        public static void SetPositionY(this Transform target, float y)
         {
-            Vector3 position = self.position;
-            position.y    = y;
-            self.position = position;
+            Vector3 position = target.position;
+            position.y      = y;
+            target.position = position;
         }
 
         /// <summary>
         ///     Sets the position.z value of a <see cref="Transform" />.
         /// </summary>
-        /// <param name="self">Transform whose position.z value to set</param>
+        /// <param name="target">Transform whose position.z value to set</param>
         /// <param name="x">New z value</param>
-        public static void SetPositionZ(this Transform self, float z)
+        public static void SetPositionZ(this Transform target, float z)
         {
-            Vector3 position = self.position;
-            position.z    = z;
-            self.position = position;
+            Vector3 position = target.position;
+            position.z      = z;
+            target.position = position;
         }
 
         /// <summary>
         ///     Adds x, y and z values to the position of a given <see cref="Transform" />.
         /// </summary>
-        /// <param name="self">Transform whose position to add the values to</param>
+        /// <param name="target">Transform whose position to add the values to</param>
         /// <param name="x">Value to add to position.x</param>
         /// <param name="y">Value to add to position.y</param>
         /// <param name="z">Value to add to position.z</param>
-        public static void IncreasePosition(this Transform self, float x, float y, float z)
+        public static void IncreasePosition(this Transform target, float x, float y, float z)
         {
-            Vector3 position = self.position;
-            position.x    += x;
-            position.y    += y;
-            position.z    += z;
-            self.position =  position;
+            Vector3 position = target.position;
+            position.x     += x;
+            position.y     += y;
+            position.z     += z;
+            target.position =  position;
         }
 
         /// <summary>

@@ -12,6 +12,7 @@ using UnityEditor;
 #endif
 #if ULTIMATEXR_USE_FISHNET_SDK
 using System.Linq;
+using FishNet;
 using FishNet.Component.Spawning;
 using FishNet.Component.Transforming;
 using FishNet.Managing;
@@ -30,7 +31,7 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
     /// <summary>
     ///     Implementation of networking support using FishNet.
     /// </summary>
-    public class UxrFishNetNetwork : UxrNetworkImplementation
+    public partial class UxrFishNetNetwork : UxrNetworkImplementation
     {
         #region Inspector Properties/Serialized Fields
 
@@ -49,7 +50,8 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
             get
             {
 #if ULTIMATEXR_USE_FISHNET_SDK
-                return _networkManager != null && _networkManager.IsServer; 
+                // If IsServerStarted is not recognized, please update to a newer version of FishNet > 4.1.0.
+                return _networkManager != null && _networkManager.IsServerStarted; 
 #else
                 return false;
 #endif
@@ -62,7 +64,8 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
             get
             {
 #if ULTIMATEXR_USE_FISHNET_SDK
-                return _networkManager != null && _networkManager.IsClient;
+                // If IsClientStarted is not recognized, please update to a newer version of FishNet > 4.1.0.
+                return _networkManager != null && _networkManager.IsClientStarted;
 #else
                 return false;
 #endif
@@ -71,10 +74,10 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
 
         /// <inheritdoc />
         public override UxrNetworkCapabilities Capabilities => UxrNetworkCapabilities.NetworkTransform | UxrNetworkCapabilities.NetworkRigidbody;
-
+/*
         /// <inheritdoc />
-        //public override string NetworkRigidbodyWarning => $"{UxrConstants.SdkFishNet} does not use Rigidbodies";
-
+        public override string NetworkRigidbodyWarning => $"{UxrConstants.SdkFishNet} does not use Rigidbodies";
+*/
         /// <inheritdoc />
         public override void SetupGlobal(UxrNetworkManager networkManager, out List<GameObject> newGameObjects, out List<Component> newComponents)
         {
@@ -129,12 +132,33 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
             UxrFishNetAvatar fishNetAvatar = avatar.GetOrAddComponent<UxrFishNetAvatar>();
             newComponents.Add(fishNetAvatar);
 
-            IEnumerable<Behaviour> avatarComponents    = SetupNetworkTransform(avatar.gameObject,                                  true, UxrNetworkTransformFlags.ChildAll);
-            IEnumerable<Behaviour> cameraComponents    = SetupNetworkTransform(avatar.CameraComponent.gameObject,                  true, UxrNetworkTransformFlags.ChildPositionAndRotation);
-            IEnumerable<Behaviour> leftHandComponents  = SetupNetworkTransform(avatar.GetHand(UxrHandSide.Left).Wrist.gameObject,  true, UxrNetworkTransformFlags.ChildTransform);
-            IEnumerable<Behaviour> rightHandComponents = SetupNetworkTransform(avatar.GetHand(UxrHandSide.Right).Wrist.gameObject, true, UxrNetworkTransformFlags.ChildTransform);
+            // FishNet doesn't allow world-space NetworkTransform synchronization, so we create dummies hanging from the avatar.
+            // Local-space hanging from the avatar will work. 
+
+            GameObject networkCamera = new GameObject("NetworkCamera");
+            Undo.RegisterCreatedObjectUndo(networkCamera, "Create avatar network camera");
+            Undo.SetTransformParent(networkCamera.transform, avatar.transform, "Parent network camera");
+            networkCamera.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+            GameObject networkHandLeft = new GameObject("NetworkHandLeft");
+            Undo.RegisterCreatedObjectUndo(networkHandLeft, "Create avatar network hand left");
+            Undo.SetTransformParent(networkHandLeft.transform, avatar.transform, "Parent network hand left");
+            networkHandLeft.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+            GameObject networkHandRight = new GameObject("NetworkHandRight");
+            Undo.RegisterCreatedObjectUndo(networkHandRight, "Create avatar network hand right");
+            Undo.SetTransformParent(networkHandRight.transform, avatar.transform, "Parent network hand right");
+            networkHandRight.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+
+            IEnumerable<Behaviour> avatarComponents    = SetupNetworkTransform(avatar.gameObject, true, UxrNetworkTransformFlags.ChildAll);
+            IEnumerable<Behaviour> cameraComponents    = SetupNetworkTransform(networkCamera,     true, UxrNetworkTransformFlags.ChildPositionAndRotation);
+            IEnumerable<Behaviour> leftHandComponents  = SetupNetworkTransform(networkHandLeft,   true, UxrNetworkTransformFlags.ChildTransform);
+            IEnumerable<Behaviour> rightHandComponents = SetupNetworkTransform(networkHandRight,  true, UxrNetworkTransformFlags.ChildTransform);
 
             newComponents.AddRange(avatarComponents.ToList().Concat(cameraComponents).Concat(leftHandComponents).Concat(rightHandComponents));
+            newGameObjects.AddRange(new[] { networkHandLeft, networkHandRight, networkCamera });
+
+            fishNetAvatar.SetupDummyNetworkTransforms(networkCamera, networkHandLeft, networkHandRight);
 
             Undo.RegisterFullObjectHierarchyUndo(avatar.gameObject, "Setup FishNet Avatar");
 #endif
@@ -180,8 +204,7 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
                 yield return networkObject;
             }
 
-            UxrFishNetworkTransform networkTransform = gameObject.GetOrAddComponent<UxrFishNetworkTransform>();
-            networkTransform.useWorldSpace = worldSpace;
+            NetworkTransform networkTransform = gameObject.GetOrAddComponent<NetworkTransform>();
 
             yield return networkTransform;
 
@@ -205,7 +228,7 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
         {
 #if ULTIMATEXR_USE_FISHNET_SDK
             
-            UxrFishNetworkTransform[] networkTransforms = gameObject.GetComponentsInChildren<UxrFishNetworkTransform>();
+            NetworkTransform[] networkTransforms = gameObject.GetComponentsInChildren<NetworkTransform>();
             networkTransforms.ForEach(nt => nt.SetEnabled(enable));
             
 #endif
@@ -284,7 +307,7 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
         public override bool HasNetworkTransformSyncComponents(GameObject gameObject)
         {
 #if ULTIMATEXR_USE_FISHNET_SDK
-            return gameObject.GetComponent<UxrFishNetworkTransform>() != null;
+            return gameObject.GetComponent<NetworkTransform>() != null;
 #else
             return false;
 #endif
@@ -301,7 +324,7 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
         /// </summary>
         private void OnGUI()
         {
-            if (!_usePrototypingUI || !NetworkManager.Instances.First())
+            if (!_usePrototypingUI || !TryGetNetworkManager())
             {
                 return;
             }
@@ -311,51 +334,46 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
 
             GUI.Box(new Rect(0, PosY, ButtonWidth, ButtonHeight), "UltimateXR Fish Networking");
             PosY += ButtonHeight;
-            if (_networkManager != null)
+            
+            if (UxrNetworkManager.IsServer || UxrNetworkManager.IsClient)
             {
-                if (_networkManager.IsServer || _networkManager.IsClient)
+                if (UxrNetworkManager.IsServerOnly)
                 {
-                    if (_networkManager.IsServerOnly)
+                    if (GUI.Button(new Rect(0, PosY, ButtonWidth, ButtonHeight), "Stop Server"))
                     {
-                        if (GUI.Button(new Rect(0, PosY, ButtonWidth, ButtonHeight), "Stop Server"))
-                        {
-                            _networkManager.ServerManager.StopConnection(true);
-                        }
-
-                        PosY += ButtonHeight;
-
-                        if (GUI.Button(new Rect(0, PosY, ButtonWidth, ButtonHeight), "Start Client"))
-                        {
-                            _networkManager.ClientManager.StartConnection("localhost", NetworkPort);
-                        }
+                        _networkManager.ServerManager.StopConnection(true);
                     }
-                    else if (_networkManager.IsClientOnly)
+
+                    PosY += ButtonHeight;
+
+                    if (GUI.Button(new Rect(0, PosY, ButtonWidth, ButtonHeight), "Start Client"))
                     {
-                        if (GUI.Button(new Rect(0, PosY, ButtonWidth, ButtonHeight), "Disconnect Client"))
-                        {
-                            _networkManager.ClientManager.StopConnection();
-                        }
+                        _networkManager.ClientManager.StartConnection("localhost", NetworkPort);
                     }
-                    else if (_networkManager.IsServer && _networkManager.IsClient)
-                    {
-                        if (GUI.Button(new Rect(0, PosY, ButtonWidth, ButtonHeight), "Stop Server"))
-                        {
-                            _networkManager.ServerManager.StopConnection(true);
-                        }
-
-                        PosY += ButtonHeight;
-
-                        if (GUI.Button(new Rect(0, PosY, ButtonWidth, ButtonHeight), "Stop Client"))
-                        {
-                            _networkManager.ClientManager.StopConnection();
-                        }
-                    }
-                    return;
                 }
-            }
-            else
-            {
-                _networkManager = NetworkManager.Instances.First();
+                else if (UxrNetworkManager.IsClientOnly)
+                {
+                    if (GUI.Button(new Rect(0, PosY, ButtonWidth, ButtonHeight), "Disconnect Client"))
+                    {
+                        _networkManager.ClientManager.StopConnection();
+                    }
+                }
+                else if (UxrNetworkManager.IsHost)
+                {
+                    if (GUI.Button(new Rect(0, PosY, ButtonWidth, ButtonHeight), "Stop Server"))
+                    {
+                        _networkManager.ServerManager.StopConnection(true);
+                    }
+
+                    PosY += ButtonHeight;
+
+                    if (GUI.Button(new Rect(0, PosY, ButtonWidth, ButtonHeight), "Stop Client"))
+                    {
+                        _networkManager.ClientManager.StopConnection();
+                    }
+                }
+                
+                return;
             }
 
             GUI.Box(new Rect(0,                PosY, ButtonWidth,     LabelHeight), "Network Address:");
@@ -388,14 +406,27 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
             }
         }
 
+        #endregion
+
+        #region Private Methods
+
+        /// <summary>
+        ///     Tries to get the FishNet network manager.
+        /// </summary>
+        private NetworkManager TryGetNetworkManager()
+        {
+            _networkManager = InstanceFinder.NetworkManager;
+            return _networkManager;
+        }
+        
+        #endregion
+
+        #region Private Types & Data
+
         /// <summary>
         ///     Gets the network port specified by the user through the UI.
         /// </summary>
         private ushort NetworkPort => ushort.Parse(_networkPort);
-
-        #endregion
-
-        #region Private Types & Data
 
         private int PosY { get; set; }
 

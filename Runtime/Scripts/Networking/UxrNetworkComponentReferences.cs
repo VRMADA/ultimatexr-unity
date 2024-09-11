@@ -190,7 +190,11 @@ namespace UltimateXR.Networking
 
             _addedGameObjects.Clear();
             _addedComponents.Clear();
-            Undo.DestroyObjectImmediate(this);
+
+            if (this != null)
+            {
+                Undo.DestroyObjectImmediate(this);
+            }
 #endif
         }
 

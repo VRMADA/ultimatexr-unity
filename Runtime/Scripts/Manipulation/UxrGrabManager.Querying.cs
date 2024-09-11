@@ -712,19 +712,18 @@ namespace UltimateXR.Manipulation
         }
 
         /// <summary>
-        ///     Enumerates all grabs on the given grabbable object.
+        ///     Returns all grabs on the given grabbable object.
         /// </summary>
         /// <param name="grabbableObject">Grabbable object to get the grab information from</param>
         /// <returns>List of grabs</returns>
-        private IEnumerable<RuntimeGrabInfo> GetGrabs(UxrGrabbableObject grabbableObject)
+        private List<RuntimeGrabInfo> GetGrabs(UxrGrabbableObject grabbableObject)
         {
             if (grabbableObject != null && _currentManipulations.TryGetValue(grabbableObject, out RuntimeManipulationInfo manipulationInfo))
             {
-                foreach (RuntimeGrabInfo grabInfo in manipulationInfo.Grabs)
-                {
-                    yield return grabInfo;
-                }
+                return new List<RuntimeGrabInfo>(manipulationInfo.Grabs);
             }
+
+            return new List<RuntimeGrabInfo>();
         }
 
         /// <summary>

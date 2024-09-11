@@ -115,6 +115,20 @@ namespace UltimateXR.Manipulation.Helpers
             }
         }
 
+        /// <summary>
+        ///     Called by the base class whenever the object is placed.
+        /// </summary>
+        /// <param name="e">Contains all grab event parameters</param>
+        protected override void OnObjectPlaced(UxrManipulationEventArgs e)
+        {
+            base.OnObjectPlaced(e);
+
+            if (e.GrabbableAnchor != null)
+            {
+                _lastObjectAnchor = e.GrabbableAnchor;
+            }
+        }
+
         #endregion
 
         #region Private Methods
@@ -125,7 +139,7 @@ namespace UltimateXR.Manipulation.Helpers
         /// <returns>Destination anchor</returns>
         private UxrGrabbableObjectAnchor GetReturnAnchor()
         {
-            if (_returnPolicy == ReturnPolicy.LastAnchor && _lastObjectAnchor != null && _lastObjectAnchor.CurrentPlacedObject != null)
+            if (_returnPolicy == ReturnPolicy.LastAnchor && _lastObjectAnchor != null && _lastObjectAnchor.CurrentPlacedObject == null)
             {
                 return _lastObjectAnchor;
             }

@@ -95,7 +95,11 @@ namespace UltimateXR.Rendering.LOD
             if (!_onlyFixLodBias)
             {
                 UxrAvatar.GlobalAvatarMoved -= UxrAvatar_GlobalAvatarMoved;
-                UnityLODGroup.ForceLOD(-1);
+
+                if (UnityLODGroup.enabled && UnityLODGroup.gameObject.activeInHierarchy)
+                {
+                    UnityLODGroup.ForceLOD(-1);
+                }
             }
         }
 
@@ -183,7 +187,10 @@ namespace UltimateXR.Rendering.LOD
         /// <param name="cam"></param>
         private void EnableLevelRenderers(Camera cam)
         {
-            UnityLODGroup.ForceLOD(UnityLODGroup.GetVisibleLevel(cam));
+            if (UnityLODGroup.enabled && UnityLODGroup.gameObject.activeInHierarchy)
+            {
+                UnityLODGroup.ForceLOD(UnityLODGroup.GetVisibleLevel(cam));
+            }
         }
 
         /// <summary>
@@ -205,8 +212,11 @@ namespace UltimateXR.Rendering.LOD
             }
             else
             {
-                UnityLODGroup.EnableAllLevelRenderers();
-                UnityLODGroup.ForceLOD(-1);
+                if (UnityLODGroup.enabled && UnityLODGroup.gameObject.activeInHierarchy)
+                {
+                    UnityLODGroup.EnableAllLevelRenderers();
+                    UnityLODGroup.ForceLOD(-1);
+                }
             }
         }
 

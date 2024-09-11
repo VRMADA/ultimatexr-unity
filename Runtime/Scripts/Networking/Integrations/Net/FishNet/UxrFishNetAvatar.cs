@@ -16,7 +16,9 @@ using UltimateXR.Extensions.System;
 using UltimateXR.Extensions.System.Collections;
 using FishNet.Connection;
 using FishNet.Object;
+using UltimateXR.Attributes;
 using UltimateXR.Core.Instantiation;
+using TransformExt = UltimateXR.Extensions.Unity.TransformExt;
 #endif
 
 namespace UltimateXR.Networking.Integrations.Net.FishNet
@@ -27,6 +29,9 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
         #region Inspector Properties/Serialized Fields
 
         [Tooltip("List of objects that will be disabled when the avatar is in local mode, to avoid intersections with the camera for example")] [SerializeField] private List<GameObject> _localDisabledGameObjects;
+        [SerializeField] [ReadOnly]                                                                                                                              private GameObject       _networkCamera;
+        [SerializeField] [ReadOnly]                                                                                                                              private GameObject       _networkHandLeft;
+        [SerializeField] [ReadOnly]                                                                                                                              private GameObject       _networkHandRight;
 
         #endregion
 
@@ -74,12 +79,26 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
                 LocalDisabledGameObjects.ForEach(o => o.SetActive(false));
             }
 
-            avatar.CombineUniqueId(uniqueId.GetGuid(), true);
+            avatar.CombineUniqueId(uniqueId.GetGuid());
         }
 
         #endregion
 
         #region Public Methods
+
+        /// <summary>
+        ///     Sets up the dummy network transforms that hang from the avatar. These network transforms will be used
+        ///     to propagate the transform data, since FishNet only can synchronize transforms in local space.
+        /// </summary>
+        /// <param name="networkCamera">Dummy GameObject that will synchronize the camera transform</param>
+        /// <param name="networkHandLeft">Dummy GameObject that will synchronize the left hand</param>
+        /// <param name="networkHandRight">Dummy GameObject that will synchronize the right hand</param>
+        public void SetupDummyNetworkTransforms(GameObject networkCamera, GameObject networkHandLeft, GameObject networkHandRight)
+        {
+            _networkCamera    = networkCamera;
+            _networkHandLeft  = networkHandLeft;
+            _networkHandRight = networkHandRight;
+        }
 
         /// <summary>
         ///     Request authority of the local avatar over an object.
@@ -92,7 +111,94 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
 
         #endregion
 
+        #region Unity
+
+        /// <summary>
+        ///     Subscribes to events.
+        /// </summary>
+        private void OnEnable()
+        {
+            UxrManager.StageUpdated += UxrManager_StageUpdated;
+        }
+
+        /// <summary>
+        ///     Unsubscribes from events.
+        /// </summary>
+        private void OnDisable()
+        {
+            UxrManager.StageUpdated -= UxrManager_StageUpdated;
+        }
+
+        /// <summary>
+        ///     Unity's Update() method. This will check for correct setup.
+        /// </summary>
+        private void Update()
+        {
+            if (UxrGlobalSettings.Instance.LogLevelNetworking >= UxrLogLevel.Errors)
+            {
+                if (_networkCamera == null || _networkHandLeft == null || _networkHandRight == null)
+                {
+                    Debug.LogError($"{UxrConstants.NetworkingModule} Avatar {this}'s prefab needs to be setup again using {nameof(UxrNetworkManager)} because dummy NetworkTransforms are missing. If the avatar is already registered, remove it and add it again.");
+                }
+            }
+        }
+
+        #endregion
+
         #region Event Handling Methods
+
+        /// <summary>
+        ///     Called when <see cref="UxrManager" /> finished an update stage during a frame. This will update the avatar if it's
+        ///     a remote avatar.
+        /// </summary>
+        /// <param name="stage">The stage that finished updating</param>
+        private void UxrManager_StageUpdated(UxrUpdateStage stage)
+        {
+            if (Avatar == null)
+            {
+                return;
+            }
+
+            if (stage == UxrUpdateStage.AvatarUsingTracking && !IsOwner)
+            {
+                // Copy from network transforms to avatar
+                
+                if (Avatar.CameraComponent && _networkCamera)
+                {
+                    TransformExt.SetPositionAndRotation(Avatar.CameraComponent.transform, _networkCamera.transform);
+                }
+
+                if (Avatar.LeftHandBone != null && _networkHandLeft != null)
+                {
+                    TransformExt.SetPositionAndRotation(Avatar.LeftHandBone, _networkHandLeft.transform);
+                }
+
+                if (Avatar.RightHandBone != null && _networkHandRight != null)
+                {
+                    TransformExt.SetPositionAndRotation(Avatar.RightHandBone, _networkHandRight.transform);
+                }
+            }
+            else if (stage == UxrUpdateStage.PostProcess && IsOwner)
+            {
+                // Copy from avatar to network transforms. Do it at the last stage to make sure the hands are
+                // In their right position after all manipulation logic has taken place.
+                
+                if (Avatar.CameraComponent && _networkCamera)
+                {
+                    TransformExt.SetPositionAndRotation(_networkCamera.transform, Avatar.CameraComponent.transform);
+                }
+
+                if (Avatar.LeftHandBone != null && _networkHandLeft != null)
+                {
+                    TransformExt.SetPositionAndRotation(_networkHandLeft.transform, Avatar.LeftHandBone);
+                }
+
+                if (Avatar.RightHandBone != null && _networkHandRight != null)
+                {
+                    TransformExt.SetPositionAndRotation(_networkHandRight.transform, Avatar.RightHandBone);
+                }
+            }
+        }
 
         /// <summary>
         ///     Called when a component in UltimateXR had a state change.
@@ -127,10 +233,54 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
         #region Event Trigger Methods
 
         /// <inheritdoc />
+        public override void OnStartServer()
+        {
+            base.OnStartServer();
+
+            if (!UxrNetworkManager.IsHost)
+            {
+                // Avoid calling in host mode, since OnStartClient() is already called. 
+                StartNetworkAvatar();
+            }
+        }
+
+        /// <inheritdoc />
         public override void OnStartClient()
         {
             base.OnStartClient();
 
+            StartNetworkAvatar();
+        }
+
+        /// <inheritdoc />
+        public override void OnStopServer()
+        {
+            base.OnStopServer();
+
+            if (!UxrNetworkManager.IsHost)
+            {
+                // Avoid calling in host mode, since OnStopClient() is already called.
+                StopNetworkAvatar();
+            }
+        }
+
+        /// <inheritdoc />
+        public override void OnStopClient()
+        {
+            base.OnStopClient();
+
+            StopNetworkAvatar();
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        /// <summary>
+        ///     Finishes the network avatar initialization.
+        /// </summary>
+        private void StartNetworkAvatar()
+        {
             Avatar = GetComponent<UxrAvatar>();
 
             InitializeNetworkAvatar(Avatar, IsOwner, OwnerId.ToString(), $"Player {OwnerId} ({(IsOwner ? "Local" : "External")})");
@@ -142,7 +292,7 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
 
             if (UxrGlobalSettings.Instance.LogLevelNetworking >= UxrLogLevel.Relevant)
             {
-                Debug.Log($"{UxrConstants.NetworkingModule} {nameof(UxrFishNetAvatar)}.{nameof(OnStartClient)}: Is Local? {IsLocal}, Name: {AvatarName}. OwnerId: {OwnerId}, UniqueId: {Avatar.UniqueId}.");
+                Debug.Log($"{UxrConstants.NetworkingModule} {nameof(UxrFishNetAvatar)}.{nameof(StartNetworkAvatar)}: Is Local? {IsLocal}, Name: {AvatarName}. OwnerId: {OwnerId}, UniqueId: {Avatar.UniqueId}.");
             }
 
             AvatarSpawned?.Invoke();
@@ -154,7 +304,7 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
 
             if (IsOwner)
             {
-                if (!IsServer)
+                if (!UxrNetworkManager.IsServer)
                 {
                     byte[] localAvatarState = UxrManager.Instance.SaveStateChanges(new List<GameObject> { Avatar.gameObject }, null, UxrStateSaveLevel.ChangesSinceBeginning, UxrGlobalSettings.Instance.NetFormatInitialState);
 
@@ -175,11 +325,11 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
             }
         }
 
-        /// <inheritdoc />
-        public override void OnStopClient()
+        /// <summary>
+        ///     Stops a network avatar.
+        /// </summary>
+        private void StopNetworkAvatar()
         {
-            base.OnStopClient();
-
             if (Avatar && IsOwner)
             {
                 UxrManager.ComponentStateChanged -= UxrManager_ComponentStateChanged;
@@ -187,7 +337,7 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
 
             if (UxrGlobalSettings.Instance.LogLevelNetworking >= UxrLogLevel.Relevant)
             {
-                Debug.Log($"{UxrConstants.NetworkingModule} {nameof(UxrFishNetAvatar)}.{nameof(OnStopClient)}: Is Local? {IsLocal}, Name: {AvatarName}");
+                Debug.Log($"{UxrConstants.NetworkingModule} {nameof(UxrFishNetAvatar)}.{nameof(StopNetworkAvatar)}: Is Local? {IsLocal}, Name: {AvatarName}");
             }
 
             if (UxrInstanceManager.HasInstance)
@@ -197,10 +347,6 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
 
             AvatarDespawned?.Invoke();
         }
-
-        #endregion
-
-        #region Private Methods
 
         /// <summary>
         ///     Server RPC to request the current global state upon joining.
@@ -260,7 +406,7 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
 
             foreach (NetworkObject no in networkObjects)
             {
-                no.GiveOwnership(conn);                
+                no.GiveOwnership(conn);
             }
         }
 
@@ -335,7 +481,7 @@ namespace UltimateXR.Networking.Integrations.Net.FishNet
         #region Private Types & Data
 
         private static bool s_initialStateLoaded;
-        
+
         private string _avatarName;
 
         #endregion

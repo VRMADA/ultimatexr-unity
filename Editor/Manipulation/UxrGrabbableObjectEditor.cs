@@ -1059,8 +1059,8 @@ namespace UltimateXR.Editor.Manipulation
                 {
                     UxrAxis axis = i;
 
-                    float min = grabbableObject.TranslationLimitsMin[axis];
-                    float max = grabbableObject.TranslationLimitsMax[axis];
+                    float min = grabbableObject.TranslationLimitsMin[axis] / grabbableObject.transform.localScale[axis];
+                    float max = grabbableObject.TranslationLimitsMax[axis] / grabbableObject.transform.localScale[axis];
 
                     if (!Mathf.Approximately(min, max))
                     {

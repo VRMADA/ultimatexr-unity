@@ -1089,51 +1089,6 @@ namespace UltimateXR.Manipulation
                 releaseVelocity.y *= grabbableObject.VerticalReleaseMultiplier;
             }
             
-            // Check if the object's rigidbody needs to be made dynamic
-
-            Rigidbody rigidBodyToRelease = null;
-
-            if (isMultiHands == false || grabber == null)
-            {
-                _currentManipulations.Remove(grabbableObject);
-
-                if (grabbableObject.RigidBodySource != null && grabbableObject.CanUseRigidBody && grabbableObject.RigidBodyDynamicOnRelease)
-                {
-                    if (!GetDirectChildrenLookAtBeingGrabbed(grabbableObject).Any())
-                    {
-                        rigidBodyToRelease = grabbableObject.RigidBodySource;
-                    }
-                }
-            }
-
-            // Check if the object's parent grabbable rigidbody needs to be made dynamic, if this is the last grab that keeps holding it
-
-            UxrGrabbableObject grabbableParentLookAt = grabbableObject.ParentLookAts.FirstOrDefault();
-
-            if (rigidBodyToRelease == null && grabbableParentLookAt != null && grabbableParentLookAt.RigidBodySource != null && grabbableParentLookAt.CanUseRigidBody && grabbableParentLookAt.RigidBodyDynamicOnRelease)
-            {
-                if (!grabbableParentLookAt.IsBeingGrabbed && !GetDirectChildrenLookAtBeingGrabbed(grabbableParentLookAt).Any())
-                {
-                    rigidBodyToRelease = grabbableParentLookAt.RigidBodySource;
-                }
-            }
-
-            if (rigidBodyToRelease != null && releaseVelocity.IsValid())
-            {
-                if (position == null)
-                {
-                    // Locally, update the position update for this frame when releasing because physics are still not enabled
-                    releasePosition             += releaseVelocity * Time.deltaTime;
-                    rigidBodyToRelease.position += releasePosition;
-                }
-                else
-                {
-                    // Use the parameters passed
-                    rigidBodyToRelease.position = releasePosition;
-                    rigidBodyToRelease.rotation = releaseRotation;
-                }
-            }
-
             // Process and raise event(s)
 
             // Avoid creating list of multiple releases if the release is just a single grabber
@@ -1171,12 +1126,56 @@ namespace UltimateXR.Manipulation
                     multipleReleases?.Add((grb, grbPoint));
                 }
             }
+            
+            // Check if the object's rigidbody needs to be made dynamic
+
+            Rigidbody rigidBodyToRelease = null;
+
+            if (isMultiHands == false || grabber == null)
+            {
+                _currentManipulations.Remove(grabbableObject);
+
+                if (grabbableObject.RigidBodySource != null && grabbableObject.CanUseRigidBody && grabbableObject.RigidBodyDynamicOnRelease)
+                {
+                    if (!GetDirectChildrenLookAtBeingGrabbed(grabbableObject).Any())
+                    {
+                        rigidBodyToRelease = grabbableObject.RigidBodySource;
+                    }
+                }
+            }
+
+            // Check if the object's parent grabbable rigidbody needs to be made dynamic, if this is the last grab that keeps holding it
+
+            UxrGrabbableObject grabbableParentLookAt = grabbableObject.ParentLookAts.FirstOrDefault();
+
+            if (rigidBodyToRelease == null && grabbableParentLookAt != null && grabbableParentLookAt.RigidBodySource != null && grabbableParentLookAt.CanUseRigidBody && grabbableParentLookAt.RigidBodyDynamicOnRelease)
+            {
+                if (!grabbableParentLookAt.IsBeingGrabbed && !GetDirectChildrenLookAtBeingGrabbed(grabbableParentLookAt).Any())
+                {
+                    rigidBodyToRelease = grabbableParentLookAt.RigidBodySource;
+                }
+            }
+
+            if (rigidBodyToRelease != null && releaseVelocity.IsValid())
+            {
+                if (position == null)
+                {
+                    // Locally, update the position update for this frame when releasing because physics are still not enabled
+                    releasePosition += releaseVelocity * Time.deltaTime;
+                }
+                else
+                {
+                    // Use the parameters passed
+                }
+            }
 
             // Make rigidbody dynamic if there is one
 
             if (rigidBodyToRelease != null)
             {
                 rigidBodyToRelease.isKinematic = false;
+                rigidBodyToRelease.position    = releasePosition;
+                rigidBodyToRelease.rotation    = releaseRotation;
 
                 if (releaseVelocity.IsValid())
                 {
@@ -2273,7 +2272,9 @@ namespace UltimateXR.Manipulation
                         Vector3 localPosOffset = grabbableObject.InitialRelativeMatrix.inverse.MultiplyPoint3x4(localPosition);
 
                         // Clamp in initial local space, transform to current local space
-                        targetLocalPos = grabbableObject.InitialRelativeMatrix.MultiplyPoint(localPosOffset.Clamp(grabbableObject.TranslationLimitsMin, grabbableObject.TranslationLimitsMax));
+                        Vector3 reciprocalScale = new Vector3(1.0f / grabbableObject.transform.localScale.x, 1.0f / grabbableObject.transform.localScale.y, 1.0f / grabbableObject.transform.localScale.z);
+                        targetLocalPos = grabbableObject.InitialRelativeMatrix.MultiplyPoint(localPosOffset.Clamp(Vector3.Scale(grabbableObject.TranslationLimitsMin, reciprocalScale),
+                                                                                                                  Vector3.Scale(grabbableObject.TranslationLimitsMax, reciprocalScale)));
                     }
                     else
                     {
