@@ -1833,12 +1833,14 @@ namespace UltimateXR.Core
 
             UxrGrabManager.Instance.UpdateManager();
             UxrWeaponManager.Instance.UpdateManager();
-
+            
             foreach (UxrAvatarController avatarController in EnabledAvatarControllers)
             {
+                // We update the manipulation after the grab manager mainly to ensure that the
+                // hand transitions that result from releasing constrained objects work with the correct start.
                 ((IUxrAvatarControllerUpdater)avatarController).UpdateAvatarManipulation();
             }
-
+            
             foreach (UxrAvatarController avatarController in EnabledAvatarControllers)
             {
                 OnAvatarUpdated(avatarController.Avatar, new UxrAvatarUpdateEventArgs(avatarController.Avatar, UxrUpdateStage.Manipulation));

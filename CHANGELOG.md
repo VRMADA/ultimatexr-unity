@@ -169,6 +169,10 @@ TODO: Write update guide:
 - Fix preview grab poses to work on hierarchies with non-uniform scaling.
 - Fix Lock Body Pivot parameter drifting in UxrStandardAvatarController.
 - Fix bug in UI system to detect fingertip presses correctly in a moving canvas.
+- Fix bug in UxrAvatar.LocalAvatar where a disabled avatar can be returned when
+  there are two or more instances of an avatar with Local update mode in the scene.
+- Fix bug in manipulation system where throwing physics-driven objects sometimes
+  has a small lag between the button release and the physics.
 
 ## [0.9.7] - 2024-01-10
   

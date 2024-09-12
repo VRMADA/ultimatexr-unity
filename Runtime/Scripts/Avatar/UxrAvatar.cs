@@ -137,7 +137,20 @@ namespace UltimateXR.Avatar
         ///     updated externally. In multiplayer sessions, for example, non-local avatars are updated using network transform
         ///     syncing.
         /// </summary>
-        public static UxrAvatar LocalAvatar => AllComponents.FirstOrDefault(c => c.AvatarMode == UxrAvatarMode.Local);
+        public static UxrAvatar LocalAvatar
+        {
+            get
+            {
+                UxrAvatar localAvatar = EnabledComponents.FirstOrDefault(c => c.AvatarMode == UxrAvatarMode.Local);
+
+                if (localAvatar == null)
+                {
+                    localAvatar = AllComponents.FirstOrDefault(c => c.AvatarMode == UxrAvatarMode.Local); 
+                }
+
+                return localAvatar;
+            }
+        }
 
         /// <summary>
         ///     Gets the camera component of the local avatar. If there is no local avatar it will return null.
@@ -161,12 +174,27 @@ namespace UltimateXR.Avatar
         {
             get
             {
+                UxrAvatar enabledNonLocalAvatar = null;
+                
                 foreach (UxrAvatar avatar in EnabledComponents)
                 {
                     if (avatar.CameraComponent != null && avatar.CameraComponent.enabled)
                     {
-                        return avatar.CameraComponent;
+                        if (avatar.AvatarMode == UxrAvatarMode.Local)
+                        {
+                            return avatar.CameraComponent;
+                        }
+
+                        if (enabledNonLocalAvatar == null)
+                        {
+                            enabledNonLocalAvatar = avatar;
+                        }
                     }
+                }
+
+                if (enabledNonLocalAvatar != null)
+                {
+                    return enabledNonLocalAvatar.CameraComponent;    
                 }
 
                 return Camera.main;

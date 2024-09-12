@@ -1041,8 +1041,8 @@ namespace UltimateXR.Manipulation
 
             UxrGrabbableObjectAnchor sourceAnchor           = manipulationInfo.SourceAnchor;
             bool                     isMultiHands           = manipulationInfo.Grabs.Count > 1;
-            Vector3                  releasePosition        = position ?? transform.position;
-            Quaternion               releaseRotation        = rotation ?? transform.rotation;
+            Vector3                  releasePosition        = position ?? (grabbableObject.RigidBodySource != null ? grabbableObject.RigidBodySource.transform.position : grabbableObject.transform.position);
+            Quaternion               releaseRotation        = rotation ?? (grabbableObject.RigidBodySource != null ? grabbableObject.RigidBodySource.transform.rotation : grabbableObject.transform.rotation);
             Vector3                  releaseVelocity        = velocity ?? (grabber != null && !grabber.IsInSmoothManipulationTransition ? grabber.SmoothVelocity : Vector3.zero);
             Vector3                  releaseAngularVelocity = angularVelocity ?? (grabber != null && !grabber.IsInSmoothManipulationTransition ? grabber.SmoothAngularVelocity * Mathf.Deg2Rad : Vector3.zero);
             Vector2                  horizontal             = new Vector2(releaseVelocity.x, releaseVelocity.z);
@@ -1156,20 +1156,7 @@ namespace UltimateXR.Manipulation
                 }
             }
 
-            if (rigidBodyToRelease != null && releaseVelocity.IsValid())
-            {
-                if (position == null)
-                {
-                    // Locally, update the position update for this frame when releasing because physics are still not enabled
-                    releasePosition += releaseVelocity * Time.deltaTime;
-                }
-                else
-                {
-                    // Use the parameters passed
-                }
-            }
-
-            // Make rigidbody dynamic if there is one
+            // If there is a rigidBody involved, make it dynamic
 
             if (rigidBodyToRelease != null)
             {

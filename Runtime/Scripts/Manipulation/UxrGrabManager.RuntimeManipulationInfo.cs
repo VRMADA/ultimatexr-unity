@@ -261,7 +261,11 @@ namespace UltimateXR.Manipulation
 
                 if (Instance.Features.HasFlag(UxrManipulationFeatures.SmoothTransitions))
                 {
-                    grabbableObject.StartSmoothManipulationTransition();
+                    if (!(grabbableObject.RigidBodySource != null && grabbableObject.RigidBodyDynamicOnRelease))
+                    {
+                        grabbableObject.StartSmoothManipulationTransition();
+                    }
+                    
                     grabber.StartSmoothManipulationTransition();
 
                     if (grabbableObject.GrabbableParent != null && grabbableObject.UsesGrabbableParentDependency && grabbableObject.ControlParentDirection)
