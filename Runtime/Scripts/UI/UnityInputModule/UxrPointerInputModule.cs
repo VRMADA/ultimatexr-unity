@@ -855,7 +855,7 @@ namespace UltimateXR.UI.UnityInputModule
 
             data.button = PointerEventData.InputButton.Left;
 
-            // Finger tip worldpos/previousworldpos initialization
+            // Fingertip worldpos/previousworldpos initialization
 
             data.PreviousWorldPos = data.WorldPos;
             data.WorldPos         = fingerTip.WorldPos;
@@ -864,6 +864,11 @@ namespace UltimateXR.UI.UnityInputModule
             {
                 data.WorldPosInitialized = true;
                 return data;
+            }
+
+            if (data.FingerTipPosInitialized)
+            {
+                data.PreviousFingerTipPosWasInsideControl = data.FingerTipPosIsInsideControl;
             }
 
             // Raycast
@@ -915,17 +920,26 @@ namespace UltimateXR.UI.UnityInputModule
 
             data.ReleasedThisFrame = data.pointerPress != null && !fingerTipValid;
 
-            // Check for presses/releases by comparing the finger tip current/last positions against the UI object's plane
+            // Check for presses/releases by comparing the fingertip current/last positions against the UI object's plane
 
             if (data.pointerEnter && fingerTipValid)
             {
-                if (!IsFingerTipOutside(data, data.pointerEnter) && WasFingerTipPreviousPosOutside(data, data.pointerEnter))
+                data.FingerTipPosIsInsideControl = !IsFingerTipOutside(data, data.pointerEnter);
+                
+                if (!data.FingerTipPosInitialized)
                 {
-                    data.PressedThisFrame = true;
+                    data.FingerTipPosInitialized = true;
                 }
-                else if (IsFingerTipOutside(data, data.pointerEnter) && !WasFingerTipPreviousPosOutside(data, data.pointerEnter))
+                else
                 {
-                    data.ReleasedThisFrame = true;
+                    if (data.FingerTipPosIsInsideControl && !data.PreviousFingerTipPosWasInsideControl)
+                    {
+                        data.PressedThisFrame = true;
+                    }
+                    else if (!data.FingerTipPosIsInsideControl && data.PreviousFingerTipPosWasInsideControl)
+                    {
+                        data.ReleasedThisFrame = true;
+                    }
                 }
             }
 
@@ -1100,17 +1114,6 @@ namespace UltimateXR.UI.UnityInputModule
         private bool IsFingerTipOutside(UxrPointerEventData pointerEventData, GameObject uiGameObject)
         {
             return Vector3.Dot(uiGameObject.transform.position - pointerEventData.WorldPos, uiGameObject.transform.forward) > 0.0f;
-        }
-
-        /// <summary>
-        ///     Gets whether a finger tip was on the front side of the plane where the control lies, during the previous frame.
-        /// </summary>
-        /// <param name="pointerEventData">Pointer event data</param>
-        /// <param name="uiGameObject">Control</param>
-        /// <returns>Whether the finger tip was on the front side the previous frame</returns>
-        private bool WasFingerTipPreviousPosOutside(UxrPointerEventData pointerEventData, GameObject uiGameObject)
-        {
-            return Vector3.Dot(uiGameObject.transform.position - pointerEventData.PreviousWorldPos, uiGameObject.transform.forward) > 0.0f;
         }
 
         #endregion

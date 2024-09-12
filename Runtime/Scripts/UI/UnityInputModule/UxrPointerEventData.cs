@@ -52,6 +52,21 @@ namespace UltimateXR.UI.UnityInputModule
         ///     Gets the pointer world position during the last frame.
         /// </summary>
         public Vector3 PreviousWorldPos { get; internal set; }
+        
+        /// <summary>
+        ///     Gets whether <see cref="FingerTipPosIsInsideControl"/> was initialized.
+        /// </summary>
+        public bool FingerTipPosInitialized { get; internal set; }
+
+        /// <summary>
+        ///     Gets whether the fingertip is inside the canvas (on the "pressed" side).
+        /// </summary>
+        public bool FingerTipPosIsInsideControl { get; internal set; }
+
+        /// <summary>
+        ///     Gets whether the fingertip was inside the canvas (on the "pressed" side) during the last frame.
+        /// </summary>
+        public bool PreviousFingerTipPosWasInsideControl { get; internal set; }
 
         /// <summary>
         ///     Gets whether the world position has been initialized.
