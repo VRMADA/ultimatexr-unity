@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Soon v1.0.0 with full multiplayer support and tons of new features.
+- Soon v1.0.0 with full multiplayer support and tons of new features! Already available
+  as a working branch in GitHub.
+- Fix bug in UI system to detect fingertip presses correctly in a moving canvas.
 
 ## [0.9.7] - 2024-01-10
 
