@@ -231,7 +231,7 @@ namespace UltimateXR.UI
         }
 
         /// <summary>
-        ///     Gets or sets the size of the ray hit quad..
+        ///     Gets or sets the size of the ray hit quad.
         /// </summary>
         public float RayHitSize
         {
@@ -280,19 +280,36 @@ namespace UltimateXR.UI
         }
 
         /// <summary>
-        ///     Tries to get the position where the laser pointer hits an object.
+        ///     Tries to get the world position where the laser pointer hits an object.
         /// </summary>
-        /// <param name="hitPosition">The position where the laser pointer hits an object.</param>
-        /// <returns>True if the laser pointer is enabled and a hit position is calculated, false otherwise.</returns>
-        public bool TryGetLaserHitPosition(out Vector3 _hitPosition)
+        /// <param name="hitPosition">Returns the position where the laser pointer hits an object</param>
+        /// <returns>True if the laser pointer is enabled and a hit position is calculated, false otherwise</returns>
+        public bool TryGetLaserHitPosition(out Vector3 hitPosition)
         {
             if (IsLaserEnabled)
             {
-                _hitPosition = LaserPos + LaserDir * CurrentRayLength;
-                return true;
+                UxrPointerEventData eventData = UxrPointerInputModule.Instance.GetLaserPointerEventData(this);
+
+                if (eventData.HasData)
+                {
+                    hitPosition = eventData.pointerCurrentRaycast.WorldPos;
+                    return true;
+                }
             }
-            _hitPosition = Vector3.zero;
+            
+            hitPosition = Vector3.zero;
             return false;
+        }
+
+        /// <summary>
+        ///     Tries to get the pointer event data.
+        /// </summary>
+        /// <param name="pointerEventData">Returns the pointer event data</param>
+        /// <returns>True if the event data was returned, false otherwise</returns>
+        public bool TryGetPointerEventData(out UxrPointerEventData pointerEventData)
+        {
+            pointerEventData = UxrPointerInputModule.Instance.GetLaserPointerEventData(this);
+            return eventData.HasData;
         }
 
         #endregion
