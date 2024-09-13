@@ -925,7 +925,7 @@ namespace UltimateXR.UI.UnityInputModule
             if (data.pointerEnter && fingerTipValid)
             {
                 data.FingerTipPosIsInsideControl = !IsFingerTipOutside(data, data.pointerEnter);
-                
+
                 if (!data.FingerTipPosInitialized)
                 {
                     data.FingerTipPosInitialized = true;
