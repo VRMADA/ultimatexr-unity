@@ -910,7 +910,8 @@ namespace UltimateXR.UI.UnityInputModule
 
             data.button           = PointerEventData.InputButton.Left;
             data.useDragThreshold = true;
-
+            data.PreviousWorldPos = data.WorldPos;
+            
             // Raycast
 
             RaycastResult raycastResult = data.pointerCurrentRaycast;
@@ -1008,6 +1009,17 @@ namespace UltimateXR.UI.UnityInputModule
             if (data.pointerCurrentRaycast.gameObject == null && data.pointerEnter != null)
             {
                 data.ReleasedThisFrame = true;
+            }
+
+            if (raycast.isValid)
+            {
+                data.WorldPos = laserPointer.LaserPos + laserPointer.LaserDir * raycast.distance;
+
+                if (!data.WorldPosInitialized && raycast.isValid)
+                {
+                    data.PreviousWorldPos = data.WorldPos;
+                    data.WorldPosInitialized = true;
+                }
             }
 
             return data;
