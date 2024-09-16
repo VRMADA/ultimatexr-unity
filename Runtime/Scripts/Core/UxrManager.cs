@@ -68,7 +68,7 @@ namespace UltimateXR.Core
         // SDK strings
 
         public const string SdkUnityInputSystem    = "Unity Input System";
-        public const string SdkOculus              = "Oculus";
+        public const string SdkOculus              = "Oculus/Meta";
         public const string SdkSteamVR             = "SteamVR";
         public const string SdkWindowsMixedReality = "Windows Mixed Reality";
         public const string SdkUltraleap           = "Ultraleap";
