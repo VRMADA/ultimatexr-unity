@@ -78,6 +78,17 @@ namespace UltimateXR.UI
             return box != null && transform.position.IsInsideBox(box);
         }
 
+        /// <summary>
+        ///     Tries to get the pointer event data.
+        /// </summary>
+        /// <param name="pointerEventData">Returns the pointer event data</param>
+        /// <returns>True if the event data was returned, false otherwise</returns>
+        public bool TryGetPointerEventData(out UxrPointerEventData pointerEventData)
+        {
+            pointerEventData = UxrPointerInputModule.Instance.GetFingerTipPointerEventData(this);
+            return eventData.HasData;
+        }
+
         #endregion
 
         #region Unity

@@ -10,7 +10,7 @@ using UnityEngine;
 namespace UltimateXR.Editor.Sdks.InputTracking
 {
     /// <summary>
-    ///     SDK Locator for Oculus' SDK.
+    ///     SDK Locator for Oculus/Meta SDK.
     /// </summary>
     public sealed class UxrSdkLocatorOvr : UxrSdkLocator
     {
@@ -23,7 +23,7 @@ namespace UltimateXR.Editor.Sdks.InputTracking
         public override string Name => UxrConstants.SdkOculus;
 
         /// <inheritdoc />
-        public override string MinimumUnityVersion => "2021.1";
+        public override string MinimumUnityVersion => "2021.3";
 
         /// <inheritdoc />
         public override string[] AvailableSymbols
@@ -70,9 +70,9 @@ namespace UltimateXR.Editor.Sdks.InputTracking
         /// <inheritdoc />
         public override void TryGet()
         {
-            if (EditorUtility.DisplayDialog("Install integration?", $"Oculus integration asset needs to be installed. Proceed to the Asset Store?", UxrConstants.Editor.Yes, UxrConstants.Editor.Cancel))
+            if (EditorUtility.DisplayDialog("Install integration?", $"Meta SDK integration asset needs to be installed. Proceed to the Asset Store?", UxrConstants.Editor.Yes, UxrConstants.Editor.Cancel))
             {
-                Application.OpenURL("https://assetstore.unity.com/packages/tools/integration/oculus-integration-82022");
+                Application.OpenURL("https://assetstore.unity.com/packages/tools/integration/meta-xr-core-sdk-269169");
             }
         }
 
@@ -102,7 +102,7 @@ namespace UltimateXR.Editor.Sdks.InputTracking
         /// <summary>
         ///     Allows to remove dependencies from the project in case the user removed SDK folders manually.
         /// </summary>
-        [MenuItem(UxrConstants.Editor.MenuPathSdksInputTracking + "Remove Symbols for Oculus SDK", priority = UxrConstants.Editor.PriorityMenuPathSdksInputTracking)]
+        [MenuItem(UxrConstants.Editor.MenuPathSdksInputTracking + "Remove Symbols for Meta SDK", priority = UxrConstants.Editor.PriorityMenuPathSdksInputTracking)]
         private static void RemoveSymbols()
         {
             UxrSdkManager.RemoveSymbols(new UxrSdkLocatorOvr());
