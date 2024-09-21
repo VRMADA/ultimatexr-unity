@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="UxrFingerTip.cs" company="VRMADA">
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
@@ -9,6 +9,7 @@ using UltimateXR.Core;
 using UltimateXR.Core.Components.Composite;
 using UltimateXR.Extensions.Unity.Math;
 using UltimateXR.Manipulation;
+using UltimateXR.UI.UnityInputModule;
 using UnityEngine;
 
 namespace UltimateXR.UI
@@ -86,7 +87,7 @@ namespace UltimateXR.UI
         public bool TryGetPointerEventData(out UxrPointerEventData pointerEventData)
         {
             pointerEventData = UxrPointerInputModule.Instance.GetFingerTipPointerEventData(this);
-            return eventData.HasData;
+            return pointerEventData.HasData;
         }
 
         #endregion
