@@ -288,11 +288,11 @@ namespace UltimateXR.UI
         {
             if (IsLaserEnabled)
             {
-                UxrPointerEventData eventData = UxrPointerInputModule.Instance.GetLaserPointerEventData(this);
+                UxrPointerEventData eventData = UxrPointerInputModule.Instance.GetPointerEventData(this);
 
                 if (eventData.HasData)
                 {
-                    hitPosition = eventData.pointerCurrentRaycast.WorldPos;
+                    hitPosition = eventData.WorldPos;
                     return true;
                 }
             }
@@ -308,8 +308,8 @@ namespace UltimateXR.UI
         /// <returns>True if the event data was returned, false otherwise</returns>
         public bool TryGetPointerEventData(out UxrPointerEventData pointerEventData)
         {
-            pointerEventData = UxrPointerInputModule.Instance.GetLaserPointerEventData(this);
-            return eventData.HasData;
+            pointerEventData = UxrPointerInputModule.Instance.GetPointerEventData(this);
+            return pointerEventData.HasData;
         }
 
         #endregion
