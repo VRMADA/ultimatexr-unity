@@ -9,6 +9,7 @@ using UltimateXR.Core;
 using UltimateXR.Core.Components.Composite;
 using UltimateXR.Extensions.Unity.Math;
 using UltimateXR.Manipulation;
+using UltimateXR.UI.UnityInputModule;
 using UnityEngine;
 
 namespace UltimateXR.UI
@@ -85,8 +86,8 @@ namespace UltimateXR.UI
         /// <returns>True if the event data was returned, false otherwise</returns>
         public bool TryGetPointerEventData(out UxrPointerEventData pointerEventData)
         {
-            pointerEventData = UxrPointerInputModule.Instance.GetFingerTipPointerEventData(this);
-            return eventData.HasData;
+            pointerEventData = UxrPointerInputModule.Instance.GetPointerEventData(this);
+            return pointerEventData.HasData;
         }
 
         #endregion
