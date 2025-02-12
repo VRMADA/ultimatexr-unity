@@ -111,34 +111,32 @@ namespace UltimateXR.Examples.FullScene.Doors
         /// </summary>
         private void Update()
         {
-            if (UxrAvatar.LocalAvatar == null)
+            if (UxrAvatar.LocalAvatar != null)
             {
-                return;
-            }
+                // Check distance to door
 
-            // Check distance to door
+                UxrAvatar closestAvatar = UxrAvatar.EnabledComponents.OrderBy(a => Vector3.Distance(a.CameraFloorPosition, FloorCenter.position)).FirstOrDefault();
 
-            UxrAvatar closestAvatar = UxrAvatar.EnabledComponents.OrderBy(a => Vector3.Distance(a.CameraFloorPosition, FloorCenter.position)).FirstOrDefault();
-
-            if (closestAvatar == UxrAvatar.LocalAvatar)
-            {
-                // The closest avatar will determine the door state.
-
-                float closestAvatarDistance = Vector3.Distance(closestAvatar.CameraFloorPosition, FloorCenter.position);
-
-                if (closestAvatarDistance < _openDistance && Mathf.Approximately(OpenValue, 0.0f))
+                if (closestAvatar == UxrAvatar.LocalAvatar)
                 {
-                    _openDelayTimer += Time.deltaTime;
+                    // The closest avatar will determine the door state.
 
-                    if (_openDelayTimer > _openDelaySeconds && IsOpeningAllowed)
+                    float closestAvatarDistance = Vector3.Distance(closestAvatar.CameraFloorPosition, FloorCenter.position);
+
+                    if (closestAvatarDistance < _openDistance && Mathf.Approximately(OpenValue, 0.0f))
                     {
-                        // Within opening distance, door completely closed and opening allowed: open door
-                        OpenDoor(true);
+                        _openDelayTimer += Time.deltaTime;
+
+                        if (_openDelayTimer > _openDelaySeconds && IsOpeningAllowed)
+                        {
+                            // Within opening distance, door completely closed and opening allowed: open door
+                            OpenDoor(true);
+                        }
                     }
-                }
-                else if (closestAvatarDistance > _closeDistance && Mathf.Approximately(OpenValue, 1.0f))
-                {
-                    CloseDoor(true);
+                    else if (closestAvatarDistance > _closeDistance && Mathf.Approximately(OpenValue, 1.0f))
+                    {
+                        CloseDoor(true);
+                    }
                 }
             }
 
