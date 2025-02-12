@@ -40,6 +40,11 @@ namespace UltimateXR.UI.UnityInputModule.Controls
         /// </summary>
         public UxrToggleControlInput CurrentSelection { get; private set; }
 
+        /// <summary>
+        ///     Gets the currently selected toggle component.
+        /// </summary>
+        public int CurrentSelectionIndex => _toggles?.IndexOf(CurrentSelection) ?? -1;
+
         #endregion
 
         #region Public Methods
