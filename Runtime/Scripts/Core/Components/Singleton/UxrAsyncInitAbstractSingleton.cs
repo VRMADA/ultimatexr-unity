@@ -41,7 +41,7 @@ namespace UltimateXR.Core.Components.Singleton
         /// </summary>
         /// <param name="ct">Allows to cancel the asynchronous process if necessary</param>
         /// <returns>Task representing the initialization</returns>
-        protected abstract Task InitAsync(CancellationToken ct = default);
+        protected abstract Task InitAsync(CancellationToken ct);
 
         #endregion
 
