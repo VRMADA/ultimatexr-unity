@@ -13,14 +13,13 @@ using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
-#if ULTIMATEXR_USE_PHOTONFUSION_SDK
+#if ULTIMATEXR_USE_PHOTONFUSION_SDK || ULTIMATEXR_USE_PHOTONFUSION2_SDK 
 using Fusion;
+using Photon.Voice.Fusion;
 #endif
 #if ULTIMATEXR_USE_PHOTONVOICE_SDK
-using Photon.Voice.Fusion;
 using Photon.Voice.Unity;
 #endif
-
 
 namespace UltimateXR.Networking.Integrations.Voice.PhotonVoice
 {
@@ -40,6 +39,7 @@ namespace UltimateXR.Networking.Integrations.Voice.PhotonVoice
             get
             {
                 yield return UxrConstants.SdkPhotonFusion;
+                yield return UxrConstants.SdkPhotonFusion2;
             }
         }
 
@@ -49,7 +49,7 @@ namespace UltimateXR.Networking.Integrations.Voice.PhotonVoice
             newGameObjects = new List<GameObject>();
             newComponents  = new List<Component>();
 
-#if ULTIMATEXR_USE_PHOTONFUSION_SDK && ULTIMATEXR_USE_PHOTONVOICE_SDK && UNITY_EDITOR
+#if (ULTIMATEXR_USE_PHOTONFUSION_SDK || ULTIMATEXR_USE_PHOTONFUSION2_SDK) && ULTIMATEXR_USE_PHOTONVOICE_SDK && UNITY_EDITOR
 
             Component runner = networkManager.CreatedGlobalComponents.FirstOrDefault(g => g.GetComponent<NetworkRunner>() != null);
 
@@ -87,7 +87,7 @@ namespace UltimateXR.Networking.Integrations.Voice.PhotonVoice
             newGameObjects = new List<GameObject>();
             newComponents  = new List<Component>();
 
-#if ULTIMATEXR_USE_PHOTONFUSION_SDK && ULTIMATEXR_USE_PHOTONVOICE_SDK && UNITY_EDITOR
+#if (ULTIMATEXR_USE_PHOTONFUSION_SDK || ULTIMATEXR_USE_PHOTONFUSION2_SDK) && ULTIMATEXR_USE_PHOTONVOICE_SDK && UNITY_EDITOR
 
             Camera cameraComponent = avatar.CameraComponent;
 

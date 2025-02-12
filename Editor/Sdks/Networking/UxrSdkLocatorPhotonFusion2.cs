@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="UxrSdkLocatorPhotonFusion.cs" company="VRMADA">
+// <copyright file="UxrSdkLocatorPhotonFusion2.cs" company="VRMADA">
 //   Copyright (c) VRMADA, All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
@@ -10,10 +10,10 @@ using UnityEngine;
 
 namespace UltimateXR.Editor.Sdks.Networking
 {
-    /// <summary>
-    ///     SDK Locator for the Photon Fusion SDK.
+  /// <summary>
+    ///     SDK Locator for the Photon Fusion 2 SDK.
     /// </summary>
-    public sealed class UxrSdkLocatorPhotonFusion : UxrSdkLocator
+    public sealed class UxrSdkLocatorPhotonFusion2 : UxrSdkLocator
     {
         #region Public Overrides UxrSdkLocator
 
@@ -21,10 +21,10 @@ namespace UltimateXR.Editor.Sdks.Networking
         public override SupportType Support => SupportType.Networking;
 
         /// <inheritdoc />
-        public override string Name => UxrConstants.SdkPhotonFusion;
+        public override string Name => UxrConstants.SdkPhotonFusion2;
 
         /// <inheritdoc />
-        public override string MinimumUnityVersion => "2020.3";
+        public override string MinimumUnityVersion => "2021.3.18";
 
         /// <inheritdoc />
         public override string[] AvailableSymbols
@@ -35,7 +35,7 @@ namespace UltimateXR.Editor.Sdks.Networking
                 {
                     if (CurrentVersion == 0)
                     {
-                        return new[] { "ULTIMATEXR_USE_PHOTONFUSION_SDK" };
+                        return new[] { "ULTIMATEXR_USE_PHOTONFUSION2_SDK" };
                     }
                 }
 
@@ -46,7 +46,7 @@ namespace UltimateXR.Editor.Sdks.Networking
         /// <inheritdoc />
         public override string[] AllSymbols
         {
-            get { return new[] { "ULTIMATEXR_USE_PHOTONFUSION_SDK" }; }
+            get { return new[] { "ULTIMATEXR_USE_PHOTONFUSION2_SDK" }; }
         }
 
         /// <inheritdoc />
@@ -55,16 +55,19 @@ namespace UltimateXR.Editor.Sdks.Networking
         /// <inheritdoc />
         public override void TryLocate()
         {
-            CurrentState = State.NotInstalled;
-            
-            // To tell Fusion2 apart from Fusion, Fusion 2 has the following types that Fusion doesn't have:
-            // NetworkSceneInfo, ReliableKey
+#if UNITY_2021_3_OR_NEWER
 
-            if (IsTypeInAssemblies("Fusion.NetworkBehaviour") && !IsTypeInAssemblies("Fusion.NetworkSceneInfo"))
+            CurrentState = State.NotInstalled;
+
+            if (IsTypeInAssemblies("Fusion.NetworkBehaviour") && IsTypeInAssemblies("Fusion.NetworkSceneInfo"))
             {
                 CurrentVersion = 0;
                 CurrentState   = State.Available;
             }
+
+#else
+            CurrentState = State.NeedsHigherUnityVersion
+#endif
         }
 
         /// <inheritdoc />
@@ -89,7 +92,7 @@ namespace UltimateXR.Editor.Sdks.Networking
         [InitializeOnLoadMethod]
         public static void RegisterLocator()
         {
-            UxrSdkManager.RegisterLocator(new UxrSdkLocatorPhotonFusion());
+            UxrSdkManager.RegisterLocator(new UxrSdkLocatorPhotonFusion2());
         }
 
         #endregion
@@ -99,10 +102,10 @@ namespace UltimateXR.Editor.Sdks.Networking
         /// <summary>
         ///     Allows to remove dependencies from the project in case the user removed SDK folders manually.
         /// </summary>
-        [MenuItem(UxrConstants.Editor.MenuPathSdksNetworking + "Remove Symbols for Photon Fusion", priority = UxrConstants.Editor.PriorityMenuPathSdksNetworking)]
+        [MenuItem(UxrConstants.Editor.MenuPathSdksNetworking + "Remove Symbols for Photon Fusion 2", priority = UxrConstants.Editor.PriorityMenuPathSdksNetworking)]
         private static void RemoveSymbols()
         {
-            UxrSdkManager.RemoveSymbols(new UxrSdkLocatorPhotonFusion());
+            UxrSdkManager.RemoveSymbols(new UxrSdkLocatorPhotonFusion2());
         }
 
         #endregion

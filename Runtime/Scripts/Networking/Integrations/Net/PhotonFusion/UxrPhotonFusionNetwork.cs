@@ -26,6 +26,8 @@ using Fusion.Sockets;
 using Behaviour = UnityEngine.Behaviour;
 #endif
 
+#pragma warning disable 414 // Disable warnings due to unused values
+
 namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
 {
     /// <summary>
@@ -659,3 +661,5 @@ namespace UltimateXR.Networking.Integrations.Net.PhotonFusion
 #endif
     }
 }
+
+#pragma warning restore 414
