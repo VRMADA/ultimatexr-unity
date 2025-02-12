@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Add support for Meta Quest 3S.
+
 - Soon v1.0.0 with full multiplayer support and tons of new features! Already available
   as a working branch in GitHub.
 - Fix bug in UI system to detect fingertip presses correctly in a moving canvas.
