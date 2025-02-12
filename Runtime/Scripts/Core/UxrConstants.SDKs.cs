@@ -22,12 +22,13 @@ namespace UltimateXR.Core
 
         // Networking
         
-        public const string SdkUnityNetCode = "Unity NetCode";
-        public const string SdkPhotonFusion = "Photon Fusion";
-        public const string SdkPhotonVoice  = "Photon Voice";
-        public const string SdkMirror       = "Mirror";
-        public const string SdkDissonance   = "Dissonance";
-        public const string SdkFishNet      = "FishNet";
+        public const string SdkUnityNetCode  = "Unity NetCode";
+        public const string SdkPhotonFusion  = "Photon Fusion";
+        public const string SdkPhotonFusion2 = "Photon Fusion 2";
+        public const string SdkPhotonVoice   = "Photon Voice";
+        public const string SdkMirror        = "Mirror";
+        public const string SdkDissonance    = "Dissonance";
+        public const string SdkFishNet       = "FishNet";
 
         #endregion
     }
