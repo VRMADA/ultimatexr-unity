@@ -112,7 +112,7 @@ namespace UltimateXR.Core.Threading
                 return Task.CompletedTask;
             }
 
-            if (!Application.isPlaying || Thread.CurrentThread == s_mainThread)
+            if (Thread.CurrentThread == s_mainThread && !Application.isPlaying)
             {
                 action();
                 return Task.CompletedTask;
