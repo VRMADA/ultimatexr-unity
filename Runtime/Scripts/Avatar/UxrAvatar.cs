@@ -12,6 +12,7 @@ using UltimateXR.CameraUtils;
 using UltimateXR.Core;
 using UltimateXR.Core.Components;
 using UltimateXR.Core.Settings;
+using UltimateXR.Core.StateSync;
 using UltimateXR.Devices;
 using UltimateXR.Devices.Integrations;
 using UltimateXR.Devices.Visualization;
@@ -89,14 +90,14 @@ namespace UltimateXR.Avatar
         #region Public Types & Data
 
         /// <summary>
-        ///     Event called right after after the local avatar called its Start().
+        ///     Event called right after the local avatar called its Start().
         /// </summary>
         public static event EventHandler<UxrAvatarStartedEventArgs> LocalAvatarStarted;
 
         /// <summary>
-        ///     Event called right after after the local avatar changed. called its Start(). This is useful when the avatar is
-        ///     instantiated
-        ///     in a deferred way, such as a networking environment, and the avatar isn't ready during Awake()/OnEnable()/Start().
+        ///     Event called right after the local avatar changed. This is useful when the avatar is
+        ///     instantiated in a deferred way, such as a networking environment, and the avatar isn't
+        ///     ready during Awake()/OnEnable()/Start().
         /// </summary>
         public static event EventHandler<UxrAvatarEventArgs> LocalAvatarChanged;
 
@@ -121,7 +122,7 @@ namespace UltimateXR.Avatar
         public event EventHandler<UxrAvatarHandPoseChangeEventArgs> HandPoseChanged;
 
         /// <summary>
-        ///     Event called right before before the avatar goes through an <see cref="UxrUpdateStage" /> of the updating process.
+        ///     Event called right before the avatar goes through an <see cref="UxrUpdateStage" /> of the updating process.
         /// </summary>
         public event EventHandler<UxrAvatarUpdateEventArgs> AvatarUpdating;
 
@@ -1644,7 +1645,10 @@ namespace UltimateXR.Avatar
         /// <param name="enabledControllerInputs">The enabled controller inputs at the moment of calling</param>
         private void SetAvatarRenderMode(UxrAvatarRenderModes avatarRenderModes, List<UxrControllerInput> enabledControllerInputs)
         {
-            BeginSync();
+            // Don't sync on Start() during networking sessions.
+            UxrStateSyncOptions syncFlags = _started ? UxrStateSyncOptions.Default : UxrStateSyncOptions.Default ^ UxrStateSyncOptions.Network;
+
+            BeginSync(syncFlags);
 
             _renderMode = avatarRenderModes;
 
