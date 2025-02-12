@@ -537,8 +537,7 @@ namespace UltimateXR.Manipulation
         ///     controls the direction.
         ///     Set it to true in objects like a rifle, where the trigger hand should be the first grab in order to keep the object
         ///     in place, and the front grab will control the aiming direction.
-        ///     If false, the grab point order is irrelevant and the hand that grabbed the object first will be considered as the
-        ///     main grab.
+        ///     If false, the object will be centered between the two grabs.
         /// </summary>
         public bool FirstGrabPointIsMain => _firstGrabPointIsMain;
 
