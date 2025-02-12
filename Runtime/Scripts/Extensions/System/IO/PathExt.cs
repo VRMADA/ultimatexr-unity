@@ -47,10 +47,15 @@ namespace UltimateXR.Extensions.System.IO
         /// <summary>
         ///     Normalizes a path or sub-path so that any wrong directory separator char is fixed for the current platform.
         /// </summary>
-        /// <param name="multiSegment">pathOrSubPath</param>
+        /// <param name="pathOrSubPath">The path or sub-path</param>
         /// <returns>Normalized path</returns>
         public static string Normalize(string pathOrSubPath)
         {
+            if (pathOrSubPath == null)
+            {
+                return null;
+            }
+            
             if (Path.IsPathFullyQualified(pathOrSubPath))
             {
                 return Path.GetFullPath(new Uri(pathOrSubPath).LocalPath).TrimEnd(PathSplitCharacters);
@@ -111,6 +116,60 @@ namespace UltimateXR.Extensions.System.IO
             }
 
             return isChild;
+        }
+
+        /// <summary>
+        ///     Gets the filename without the extension. Solves some issues with Android paths that
+        ///     Path.GetFileNameWithoutExtension() has.
+        /// </summary>
+        /// <param name="uriPath">File path</param>
+        /// <returns>Filename without the extension</returns>
+        public static string GetFileNameWithoutExtension(string uriPath)
+        {
+            // Normalize separators to handle both '/' and '\'
+            uriPath = uriPath.Replace('\\', '/');
+
+            // Split the path by '/' to isolate the file name
+            string[] parts = uriPath.Split('/');
+
+            // Get the last segment, which should be the file with extension
+            string fileWithExtension = parts[parts.Length - 1];
+
+            // Find the last dot to remove the extension manually
+            int dotIndex = fileWithExtension.LastIndexOf('.');
+
+            // If there is no dot, return the file as is; otherwise, remove the extension
+            if (dotIndex == -1)
+            {
+                return fileWithExtension; // No extension found
+            }
+            return fileWithExtension.Substring(0, dotIndex); // Remove extension
+        }
+
+        /// <summary>
+        ///     Removes the top level folder from the path string if there is one.
+        /// </summary>
+        /// <param name="path">Path</param>
+        /// <returns>Path without the top level folder</returns>
+        public static string RemoveHighestLevelFolder(string path)
+        {
+            // Normalize the path by replacing backslashes with forward slashes
+            path = path.Replace('\\', '/');
+
+            // Split the path into components
+            string[] components = path.Split('/');
+
+            // If there's only one component or the first component is empty, return the original path
+            if (components.Length <= 1 || string.IsNullOrEmpty(components[0]))
+            {
+                return Normalize(path);
+            }
+
+            // Join the components starting from the second one to form the new path
+            string newPath = string.Join("/", components, 1, components.Length - 1);
+
+            // Return the new path
+            return Normalize(newPath);
         }
 
         #endregion
