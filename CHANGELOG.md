@@ -93,6 +93,7 @@ TODO: Write update guide:
 - Add new PBR shader with a tinted mask. Use in cyborg avatar to color it.
 - Add new cabinet prefab to Lab in example scene to showcase grabbable parent dummies.
 - Expose properties in UxrTeleportSpawnCollider to have public access.
+- Add support for Meta Quest 3S.
 
 ### Changed
 
